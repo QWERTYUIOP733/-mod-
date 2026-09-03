@@ -1,9 +1,9 @@
 plugins {
-    id 'fabric-loom' version '1.6-SNAPSHOT'
+    id 'fabric-loom' version '1.5.+'
     id 'maven-publish'
 }
 
-version = project.version
+version = '1.2.0'
 group = 'com.mard.pixel'
 
 base {
