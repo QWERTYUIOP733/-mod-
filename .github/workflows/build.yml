@@ -77,7 +77,7 @@ jobs:
         with:
           arguments: build --no-daemon
           build-root-directory: fabric
-          gradle-version: '8.8'
+          gradle-version: '8.5'
 
       - name: Upload Fabric jar
         uses: actions/upload-artifact@v4

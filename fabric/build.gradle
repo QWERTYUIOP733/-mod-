@@ -22,13 +22,6 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:0.92.1+1.20.1"
 }
 
-// 禁用mixin remap，兼容loom 1.4.x
-loom {
-    mixin {
-        useLegacyMixinRemap = false
-    }
-}
-
 // 移除sourceSets配置，shared目录的文件将直接复制到src/main/java下
 // （在workflow中通过cp命令完成复制）
 
