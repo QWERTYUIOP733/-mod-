@@ -230,6 +230,14 @@ public class MardPixelForge {
     }
 
     public static void addCustom(ServerPlayer player, String name, int rgb) {
+        // 检测背包中自定义颜色物品数量上限（64个）
+        int customCount = countCustomItemsInInventory(player);
+        if (customCount >= 64) {
+            player.sendSystemMessage(Component.literal("背包中自定义颜色物品已达上限（64个），无法新增。请清空背包中部分物品后继续。").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("也可以将物品移至箱子或其他地方以腾出背包空间。").withStyle(ChatFormatting.GRAY));
+            return;
+        }
+
         CustomColor c = CustomColorStore.add(name, rgb);
         if (c == null) {
             player.sendSystemMessage(Component.literal("自定义色已满（9999）或参数非法").withStyle(ChatFormatting.RED));
@@ -242,6 +250,21 @@ public class MardPixelForge {
         // 自动给玩家对应的自定义方块物品：快捷栏 → 主物品栏 → 扔地面
         ItemStack stack = customStack(c, rgb, c.displayName());
         giveItemSmart(player, stack);
+    }
+
+    /**
+     * 统计背包中自定义颜色物品的总数量。
+     */
+    private static int countCustomItemsInInventory(ServerPlayer player) {
+        int count = 0;
+        Inventory inv = player.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && stack.getItem() == CUSTOM_ITEM.get()) {
+                count += stack.getCount();
+            }
+        }
+        return count;
     }
 
     /**
