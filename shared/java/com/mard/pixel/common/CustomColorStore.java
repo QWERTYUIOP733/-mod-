@@ -41,53 +41,61 @@ public final class CustomColorStore {
         // 先判断颜色名称
         String colorName = ColorMath.colorName(rgb);
 
-        // 检测该色系编号是否已达64上限（每个色系独立计数）
-        if (countByColorName(colorName) >= 64) {
-            return null; // 该色系编号已满，返回null
-        }
-
         Set<String> used = new TreeSet<>();
         for (CustomColor cc : COLORS) used.add(cc.code().toUpperCase());
         String code = CustomColor.nextCode(used);
         if (code == null) return null;
-        // 自动生成"颜色名 编号"形式的显示名，如"黄 A1"
-        String serial = nextSerialForColor(colorName);
-        String displayName = colorName + " " + serial;
+
+        // 自动生成"颜色名 编号 #RRGGBB"形式的显示名，如"黄 A1 #FFFF00"
+        // 编号循环利用：找最小可用编号（遗失的编号会被回收，可重新分配）
+        String serial = nextAvailableSerial(colorName);
+        String displayName = colorName + " " + serial + " #" + ColorMath.toHex(rgb);
         CustomColor c = new CustomColor(displayName, code, rgb);
         COLORS.add(c);
         return c;
     }
 
     /**
-     * 为指定颜色名称生成下一个编号（A1, A2, ..., A99, B1, B2...）。
+     * 为指定颜色名称找最小可用编号（A1, A2, ..., A99, B1, B2...）。
+     * 遗失的编号会被回收，可重新分配给新颜色，实现编号循环利用。
      */
-    private static String nextSerialForColor(String colorName) {
-        int maxNum = 0;
-        char maxLetter = 'A';
+    private static String nextAvailableSerial(String colorName) {
+        // 收集该色系已使用的编号
+        Set<String> usedSerials = new TreeSet<>();
         for (CustomColor cc : COLORS) {
             String dn = cc.name();
             if (dn != null && dn.startsWith(colorName + " ")) {
-                String serial = dn.substring(colorName.length() + 1).trim();
-                if (serial.length() >= 2) {
-                    char letter = serial.charAt(0);
-                    try {
-                        int num = Integer.parseInt(serial.substring(1));
-                        if (letter > maxLetter || (letter == maxLetter && num > maxNum)) {
-                            maxLetter = letter;
-                            maxNum = num;
-                        }
-                    } catch (NumberFormatException ignored) {}
+                String serial = extractSerial(dn, colorName);
+                if (serial != null) usedSerials.add(serial);
+            }
+        }
+        // 找最小可用编号：A1-A99, B1-B99, ..., Z1-Z99
+        for (char letter = 'A'; letter <= 'Z'; letter++) {
+            for (int num = 1; num <= 99; num++) {
+                String serial = "" + letter + num;
+                if (!usedSerials.contains(serial)) {
+                    return serial;
                 }
             }
         }
-        int nextNum = maxNum + 1;
-        char nextLetter = maxLetter;
-        if (nextNum > 99) {
-            nextNum = 1;
-            nextLetter = (char) (maxLetter + 1);
-            if (nextLetter > 'Z') nextLetter = 'Z'; // 封顶
-        }
-        return "" + nextLetter + nextNum;
+        return "Z99"; // 封顶
+    }
+
+    /**
+     * 从显示名中提取编号部分（如"黄 A1 #FFFF00" → "A1"）。
+     */
+    private static String extractSerial(String displayName, String colorName) {
+        try {
+            String rest = displayName.substring(colorName.length() + 1).trim();
+            // 格式："A1 #FFFF00" 或 "A1"
+            int spaceIdx = rest.indexOf(' ');
+            String serial = spaceIdx > 0 ? rest.substring(0, spaceIdx) : rest;
+            if (serial.length() >= 2 && Character.isLetter(serial.charAt(0))) {
+                Integer.parseInt(serial.substring(1));
+                return serial;
+            }
+        } catch (Exception ignored) {}
+        return null;
     }
 
     public static synchronized boolean remove(String code) {

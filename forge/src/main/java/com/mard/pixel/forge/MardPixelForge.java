@@ -47,6 +47,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 @Mod(MardPixelForge.MODID)
 public class MardPixelForge {
@@ -211,6 +213,18 @@ public class MardPixelForge {
                                     scanExternalBrands();
                                     p.sendSystemMessage(Component.literal("已重新扫描外部色系：" + externalBrands.size() + " 个"));
                                     return 1;
+                                }))
+                        .then(Commands.literal("scan")
+                                .executes(ctx -> {
+                                    ServerPlayer p = ctx.getSource().getPlayerOrException();
+                                    scanCustomItems(p);
+                                    return 1;
+                                }))
+                        .then(Commands.literal("restore")
+                                .executes(ctx -> {
+                                    ServerPlayer p = ctx.getSource().getPlayerOrException();
+                                    restoreCustomItems(p);
+                                    return 1;
                                 })));
     }
 
@@ -239,10 +253,8 @@ public class MardPixelForge {
 
         CustomColor c = CustomColorStore.add(name, rgb);
         if (c == null) {
-            // 判断是哪个色系编号满了（每个色系独立上限64）
-            String colorName = ColorMath.colorName(rgb);
-            player.sendSystemMessage(Component.literal(colorName + "色系编号已达上限（64个），无法继续新增。").withStyle(ChatFormatting.RED));
-            player.sendSystemMessage(Component.literal("请在色板中删除该色系不需要的颜色后再试，其他色系仍可继续新增。").withStyle(ChatFormatting.GRAY));
+            player.sendSystemMessage(Component.literal("自定义色编号已用尽，无法继续新增。").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("可使用 /mardp scan 扫描并回收遗失编号，或删除不需要的颜色后再试。").withStyle(ChatFormatting.GRAY));
             return;
         }
         CustomColorFile.save(CUSTOM_FILE, CustomColorStore.all());
@@ -464,7 +476,12 @@ public class MardPixelForge {
 
     public static ItemStack customStack(CustomColor cc, int rgb, String displayName) {
         ItemStack stack = new ItemStack(CUSTOM_ITEM.get());
-        stack.getOrCreateTag().putInt("mard_color", rgb & 0xFFFFFF);
+        CompoundTag tag = stack.getOrCreateTag();
+        tag.putInt("mard_color", rgb & 0xFFFFFF);
+        // 写入色号编号到NBT，用于扫描检测遗失编号
+        if (cc != null && cc.code() != null) {
+            tag.putString("mard_code", cc.code());
+        }
         String name = displayName != null ? displayName
                 : cc != null ? cc.displayName()
                 : "MARD Custom " + ColorMath.toHex(rgb);
@@ -544,5 +561,155 @@ public class MardPixelForge {
         }
         if (externalBrands.isEmpty()) sb.append("无（把 .json 放到 config/mard_pixel_brands/ 即可导入）");
         player.sendSystemMessage(Component.literal(sb.toString()));
+    }
+
+    /**
+     * 扫描玩家背包和附近5格内的箱子，检测遗失的自定义颜色编号并回收。
+     * 已保存但物品不存在于世界的编号 → 从保存列表移除，编号可循环利用。
+     */
+    public static void scanCustomItems(ServerPlayer player) {
+        Set<String> foundCodes = new TreeSet<>();
+        int chestCount = 0;
+        int itemCount = 0;
+
+        // 1. 扫描玩家背包（36格）
+        Inventory inv = player.getInventory();
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && stack.getItem() == CUSTOM_ITEM.get()) {
+                String code = customCodeOf(stack);
+                if (code != null) { foundCodes.add(code); itemCount++; }
+            }
+        }
+
+        // 2. 扫描附近5格内的箱子（箱子/陷阱箱/木桶/潜影盒）
+        net.minecraft.server.level.ServerLevel level = player.serverLevel();
+        net.minecraft.core.BlockPos pp = player.blockPosition();
+        int range = 5;
+        for (int dx = -range; dx <= range; dx++) {
+            for (int dy = -range; dy <= range; dy++) {
+                for (int dz = -range; dz <= range; dz++) {
+                    net.minecraft.core.BlockPos pos = pp.offset(dx, dy, dz);
+                    net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(pos);
+                    if (be instanceof net.minecraft.world.Container container) {
+                        chestCount++;
+                        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                            ItemStack stack = container.getItem(slot);
+                            if (!stack.isEmpty() && stack.getItem() == CUSTOM_ITEM.get()) {
+                                String code = customCodeOf(stack);
+                                if (code != null) { foundCodes.add(code); itemCount++; }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. 对比已保存的自定义颜色，找出遗失的编号
+        List<CustomColor> all = CustomColorStore.all();
+        List<String> lostCodes = new ArrayList<>();
+        for (CustomColor cc : all) {
+            if (!foundCodes.contains(cc.code())) {
+                lostCodes.add(cc.code());
+            }
+        }
+
+        // 4. 回收遗失编号（从保存列表移除，编号可循环利用）
+        int recycled = 0;
+        for (String code : lostCodes) {
+            if (CustomColorStore.remove(code)) recycled++;
+        }
+        if (recycled > 0) {
+            CustomColorFile.save(CUSTOM_FILE, CustomColorStore.all());
+            broadcastCustom();
+        }
+
+        // 5. 输出检测报告
+        player.sendSystemMessage(Component.literal("===== 自定义颜色物品检测报告 =====").withStyle(ChatFormatting.AQUA));
+        player.sendSystemMessage(Component.literal("扫描范围：背包 + 附近 " + range + " 格内 " + chestCount + " 个容器").withStyle(ChatFormatting.GRAY));
+        player.sendSystemMessage(Component.literal("找到自定义物品：" + itemCount + " 个，涉及 " + foundCodes.size() + " 个编号").withStyle(ChatFormatting.GREEN));
+        player.sendSystemMessage(Component.literal("已保存编号：" + all.size() + " 个").withStyle(ChatFormatting.GRAY));
+        if (lostCodes.isEmpty()) {
+            player.sendSystemMessage(Component.literal("未发现遗失编号，所有编号均有对应物品。").withStyle(ChatFormatting.GREEN));
+        } else {
+            player.sendSystemMessage(Component.literal("发现遗失编号：" + lostCodes.size() + " 个，已回收（编号可重新分配）").withStyle(ChatFormatting.YELLOW));
+            StringBuilder sb = new StringBuilder("回收编号：");
+            for (int i = 0; i < Math.min(lostCodes.size(), 10); i++) {
+                CustomColor cc = null;
+                for (CustomColor x : all) if (x.code().equals(lostCodes.get(i))) { cc = x; break; }
+                if (cc != null) sb.append(cc.name()).append(", ");
+            }
+            if (lostCodes.size() > 10) sb.append("等共 ").append(lostCodes.size()).append(" 个");
+            player.sendSystemMessage(Component.literal(sb.toString()).withStyle(ChatFormatting.GRAY));
+        }
+        player.sendSystemMessage(Component.literal("提示：遗失编号已回收，新增颜色时将优先复用这些编号。").withStyle(ChatFormatting.GRAY));
+    }
+
+    /**
+     * 补全遗失的自定义颜色物品：扫描后为遗失编号生成对应物品放入背包。
+     */
+    public static void restoreCustomItems(ServerPlayer player) {
+        Set<String> foundCodes = new TreeSet<>();
+
+        // 1. 扫描玩家背包
+        Inventory inv = player.getInventory();
+        for (int i = 0; i < 36; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && stack.getItem() == CUSTOM_ITEM.get()) {
+                String code = customCodeOf(stack);
+                if (code != null) foundCodes.add(code);
+            }
+        }
+
+        // 2. 扫描附近5格内的箱子
+        net.minecraft.server.level.ServerLevel level = player.serverLevel();
+        net.minecraft.core.BlockPos pp = player.blockPosition();
+        int range = 5;
+        for (int dx = -range; dx <= range; dx++) {
+            for (int dy = -range; dy <= range; dy++) {
+                for (int dz = -range; dz <= range; dz++) {
+                    net.minecraft.core.BlockPos pos = pp.offset(dx, dy, dz);
+                    net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(pos);
+                    if (be instanceof net.minecraft.world.Container container) {
+                        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                            ItemStack stack = container.getItem(slot);
+                            if (!stack.isEmpty() && stack.getItem() == CUSTOM_ITEM.get()) {
+                                String code = customCodeOf(stack);
+                                if (code != null) foundCodes.add(code);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. 找出遗失的编号并补全
+        List<CustomColor> all = CustomColorStore.all();
+        int restored = 0;
+        for (CustomColor cc : all) {
+            if (!foundCodes.contains(cc.code())) {
+                ItemStack stack = customStack(cc, cc.rgb(), cc.name());
+                giveItemSmart(player, stack);
+                restored++;
+            }
+        }
+
+        if (restored == 0) {
+            player.sendSystemMessage(Component.literal("未发现遗失编号，无需补全。").withStyle(ChatFormatting.GREEN));
+        } else {
+            player.sendSystemMessage(Component.literal("已补全 " + restored + " 个遗失编号的物品。").withStyle(ChatFormatting.GREEN));
+        }
+    }
+
+    /**
+     * 从自定义物品的NBT中读取色号编号（code）。
+     */
+    private static String customCodeOf(ItemStack stack) {
+        if (stack.isEmpty() || stack.getItem() != CUSTOM_ITEM.get()) return null;
+        CompoundTag tag = stack.getTag();
+        if (tag != null && tag.contains("mard_code")) {
+            return tag.getString("mard_code");
+        }
+        return null;
     }
 }
