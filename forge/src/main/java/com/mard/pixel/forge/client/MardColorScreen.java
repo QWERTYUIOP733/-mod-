@@ -127,11 +127,6 @@ public class MardColorScreen extends Screen {
             importPngPalettes();
         }).bounds(width - 100, 6, 90, 18).build());
 
-        addRenderableWidget(Button.builder(Component.translatable("screen.mard_pixel.switchbag"), btn -> {
-            MardNetwork.CHANNEL.sendToServer(new MardNetwork.SwitchBagSystemPacket(currentSystem));
-            statusMsg = "已请求切换到 " + currentSystem + " 色系";
-        }).bounds(width - 120, height - 28, 110, 20).build());
-
         if (!currentSystem.equals("MARD") && !currentSystem.equals("CUSTOM")
                 && ImportedPaletteStore.get(currentSystem) != null) {
             addRenderableWidget(Button.builder(Component.literal("删除该色系"), btn -> {
@@ -141,7 +136,7 @@ public class MardColorScreen extends Screen {
                 rebuildSystems();
                 rebuildSwatches();
                 init();
-            }).bounds(width - 220, height - 28, 90, 20).build());
+            }).bounds(width - 110, height - 28, 100, 20).build());
         }
 
         if (currentSystem.equals("CUSTOM")) {
