@@ -230,10 +230,9 @@ public class MardPixelForge {
     }
 
     public static void addCustom(ServerPlayer player, String name, int rgb) {
-        // 检测1：背包中自定义颜色物品数量上限（64个）
-        int customCount = countCustomItemsInInventory(player);
-        if (customCount >= 64) {
-            player.sendSystemMessage(Component.literal("背包中自定义颜色物品已达上限（64个），无法新增。请清空背包中部分物品后继续。").withStyle(ChatFormatting.RED));
+        // 检测1：背包是否已满（无空槽位），有空格则正常给予，全满才弹出提示
+        if (isInventoryFull(player)) {
+            player.sendSystemMessage(Component.literal("背包已满，无法新增物品。请清空背包中部分物品后继续。").withStyle(ChatFormatting.RED));
             player.sendSystemMessage(Component.literal("也可以将物品移至箱子或其他地方以腾出背包空间。").withStyle(ChatFormatting.GRAY));
             return;
         }
@@ -257,6 +256,18 @@ public class MardPixelForge {
         // 自动给玩家对应的自定义方块物品：快捷栏 → 主物品栏 → 扔地面
         ItemStack stack = customStack(c, rgb, c.displayName());
         giveItemSmart(player, stack);
+    }
+
+    /**
+     * 检测背包是否已满（快捷栏9格 + 主物品栏27格 = 36格全部被占用）。
+     */
+    private static boolean isInventoryFull(ServerPlayer player) {
+        Inventory inv = player.getInventory();
+        // 检查快捷栏（0-8）和主物品栏（9-35）共36格
+        for (int i = 0; i < 36; i++) {
+            if (inv.getItem(i).isEmpty()) return false; // 有空槽位
+        }
+        return true; // 全部满了
     }
 
     /**
