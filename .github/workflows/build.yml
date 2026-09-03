@@ -62,6 +62,16 @@ jobs:
       - name: Generate 295 blockstates + item models + lang
         run: node tools/generate_resources.js
 
+      - name: Copy shared sources to Fabric (workaround for loom sourceSets issue)
+        run: |
+          mkdir -p fabric/src/main/java
+          mkdir -p fabric/src/main/resources
+          cp -r shared/java/* fabric/src/main/java/
+          if [ -d "shared/assets" ]; then cp -r shared/assets fabric/src/main/resources/; fi
+          if [ -d "shared/brands" ]; then cp -r shared/brands fabric/src/main/resources/; fi
+          echo "Shared files copied to Fabric src directory"
+          ls -la fabric/src/main/java/com/mard/pixel/common/ | head -20
+
       - name: Build Fabric mod
         uses: gradle/gradle-build-action@v3
         with:
