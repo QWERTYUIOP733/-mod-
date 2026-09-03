@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.4.+'
+    id 'fabric-loom' version '1.6-SNAPSHOT'
     id 'maven-publish'
 }
 
@@ -22,18 +22,18 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:0.92.1+1.20.1"
 }
 
-// 临时移除sourceSets，测试Minecraft依赖是否能正确加载
-// sourceSets {
-//     main {
-//         java {
-//             srcDir '../shared/java'
-//         }
-//         resources {
-//             srcDir '../shared'
-//             exclude 'java/**'
-//         }
-//     }
-// }
+// 使用 += 操作符添加 sourceDir，避免覆盖默认 sourceSets
+sourceSets {
+    main {
+        java {
+            srcDirs += '../shared/java'
+        }
+        resources {
+            srcDirs += '../shared'
+            exclude 'java/**'
+        }
+    }
+}
 
 processResources {
     inputs.property "version", project.version
