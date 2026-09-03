@@ -89,6 +89,15 @@ public class MardPixelForge {
             MARD_BLOCK_REFS.add(ro);
         }
 
+        // 按系列（字母）分类的创造模式标签页
+        java.util.Set<String> seriesSet = new java.util.LinkedHashSet<>();
+        for (MardColor mc : MardPalette.COLORS) {
+            seriesSet.add(mc.series());
+        }
+        List<String> seriesList = new ArrayList<>(seriesSet);
+        java.util.Collections.sort(seriesList);
+
+        // 主标签页：全部色块 + 自定义色块
         TABS.register("mard_pixel", () -> CreativeModeTab.builder()
                 .title(Component.translatable("itemGroup.mard_pixel"))
                 .icon(() -> new ItemStack(CUSTOM_ITEM.get()))
@@ -97,6 +106,37 @@ public class MardPixelForge {
                     output.accept(new ItemStack(CUSTOM_ITEM.get()));
                 })
                 .build());
+
+        // 按系列分类的标签页
+        for (String series : seriesList) {
+            final String s = series;
+            TABS.register("mard_pixel_" + series.toLowerCase(), () -> CreativeModeTab.builder()
+                    .title(Component.literal("MARD " + series + " 系列"))
+                    .icon(() -> {
+                        // 用该系列第一个色块作为图标
+                        for (MardColor mc : MardPalette.COLORS) {
+                            if (mc.series().equals(s)) {
+                                for (MardBlock mb : MARD_BLOCKS) {
+                                    if (mb.code().equalsIgnoreCase(mc.code())) return new ItemStack(mb);
+                                }
+                            }
+                        }
+                        return new ItemStack(CUSTOM_ITEM.get());
+                    })
+                    .displayItems((params, output) -> {
+                        for (MardColor mc : MardPalette.COLORS) {
+                            if (mc.series().equals(s)) {
+                                for (MardBlock mb : MARD_BLOCKS) {
+                                    if (mb.code().equalsIgnoreCase(mc.code())) {
+                                        output.accept(new ItemStack(mb));
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    })
+                    .build());
+        }
 
         MinecraftForge.EVENT_BUS.register(this);
         bus.addListener(this::onCommonSetup);

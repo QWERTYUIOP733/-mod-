@@ -28,7 +28,10 @@ public class MardPixelForgeClient {
 
     @SubscribeEvent
     public static void onBlockColors(RegisterColorHandlersEvent.Block event) {
-        Block[] arr = MardPixelForge.MARD_BLOCKS.toArray(new Block[0]);
+        // 使用 MARD_BLOCK_REFS（构造函数中已填充）而非 MARD_BLOCKS（onCommonSetup才填充）
+        Block[] arr = MardPixelForge.MARD_BLOCK_REFS.stream()
+                .map(ro -> ro.get())
+                .toArray(Block[]::new);
         event.getBlockColors().register((state, level, pos, tint) -> {
             if (level != null && pos != null && level.getBlockEntity(pos) instanceof MardCustomBlockEntity mbe) {
                 return mbe.getColor();
@@ -45,8 +48,12 @@ public class MardPixelForgeClient {
 
     @SubscribeEvent
     public static void onItemColors(RegisterColorHandlersEvent.Item event) {
-        for (MardBlock mb : MardPixelForge.MARD_BLOCKS) {
-            event.getItemColors().register((stack, tint) -> mb.rgb(), mb);
+        // 使用 MARD_BLOCK_REFS 而非 MARD_BLOCKS
+        for (var ro : MardPixelForge.MARD_BLOCK_REFS) {
+            Block b = ro.get();
+            if (b instanceof MardBlock mb) {
+                event.getItemColors().register((stack, tint) -> mb.rgb(), mb);
+            }
         }
         event.getItemColors().register((stack, tint) -> {
             CompoundTag tag = stack.getTag();
