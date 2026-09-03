@@ -113,12 +113,11 @@ public class MardPixelForge {
             TABS.register("mard_pixel_" + series.toLowerCase(), () -> CreativeModeTab.builder()
                     .title(Component.literal("MARD " + series + " 系列"))
                     .icon(() -> {
-                        // 用该系列第一个色块作为图标，使用MARD_BLOCK_REFS（构造函数已填充）
+                        // 用该系列第一个色块作为图标，使用MARD_BLOCKS（游戏运行时onCommonSetup已填充）
                         for (MardColor mc : MardPalette.COLORS) {
                             if (mc.series().equals(s)) {
-                                for (var ro : MARD_BLOCK_REFS) {
-                                    Block b = ro.get();
-                                    if (b instanceof MardBlock mb && mb.code().equalsIgnoreCase(mc.code())) {
+                                for (MardBlock mb : MARD_BLOCKS) {
+                                    if (mb.code().equalsIgnoreCase(mc.code())) {
                                         return new ItemStack(mb);
                                     }
                                 }
@@ -129,9 +128,8 @@ public class MardPixelForge {
                     .displayItems((params, output) -> {
                         for (MardColor mc : MardPalette.COLORS) {
                             if (mc.series().equals(s)) {
-                                for (var ro : MARD_BLOCK_REFS) {
-                                    Block b = ro.get();
-                                    if (b instanceof MardBlock mb && mb.code().equalsIgnoreCase(mc.code())) {
+                                for (MardBlock mb : MARD_BLOCKS) {
+                                    if (mb.code().equalsIgnoreCase(mc.code())) {
                                         output.accept(new ItemStack(mb));
                                         break;
                                     }
@@ -240,6 +238,42 @@ public class MardPixelForge {
         CustomColorFile.save(CUSTOM_FILE, CustomColorStore.all());
         broadcastCustom();
         player.sendSystemMessage(Component.literal("已新增自定义色 " + c.code() + " " + ColorMath.toHex(rgb)));
+
+        // 自动给玩家对应的自定义方块物品：快捷栏 → 主物品栏 → 扔地面
+        ItemStack stack = customStack(c, rgb, c.displayName());
+        giveItemSmart(player, stack);
+    }
+
+    /**
+     * 智能给予物品：先放快捷栏，再放主物品栏，都满则扔到地面
+     */
+    private static void giveItemSmart(ServerPlayer player, ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return;
+        Inventory inv = player.getInventory();
+
+        // 1. 先尝试放快捷栏（0-8槽位）
+        for (int i = 0; i < 9; i++) {
+            ItemStack slot = inv.getItem(i);
+            if (slot.isEmpty()) {
+                inv.setItem(i, stack.copy());
+                player.sendSystemMessage(Component.literal("已放入快捷栏").withStyle(ChatFormatting.GRAY));
+                return;
+            }
+        }
+
+        // 2. 再尝试放主物品栏（9-35槽位）
+        for (int i = 9; i < 36; i++) {
+            ItemStack slot = inv.getItem(i);
+            if (slot.isEmpty()) {
+                inv.setItem(i, stack.copy());
+                player.sendSystemMessage(Component.literal("已放入背包").withStyle(ChatFormatting.GRAY));
+                return;
+            }
+        }
+
+        // 3. 都满了，扔到地面
+        player.drop(stack.copy(), false);
+        player.sendSystemMessage(Component.literal("背包已满，已扔到地面").withStyle(ChatFormatting.YELLOW));
     }
 
     public static void removeCustom(ServerPlayer player, String code) {
