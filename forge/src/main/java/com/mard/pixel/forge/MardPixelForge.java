@@ -113,11 +113,14 @@ public class MardPixelForge {
             TABS.register("mard_pixel_" + series.toLowerCase(), () -> CreativeModeTab.builder()
                     .title(Component.literal("MARD " + series + " 系列"))
                     .icon(() -> {
-                        // 用该系列第一个色块作为图标
+                        // 用该系列第一个色块作为图标，使用MARD_BLOCK_REFS（构造函数已填充）
                         for (MardColor mc : MardPalette.COLORS) {
                             if (mc.series().equals(s)) {
-                                for (MardBlock mb : MARD_BLOCKS) {
-                                    if (mb.code().equalsIgnoreCase(mc.code())) return new ItemStack(mb);
+                                for (var ro : MARD_BLOCK_REFS) {
+                                    Block b = ro.get();
+                                    if (b instanceof MardBlock mb && mb.code().equalsIgnoreCase(mc.code())) {
+                                        return new ItemStack(mb);
+                                    }
                                 }
                             }
                         }
@@ -126,8 +129,9 @@ public class MardPixelForge {
                     .displayItems((params, output) -> {
                         for (MardColor mc : MardPalette.COLORS) {
                             if (mc.series().equals(s)) {
-                                for (MardBlock mb : MARD_BLOCKS) {
-                                    if (mb.code().equalsIgnoreCase(mc.code())) {
+                                for (var ro : MARD_BLOCK_REFS) {
+                                    Block b = ro.get();
+                                    if (b instanceof MardBlock mb && mb.code().equalsIgnoreCase(mc.code())) {
                                         output.accept(new ItemStack(mb));
                                         break;
                                     }
