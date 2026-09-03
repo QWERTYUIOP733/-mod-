@@ -36,6 +36,10 @@ function main() {
         const bs = { variants: { "": { model: "mard_pixel:block/mard_base" } } };
         fs.writeFileSync(path.join(bsDir, name + '.json'), JSON.stringify(bs));
     }
+    // mard_custom 方块的 blockstate
+    fs.writeFileSync(path.join(bsDir, 'mard_custom.json'), JSON.stringify({
+        variants: { "": { model: "mard_pixel:block/mard_base" } }
+    }));
 
     // 2. item models
     const imDir = path.join(ASSETS, 'models', 'item');
@@ -45,6 +49,10 @@ function main() {
         const im = { parent: "mard_pixel:block/mard_base" };
         fs.writeFileSync(path.join(imDir, name + '.json'), JSON.stringify(im));
     }
+    // mard_custom 物品的 item model（手持尺寸与标准色块一致）
+    fs.writeFileSync(path.join(imDir, 'mard_custom.json'), JSON.stringify({
+        parent: "mard_pixel:block/mard_base"
+    }));
 
     // 3. lang
     const langDir = path.join(ASSETS, 'lang');
