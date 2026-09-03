@@ -23,13 +23,34 @@ public final class CustomColorStore {
 
     public static synchronized int size() { return COLORS.size(); }
 
+    /**
+     * 统计指定色系（颜色名称）的编号数量。
+     */
+    public static synchronized int countByColorName(String colorName) {
+        int count = 0;
+        for (CustomColor cc : COLORS) {
+            String dn = cc.name();
+            if (dn != null && dn.startsWith(colorName + " ")) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     public static synchronized CustomColor add(String name, int rgb) {
+        // 先判断颜色名称
+        String colorName = ColorMath.colorName(rgb);
+
+        // 检测该色系编号是否已达64上限（每个色系独立计数）
+        if (countByColorName(colorName) >= 64) {
+            return null; // 该色系编号已满，返回null
+        }
+
         Set<String> used = new TreeSet<>();
         for (CustomColor cc : COLORS) used.add(cc.code().toUpperCase());
         String code = CustomColor.nextCode(used);
         if (code == null) return null;
         // 自动生成"颜色名 编号"形式的显示名，如"黄 A1"
-        String colorName = ColorMath.colorName(rgb);
         String serial = nextSerialForColor(colorName);
         String displayName = colorName + " " + serial;
         CustomColor c = new CustomColor(displayName, code, rgb);

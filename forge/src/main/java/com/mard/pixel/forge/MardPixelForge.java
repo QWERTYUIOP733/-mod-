@@ -237,16 +237,12 @@ public class MardPixelForge {
             return;
         }
 
-        // 检测2：自定义颜色编号种类上限（64种），达到则阻止新增
-        if (CustomColorStore.size() >= 64) {
-            player.sendSystemMessage(Component.literal("自定义颜色已达上限（64种），无法继续新增。").withStyle(ChatFormatting.RED));
-            player.sendSystemMessage(Component.literal("请在色板中删除不需要的颜色后再试，或把常用色块存入箱子保存。").withStyle(ChatFormatting.GRAY));
-            return;
-        }
-
         CustomColor c = CustomColorStore.add(name, rgb);
         if (c == null) {
-            player.sendSystemMessage(Component.literal("自定义色已满（9999）或参数非法").withStyle(ChatFormatting.RED));
+            // 判断是哪个色系编号满了（每个色系独立上限64）
+            String colorName = ColorMath.colorName(rgb);
+            player.sendSystemMessage(Component.literal(colorName + "色系编号已达上限（64个），无法继续新增。").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("请在色板中删除该色系不需要的颜色后再试，其他色系仍可继续新增。").withStyle(ChatFormatting.GRAY));
             return;
         }
         CustomColorFile.save(CUSTOM_FILE, CustomColorStore.all());
