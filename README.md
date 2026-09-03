@@ -1,11 +1,12 @@
-# MARD 像素色块 Mod（Minecraft 1.20.1）
+# MARD 像素色块 Mod（Minecraft 1.20.1 · Forge）
 
 一套将 **MARD 拼豆 295 色系**标准色卡做成 Minecraft 实心色块的像素画 Mod。
-支持 **Forge 与 Fabric** 两种 Mod 加载器，一套色值、双端可用。
+
+> **当前版本仅支持 Forge 加载器。** Fabric 版本因构建兼容性问题已停止维护，后续如有需要可单独重启。
 
 - 版本：v1.2.0
 - 游戏版本：Minecraft 1.20.1
-- Forge：47.2.0 ｜ Fabric：loader 0.15.11 + fabric-api 0.92.1+1.20.1
+- 加载器：Forge 47.2.0
 - 色卡：MARD 官方 295 色（221 标准 A–H/M + 74 特殊 P/Q/R/T/Y/ZG，dehumaker.cn 对照表）
 
 ---
@@ -28,13 +29,9 @@
 ## 安装
 
 ### Forge 端
+
 1. 安装 Minecraft 1.20.1 + Forge 47.2.0
 2. 把 `MARD_Pixel_Forge_1.20.1_v1.2.0.jar` 放入 `mods/` 文件夹
-3. 启动游戏
-
-### Fabric 端
-1. 安装 Minecraft 1.20.1 + Fabric Loader 0.15.11+
-2. 把 `fabric-api-0.92.1+1.20.1.jar` 与 `MARD_Pixel_Fabric_1.20.1_v1.2.0.jar` 一起放入 `mods/` 文件夹
 3. 启动游戏
 
 ---
@@ -42,6 +39,7 @@
 ## 使用方法
 
 ### 色板（推荐）
+
 - 按 **G** 打开色板
 - 顶部按钮切换色系（MARD / 导入的 PNG 色系 / CUSTOM）
 - 点击任意色块 → 对应物品进入背包
@@ -50,6 +48,7 @@
 - 选中导入的色系后，点「删除该色系」可移除
 
 ### 自定义色号（CUSTOM 页）
+
 1. 切换到 **CUSTOM** 色系
 2. 在 **RGB 色环** 上点选色相
 3. 在 **HSV 三角** 上点选饱和度/明度
@@ -58,6 +57,7 @@
 6. 点「删除」移除最后一个自定义色（也可用命令精确删除）
 
 ### 命令
+
 | 命令 | 说明 |
 |---|---|
 | `/mardp brands` | 列出内置品牌 + 外部色系及色号数量 |
@@ -104,13 +104,12 @@
 需要：**JDK 17**、**Gradle 8.8**、**Node.js 18+**（都加入 PATH）。
 
 1. 双击运行 **`build.bat`**
-2. 脚本自动：生成资源 → 构建 Forge → 构建 Fabric → 收集 JAR 到 `dist/`
-3. 首次构建会下载 Minecraft/Forge/Fabric 依赖，耗时较长（网络需可达 maven.minecraftforge.net / maven.fabricmc.net）
+2. 脚本自动：生成资源 → 构建 Forge → 收集 JAR 到 `dist/`
+3. 首次构建会下载 Minecraft/Forge 依赖，耗时较长（网络需可达 maven.minecraftforge.net）
 
 也可手动：
 ```
-cd forge  && gradle build
-cd fabric && gradle build
+cd forge && gradle build
 ```
 
 ---
@@ -121,11 +120,10 @@ cd fabric && gradle build
 mard-pixel-mod/
 ├── build.bat                一键构建脚本
 ├── colors/                  数据源（MARD 295 色、外部色卡示例）
-├── shared/                  双端共享：Java 源码(common) + 资源(assets)
+├── shared/                  共享：Java 源码(common) + 资源(assets)
 │   ├── java/com/mard/pixel/common/   共享逻辑（色卡/转换/存储/解析）
 │   └── assets/mard_pixel/            资源（模型、lang、内置品牌色卡）
 ├── forge/                   Forge 工程（build.gradle + 主类 + UI）
-├── fabric/                  Fabric 工程（build.gradle + 主类 + UI）
 ├── tools/generate_resources.js  资源生成脚本（Node）
 └── dist/                    构建产物（JAR）
 ```
