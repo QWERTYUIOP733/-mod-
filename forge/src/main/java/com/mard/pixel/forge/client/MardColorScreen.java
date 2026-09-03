@@ -43,21 +43,16 @@ public class MardColorScreen extends Screen {
     private String statusMsg = "";
 
     // 拖动状态
-    private boolean draggingWheel = false;
-    private boolean draggingSat = false;
-    private boolean draggingVal = false;
+    private boolean draggingPicker = false;  // 拖动取色方块
+    private boolean draggingHue = false;     // 拖动色相条
 
     private static final int SW = 18, GAP = 4, COLS = 16;
     private static final int LABEL_H = 8; // 色号标签高度
     private static final Path IMPORT_DIR = FMLPaths.CONFIGDIR.get().resolve("mard_pixel").resolve("import");
 
-    // 自定义编辑器布局常量
-    private static final int WHEEL_CX = 340, WHEEL_CY = 170;
-    private static final int WHEEL_R1 = 18, WHEEL_R2 = 62;
-    private static final int SLIDER_X = 200, SLIDER_W = 16, SLIDER_H = 120;
-    private static final int SAT_SLIDER_Y = 110;
-    private static final int VAL_SLIDER_Y = 110;
-    private static final int VAL_SLIDER_X = 230;
+    // PS风格取色器布局常量
+    private static final int PICKER_X = 140, PICKER_Y = 100, PICKER_SIZE = 170;
+    private static final int HUE_X = 325, HUE_Y = 100, HUE_W = 20, HUE_H = 170;
 
     public MardColorScreen() {
         super(Component.translatable("screen.mard_pixel.title"));
@@ -272,191 +267,115 @@ public class MardColorScreen extends Screen {
         g.drawString(font, Component.literal(String.format("B %d", cur & 0xFF)), 12, 230, 0xFFFFFF);
         g.drawString(font, Component.literal("HEX " + ColorMath.toHex(cur)), 12, 244, 0xFFFFAA);
 
-        // === 中间：饱和度 + 明度 垂直调节条 ===
-        renderSatSlider(g, SLIDER_X, SAT_SLIDER_Y, SLIDER_W, SLIDER_H, mx, my);
-        renderValSlider(g, VAL_SLIDER_X, VAL_SLIDER_Y, SLIDER_W, SLIDER_H, mx, my);
+        // === 中间：PS风格取色方块（饱和度×明度） ===
+        renderPsPicker(g, PICKER_X, PICKER_Y, PICKER_SIZE, mx, my);
+        g.drawString(font, Component.literal("取色区"), PICKER_X, PICKER_Y - 12, 0xAAAAAA);
 
-        // 标签
-        g.drawString(font, Component.literal("饱和度"), SLIDER_X - 2, SAT_SLIDER_Y - 12, 0xAAAAAA);
-        g.drawString(font, Component.literal("明度"), VAL_SLIDER_X - 2, VAL_SLIDER_Y - 12, 0xAAAAAA);
-        g.drawString(font, Component.literal(curSat + "%"), SLIDER_X, SAT_SLIDER_Y + SLIDER_H + 4, 0xCCCCCC);
-        g.drawString(font, Component.literal(curVal + "%"), VAL_SLIDER_X, VAL_SLIDER_Y + SLIDER_H + 4, 0xCCCCCC);
+        // === 右侧：垂直色相条 ===
+        renderHueSlider(g, HUE_X, HUE_Y, HUE_W, HUE_H, mx, my);
+        g.drawString(font, Component.literal("色相"), HUE_X - 2, HUE_Y - 12, 0xAAAAAA);
 
-        // === 右侧：圆润色环 ===
-        renderSmoothWheel(g, WHEEL_CX, WHEEL_CY, WHEEL_R1, WHEEL_R2, mx, my);
-        g.drawString(font, Component.literal("色相环"), WHEEL_CX - 16, WHEEL_CY - WHEEL_R2 - 14, 0xAAAAAA);
+        // HSV数值显示
+        g.drawString(font, Component.literal("H " + curHue + "°"), PICKER_X, PICKER_Y + PICKER_SIZE + 6, 0xCCCCCC);
+        g.drawString(font, Component.literal("S " + curSat + "%"), PICKER_X + 50, PICKER_Y + PICKER_SIZE + 6, 0xCCCCCC);
+        g.drawString(font, Component.literal("V " + curVal + "%"), PICKER_X + 100, PICKER_Y + PICKER_SIZE + 6, 0xCCCCCC);
 
         // === 最右侧：已保存的自定义色列表 ===
         int ly = 60;
         for (CustomColor cc : customList) {
             drawSwatch(g, 430, ly, cc.rgb());
-            g.drawString(font, Component.literal(cc.code()), 452, ly + 5, 0xFFFFFF);
+            g.drawString(font, Component.literal(cc.displayName()), 452, ly + 5, 0xFFFFFF);
             ly += SW + 4;
             if (ly > height - 90) break;
         }
     }
 
     /**
-     * 渲染饱和度垂直调节条：顶部灰色（0%），底部当前色相纯色（100%）
+     * PS风格取色方块：X轴饱和度（左灰右纯），Y轴明度（上白下黑）。
+     * 支持多角度、多轴取色，拖动指示器实时选色。
      */
-    private void renderSatSlider(GuiGraphics g, int x, int y, int w, int h, int mx, int my) {
-        int pure = ColorMath.hsvToRgb(curHue, 1, curVal / 100.0);
-        int pr = (pure >> 16) & 0xFF, pg = (pure >> 8) & 0xFF, pb = pure & 0xFF;
-        // 逐行渐变：从灰到纯色
-        for (int py = 0; py < h; py++) {
-            double t = (double) py / (h - 1); // 0=顶(灰), 1=底(纯色)
-            int gray = (int) (curVal / 100.0 * 255);
-            int r = (int) (gray + t * (pr - gray));
-            int gg = (int) (gray + t * (pg - gray));
-            int b = (int) (gray + t * (pb - gray));
-            g.fill(x, y + py, x + w, y + py + 1, 0xFF000000 | ((r & 0xFF) << 16) | ((gg & 0xFF) << 8) | (b & 0xFF));
+    private void renderPsPicker(GuiGraphics g, int x, int y, int size, int mx, int my) {
+        // 逐像素渲染取色方块
+        for (int py = 0; py < size; py++) {
+            for (int px = 0; px < size; px++) {
+                double sat = (double) px / (size - 1);  // 0=左(灰), 1=右(纯)
+                double val = 1.0 - (double) py / (size - 1); // 1=上(白), 0=下(黑)
+                int c = ColorMath.hsvToRgb(curHue, sat, val);
+                g.fill(x + px, y + py, x + px + 1, y + py + 1, 0xFF000000 | c);
+            }
         }
         // 边框
-        g.fill(x - 1, y - 1, x + w + 1, y, 0xFF888888);
-        g.fill(x - 1, y + h, x + w + 1, y + h + 1, 0xFF888888);
-        g.fill(x - 1, y - 1, x, y + h + 1, 0xFF888888);
-        g.fill(x + w, y - 1, x + w + 1, y + h + 1, 0xFF888888);
-        // 滑块指示器
-        int sy = y + (int) ((curSat / 100.0) * (h - 1));
-        g.fill(x - 3, sy - 2, x + w + 3, sy + 3, 0xFFFFFFFF);
-        g.fill(x - 2, sy - 1, x + w + 2, sy + 2, 0xFF000000);
-    }
+        g.fill(x - 1, y - 1, x + size + 1, y, 0xFF888888);
+        g.fill(x - 1, y + size, x + size + 1, y + size + 1, 0xFF888888);
+        g.fill(x - 1, y - 1, x, y + size + 1, 0xFF888888);
+        g.fill(x + size, y - 1, x + size + 1, y + size + 1, 0xFF888888);
 
-    /**
-     * 渲染明度垂直调节条：顶部黑色（0%），底部白色（100%），中间当前色相
-     */
-    private void renderValSlider(GuiGraphics g, int x, int y, int w, int h, int mx, int my) {
-        int pure = ColorMath.hsvToRgb(curHue, curSat / 100.0, 1);
-        int pr = (pure >> 16) & 0xFF, pg = (pure >> 8) & 0xFF, pb = pure & 0xFF;
-        // 逐行渐变：从黑到纯色到白
-        for (int py = 0; py < h; py++) {
-            double t = (double) py / (h - 1); // 0=顶(黑), 0.5=纯色, 1=底(白)
-            int r, gg, b;
-            if (t < 0.5) {
-                double k = t * 2;
-                r = (int) (k * pr);
-                gg = (int) (k * pg);
-                b = (int) (k * pb);
-            } else {
-                double k = (t - 0.5) * 2;
-                r = (int) (pr + k * (255 - pr));
-                gg = (int) (pg + k * (255 - pg));
-                b = (int) (pb + k * (255 - pb));
-            }
-            g.fill(x, y + py, x + w, y + py + 1, 0xFF000000 | ((r & 0xFF) << 16) | ((gg & 0xFF) << 8) | (b & 0xFF));
-        }
-        // 边框
-        g.fill(x - 1, y - 1, x + w + 1, y, 0xFF888888);
-        g.fill(x - 1, y + h, x + w + 1, y + h + 1, 0xFF888888);
-        g.fill(x - 1, y - 1, x, y + h + 1, 0xFF888888);
-        g.fill(x + w, y - 1, x + w + 1, y + h + 1, 0xFF888888);
-        // 滑块指示器
-        int sy = y + (int) ((curVal / 100.0) * (h - 1));
-        g.fill(x - 3, sy - 2, x + w + 3, sy + 3, 0xFFFFFFFF);
-        g.fill(x - 2, sy - 1, x + w + 2, sy + 2, 0xFF000000);
-    }
-
-    /**
-     * 渲染光滑圆润的色相环，支持抗锯齿边缘
-     */
-    private void renderSmoothWheel(GuiGraphics g, int cx, int cy, int r1, int r2, int mx, int my) {
-        // 外发光背景
-        for (int py = -r2 - 2; py <= r2 + 2; py++) {
-            for (int px = -r2 - 2; px <= r2 + 2; px++) {
-                double d = Math.sqrt(px * px + py * py);
-                if (d > r2 && d <= r2 + 2) {
-                    double alpha = 1 - (d - r2) / 2.0;
-                    int a = (int) (alpha * 60);
-                    g.fill(cx + px, cy + py, cx + px + 1, cy + py + 1, (a & 0xFF) << 24 | 0x888888);
-                }
-            }
-        }
-        // 色环主体（逐像素，更细腻）
-        for (int py = -r2; py <= r2; py++) {
-            for (int px = -r2; px <= r2; px++) {
-                double d = Math.sqrt(px * px + py * py);
-                if (d >= r1 && d <= r2) {
-                    // 边缘抗锯齿
-                    double edgeAlpha = 1.0;
-                    if (d < r1 + 1) edgeAlpha = d - r1;
-                    if (d > r2 - 1) edgeAlpha = r2 - d;
-                    if (edgeAlpha > 0) {
-                        double hue = (Math.toDegrees(Math.atan2(py, px)) + 360) % 360;
-                        int c = ColorMath.hsvToRgb(hue, 1, 1);
-                        int a = (int) (Math.min(1, edgeAlpha) * 255);
-                        g.fill(cx + px, cy + py, cx + px + 1, cy + py + 1, (a << 24) | (c & 0xFFFFFF));
-                    }
-                }
-            }
-        }
-        // 内圆背景（深色）
-        for (int py = -r1 + 1; py < r1; py++) {
-            for (int px = -r1 + 1; px < r1; px++) {
-                double d = Math.sqrt(px * px + py * py);
-                if (d < r1) {
-                    g.fill(cx + px, cy + py, cx + px + 1, cy + py + 1, 0xFF1A1A2E);
-                }
-            }
-        }
-        // 内圆显示当前颜色
-        int cur = curColor();
-        for (int py = -r1 + 3; py < r1 - 3; py++) {
-            for (int px = -r1 + 3; px < r1 - 3; px++) {
-                double d = Math.sqrt(px * px + py * py);
-                if (d < r1 - 4) {
-                    g.fill(cx + px, cy + py, cx + px + 1, cy + py + 1, 0xFF000000 | cur);
-                }
-            }
-        }
-        // 色相指示器（白色圆环 + 黑色描边）
-        double ang = Math.toRadians(curHue);
-        int indicatorR = (r1 + r2) / 2;
-        int ix = (int) (cx + Math.cos(ang) * indicatorR);
-        int iy = (int) (cy + Math.sin(ang) * indicatorR);
+        // 取色指示器（白色圆圈+黑色描边，PS风格）
+        int ix = x + (int) ((curSat / 100.0) * (size - 1));
+        int iy = y + (int) ((1 - curVal / 100.0) * (size - 1));
         // 外白圈
-        for (int dy = -4; dy <= 4; dy++) {
-            for (int dx = -4; dx <= 4; dx++) {
-                double dd = Math.sqrt(dx * dx + dy * dy);
-                if (dd <= 4 && dd >= 2.5) {
+        for (int dy = -5; dy <= 5; dy++) {
+            for (int dx = -5; dx <= 5; dx++) {
+                double d = Math.sqrt(dx * dx + dy * dy);
+                if (d <= 5 && d >= 3) {
                     g.fill(ix + dx, iy + dy, ix + dx + 1, iy + dy + 1, 0xFFFFFFFF);
                 }
             }
         }
         // 内黑圈
-        for (int dy = -2; dy <= 2; dy++) {
-            for (int dx = -2; dx <= 2; dx++) {
-                double dd = Math.sqrt(dx * dx + dy * dy);
-                if (dd <= 2) {
+        for (int dy = -3; dy <= 3; dy++) {
+            for (int dx = -3; dx <= 3; dx++) {
+                double d = Math.sqrt(dx * dx + dy * dy);
+                if (d <= 3) {
                     g.fill(ix + dx, iy + dy, ix + dx + 1, iy + dy + 1, 0xFF000000);
                 }
             }
         }
+        // 中心点（当前颜色）
+        g.fill(ix - 1, iy - 1, ix + 2, iy + 2, 0xFF000000 | curColor());
+    }
+
+    /**
+     * 垂直色相条：从上到下红→黄→绿→青→蓝→紫→红。
+     */
+    private void renderHueSlider(GuiGraphics g, int x, int y, int w, int h, int mx, int my) {
+        // 逐行渲染色相条
+        for (int py = 0; py < h; py++) {
+            double hue = (double) py / (h - 1) * 360.0; // 0=顶(红), 360=底(红)
+            int c = ColorMath.hsvToRgb(hue, 1, 1);
+            g.fill(x, y + py, x + w, y + py + 1, 0xFF000000 | c);
+        }
+        // 边框
+        g.fill(x - 1, y - 1, x + w + 1, y, 0xFF888888);
+        g.fill(x - 1, y + h, x + w + 1, y + h + 1, 0xFF888888);
+        g.fill(x - 1, y - 1, x, y + h + 1, 0xFF888888);
+        g.fill(x + w, y - 1, x + w + 1, y + h + 1, 0xFF888888);
+
+        // 色相指示器（白色横线+黑色描边）
+        int sy = y + (int) ((curHue / 360.0) * (h - 1));
+        g.fill(x - 4, sy - 2, x + w + 4, sy + 3, 0xFFFFFFFF);
+        g.fill(x - 3, sy - 1, x + w + 3, sy + 2, 0xFF000000);
+        g.fill(x - 2, sy, x + w + 2, sy + 1, 0xFFFFFFFF);
     }
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         if (button == 0) {
             if (currentSystem.equals("CUSTOM")) {
-                // 色环点击
-                double dx = mx - WHEEL_CX, dy = my - WHEEL_CY;
-                double d = Math.sqrt(dx * dx + dy * dy);
-                if (d >= WHEEL_R1 - 2 && d <= WHEEL_R2 + 2) {
-                    curHue = (int) ((Math.toDegrees(Math.atan2(dy, dx)) + 360) % 360);
-                    draggingWheel = true;
+                // PS取色方块点击（X轴饱和度，Y轴明度）
+                if (mx >= PICKER_X && mx < PICKER_X + PICKER_SIZE
+                        && my >= PICKER_Y && my < PICKER_Y + PICKER_SIZE) {
+                    curSat = (int) Math.round(Math.max(0, Math.min(1, (mx - PICKER_X) / (double) (PICKER_SIZE - 1))) * 100);
+                    curVal = (int) Math.round(Math.max(0, Math.min(1, 1 - (my - PICKER_Y) / (double) (PICKER_SIZE - 1))) * 100);
+                    draggingPicker = true;
                     return true;
                 }
-                // 饱和度条点击
-                if (mx >= SLIDER_X - 3 && mx <= SLIDER_X + SLIDER_W + 3
-                        && my >= SAT_SLIDER_Y && my <= SAT_SLIDER_Y + SLIDER_H) {
-                    curSat = (int) Math.round(Math.max(0, Math.min(1, (my - SAT_SLIDER_Y) / (double) SLIDER_H)) * 100);
-                    draggingSat = true;
-                    return true;
-                }
-                // 明度条点击
-                if (mx >= VAL_SLIDER_X - 3 && mx <= VAL_SLIDER_X + SLIDER_W + 3
-                        && my >= VAL_SLIDER_Y && my <= VAL_SLIDER_Y + SLIDER_H) {
-                    curVal = (int) Math.round(Math.max(0, Math.min(1, (my - VAL_SLIDER_Y) / (double) SLIDER_H)) * 100);
-                    draggingVal = true;
+                // 色相条点击
+                if (mx >= HUE_X - 2 && mx < HUE_X + HUE_W + 2
+                        && my >= HUE_Y && my < HUE_Y + HUE_H) {
+                    curHue = (int) Math.round(Math.max(0, Math.min(360, (my - HUE_Y) / (double) (HUE_H - 1) * 360)));
+                    if (curHue >= 360) curHue = 0;
+                    draggingHue = true;
                     return true;
                 }
             }
@@ -490,17 +409,16 @@ public class MardColorScreen extends Screen {
     @Override
     public boolean mouseDragged(double mx, double my, int button, double dragX, double dragY) {
         if (button == 0 && currentSystem.equals("CUSTOM")) {
-            if (draggingWheel) {
-                double dx = mx - WHEEL_CX, dy = my - WHEEL_CY;
-                curHue = (int) ((Math.toDegrees(Math.atan2(dy, dx)) + 360) % 360);
+            if (draggingPicker) {
+                // 拖动取色方块：X轴饱和度，Y轴明度（支持多角度、多轴取色）
+                curSat = (int) Math.round(Math.max(0, Math.min(1, (mx - PICKER_X) / (double) (PICKER_SIZE - 1))) * 100);
+                curVal = (int) Math.round(Math.max(0, Math.min(1, 1 - (my - PICKER_Y) / (double) (PICKER_SIZE - 1))) * 100);
                 return true;
             }
-            if (draggingSat) {
-                curSat = (int) Math.round(Math.max(0, Math.min(1, (my - SAT_SLIDER_Y) / (double) SLIDER_H)) * 100);
-                return true;
-            }
-            if (draggingVal) {
-                curVal = (int) Math.round(Math.max(0, Math.min(1, (my - VAL_SLIDER_Y) / (double) SLIDER_H)) * 100);
+            if (draggingHue) {
+                // 拖动色相条
+                curHue = (int) Math.round(Math.max(0, Math.min(360, (my - HUE_Y) / (double) (HUE_H - 1) * 360)));
+                if (curHue >= 360) curHue = 0;
                 return true;
             }
         }
@@ -509,9 +427,8 @@ public class MardColorScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mx, double my, int button) {
-        draggingWheel = false;
-        draggingSat = false;
-        draggingVal = false;
+        draggingPicker = false;
+        draggingHue = false;
         return super.mouseReleased(mx, my, button);
     }
 
