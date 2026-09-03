@@ -1,0 +1,87 @@
+/**
+ * MARD 像素画 Mod —— 资源生成脚本（Node.js）
+ *
+ * 读取 colors/mard_295.json，生成：
+ *   1. shared/assets/mard_pixel/blockstates/mard_<code>.json  （295 个）
+ *   2. shared/assets/mard_pixel/models/item/mard_<code>.json  （295 个）
+ *   3. shared/assets/mard_pixel/lang/{en_us,zh_cn}.json        （物品名 + UI 文本）
+ *
+ * 用法：node tools/generate_resources.js
+ * 在 build.bat 中会先运行本脚本再构建。
+ */
+const fs = require('fs');
+const path = require('path');
+
+const ROOT = path.resolve(__dirname, '..');
+const COLORS_JSON = path.join(ROOT, 'colors', 'mard_295.json');
+const ASSETS = path.join(ROOT, 'shared', 'assets', 'mard_pixel');
+
+function main() {
+    if (!fs.existsSync(COLORS_JSON)) {
+        console.error('[ERROR] 未找到 colors/mard_295.json');
+        process.exit(1);
+    }
+    const data = JSON.parse(fs.readFileSync(COLORS_JSON, 'utf8'));
+    const colors = data.colors;
+    if (!Array.isArray(colors) || colors.length === 0) {
+        console.error('[ERROR] colors 数据为空');
+        process.exit(1);
+    }
+
+    // 1. blockstates
+    const bsDir = path.join(ASSETS, 'blockstates');
+    fs.mkdirSync(bsDir, { recursive: true });
+    for (const c of colors) {
+        const name = 'mard_' + c.code.toLowerCase();
+        const bs = { variants: { "": { model: "mard_pixel:block/mard_base" } } };
+        fs.writeFileSync(path.join(bsDir, name + '.json'), JSON.stringify(bs));
+    }
+
+    // 2. item models
+    const imDir = path.join(ASSETS, 'models', 'item');
+    fs.mkdirSync(imDir, { recursive: true });
+    for (const c of colors) {
+        const name = 'mard_' + c.code.toLowerCase();
+        const im = { parent: "mard_pixel:block/mard_base" };
+        fs.writeFileSync(path.join(imDir, name + '.json'), JSON.stringify(im));
+    }
+
+    // 3. lang
+    const langDir = path.join(ASSETS, 'lang');
+    fs.mkdirSync(langDir, { recursive: true });
+    const en = {}, zh = {};
+    en['itemGroup.mard_pixel'] = 'MARD Pixel Blocks';
+    zh['itemGroup.mard_pixel'] = 'MARD 像素色块';
+    for (const c of colors) {
+        const key = 'block.mard_pixel.mard_' + c.code.toLowerCase();
+        en[key] = 'MARD ' + c.code;
+        zh[key] = 'MARD ' + c.code;
+    }
+    en['block.mard_pixel.mard_custom'] = 'MARD Custom Block';
+    zh['block.mard_pixel.mard_custom'] = 'MARD 自定义色块';
+    en['key.mard_pixel.open'] = 'Open MARD Color Palette';
+    zh['key.mard_pixel.open'] = '打开 MARD 色板';
+    en['key.categories.mard_pixel'] = 'MARD Pixel';
+    zh['key.categories.mard_pixel'] = 'MARD 像素画';
+    en['screen.mard_pixel.title'] = 'MARD Color Palette';
+    zh['screen.mard_pixel.title'] = 'MARD 色板';
+    en['screen.mard_pixel.switchbag'] = 'Switch Bag to This System';
+    zh['screen.mard_pixel.switchbag'] = '整体换包到此色系';
+    en['screen.mard_pixel.pick'] = 'Pick Color';
+    zh['screen.mard_pixel.pick'] = '吸取颜色';
+    en['screen.mard_pixel.add'] = 'Add';
+    zh['screen.mard_pixel.add'] = '新增';
+    en['screen.mard_pixel.remove'] = 'Remove';
+    zh['screen.mard_pixel.remove'] = '删除';
+    en['screen.mard_pixel.tri'] = 'HSV Triangle';
+    zh['screen.mard_pixel.tri'] = 'HSV 三角';
+    en['screen.mard_pixel.wheel'] = 'RGB Wheel';
+    zh['screen.mard_pixel.wheel'] = 'RGB 色环';
+
+    fs.writeFileSync(path.join(langDir, 'en_us.json'), JSON.stringify(en, null, 1));
+    fs.writeFileSync(path.join(langDir, 'zh_cn.json'), JSON.stringify(zh, null, 1));
+
+    console.log('[OK] 已生成 ' + colors.length + ' 个 blockstates, ' + colors.length + ' 个 item models, 2 个 lang 文件');
+}
+
+main();

@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+
+[[mods]]
+modId="mard_pixel"
+version="1.2.0"
+displayName="MARD Pixel Mod"
+description="MARD 拼豆 295 色标准色卡像素画 Mod：实心色块 + 色板(快捷键G) + 品牌/外部色系切换 + 自定义色号 + 背包整体换包。"
+authors="MARD Pixel Team"
+logoFile=""
+
+[[dependencies.mard_pixel]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.mard_pixel]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"

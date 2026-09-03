@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "mard_pixel",
+  "version": "1.2.0",
+  "name": "MARD Pixel Mod",
+  "description": "MARD 拼豆 295 色标准色卡像素画 Mod：实心色块 + 色板(快捷键G) + 品牌/外部色系切换 + 自定义色号 + 背包整体换包。",
+  "authors": ["MARD Pixel Team"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.mard.pixel.fabric.MardPixelFabric"],
+    "client": ["com.mard.pixel.fabric.client.MardPixelFabricClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": "~1.20.1",
+    "java": ">=17"
+  }
+}
