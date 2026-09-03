@@ -136,7 +136,7 @@ public class MardColorScreen extends Screen {
                 rebuildSystems();
                 rebuildSwatches();
                 init();
-            }).bounds(width - 110, height - 28, 100, 20).build());
+            }).bounds(width - 220, height - 28, 90, 20).build());
         }
 
         if (currentSystem.equals("CUSTOM")) {
