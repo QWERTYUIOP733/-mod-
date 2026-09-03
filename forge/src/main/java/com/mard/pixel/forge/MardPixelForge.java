@@ -232,22 +232,15 @@ public class MardPixelForge {
     public static void addCustom(ServerPlayer player, String name, int rgb) {
         // 检测1：背包是否已满（无空槽位），全满则阻止新增并弹出提示
         if (isInventoryFull(player)) {
-            player.sendSystemMessage(Component.literal("背包已满，无法新增物品。请清空背包中部分物品后继续。").withStyle(ChatFormatting.RED));
-            player.sendSystemMessage(Component.literal("也可以将物品移至箱子或其他地方以腾出背包空间。").withStyle(ChatFormatting.GRAY));
+            player.sendSystemMessage(Component.literal("背包已满，无法新增自定义色块。").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("请丢弃或移走部分物品后再试，也可将物品存入箱子腾出空间。").withStyle(ChatFormatting.GRAY));
             return;
         }
 
-        // 检测2：背包中自定义颜色物品数量是否达到64个上限（达到则提示，但有空格仍可继续）
-        int customCount = countCustomItemsInInventory(player);
-        if (customCount >= 64) {
-            player.sendSystemMessage(Component.literal("注意：背包中自定义颜色物品已达64个，建议及时整理。").withStyle(ChatFormatting.YELLOW));
-            player.sendSystemMessage(Component.literal("仍有空余格子，可继续新增；也可将物品移至箱子保存。").withStyle(ChatFormatting.GRAY));
-        }
-
-        // 检测3：自定义颜色编号种类上限（64种）
+        // 检测2：自定义颜色编号种类上限（64种），达到则阻止新增
         if (CustomColorStore.size() >= 64) {
-            player.sendSystemMessage(Component.literal("自定义颜色编号已达上限（64种），无法新增。请删除部分不需要的自定义颜色后继续。").withStyle(ChatFormatting.RED));
-            player.sendSystemMessage(Component.literal("也可以将常用颜色移至箱子或其他地方保存。").withStyle(ChatFormatting.GRAY));
+            player.sendSystemMessage(Component.literal("自定义颜色已达上限（64种），无法继续新增。").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("请在色板中删除不需要的颜色后再试，或把常用色块存入箱子保存。").withStyle(ChatFormatting.GRAY));
             return;
         }
 
