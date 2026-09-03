@@ -26,7 +26,6 @@ jobs:
 
       - name: Generate 295 blockstates + item models + lang
         run: node tools/generate_resources.js
-        working-directory: forge
 
       - name: Build Forge mod
         uses: gradle/gradle-build-action@v3
@@ -54,6 +53,14 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate 295 blockstates + item models + lang
+        run: node tools/generate_resources.js
 
       - name: Build Fabric mod
         uses: gradle/gradle-build-action@v3
