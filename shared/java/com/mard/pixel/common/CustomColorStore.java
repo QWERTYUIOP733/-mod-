@@ -28,9 +28,45 @@ public final class CustomColorStore {
         for (CustomColor cc : COLORS) used.add(cc.code().toUpperCase());
         String code = CustomColor.nextCode(used);
         if (code == null) return null;
-        CustomColor c = new CustomColor(name, code, rgb);
+        // 自动生成"颜色名 编号"形式的显示名，如"黄 A1"
+        String colorName = ColorMath.colorName(rgb);
+        String serial = nextSerialForColor(colorName);
+        String displayName = colorName + " " + serial;
+        CustomColor c = new CustomColor(displayName, code, rgb);
         COLORS.add(c);
         return c;
+    }
+
+    /**
+     * 为指定颜色名称生成下一个编号（A1, A2, ..., A99, B1, B2...）。
+     */
+    private static String nextSerialForColor(String colorName) {
+        int maxNum = 0;
+        char maxLetter = 'A';
+        for (CustomColor cc : COLORS) {
+            String dn = cc.name();
+            if (dn != null && dn.startsWith(colorName + " ")) {
+                String serial = dn.substring(colorName.length() + 1).trim();
+                if (serial.length() >= 2) {
+                    char letter = serial.charAt(0);
+                    try {
+                        int num = Integer.parseInt(serial.substring(1));
+                        if (letter > maxLetter || (letter == maxLetter && num > maxNum)) {
+                            maxLetter = letter;
+                            maxNum = num;
+                        }
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+        }
+        int nextNum = maxNum + 1;
+        char nextLetter = maxLetter;
+        if (nextNum > 99) {
+            nextNum = 1;
+            nextLetter = (char) (maxLetter + 1);
+            if (nextLetter > 'Z') nextLetter = 'Z'; // 封顶
+        }
+        return "" + nextLetter + nextNum;
     }
 
     public static synchronized boolean remove(String code) {

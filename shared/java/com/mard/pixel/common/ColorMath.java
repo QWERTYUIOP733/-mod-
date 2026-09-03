@@ -130,5 +130,38 @@ public final class ColorMath {
         return String.format("#%06X", rgb & 0xFFFFFF);
     }
 
+    /**
+     * 根据 RGB 判断中文颜色名称。
+     * 返回：红/橙/黄/绿/青/蓝/紫/粉/棕/灰/黑/白
+     */
+    public static String colorName(int rgb) {
+        double[] hsv = rgbToHsv(rgb);
+        double h = hsv[0], s = hsv[1], v = hsv[2];
+
+        // 黑色：明度极低
+        if (v < 0.12) return "黑";
+        // 白色：明度极高且饱和度极低
+        if (v > 0.88 && s < 0.12) return "白";
+        // 灰色：饱和度极低（中等明度）
+        if (s < 0.12) return "灰";
+
+        // 棕色：橙/红色系且明度偏低
+        if ((h >= 15 && h < 45) && v < 0.55) return "棕";
+        // 深红/暗红色也算棕色
+        if ((h >= 345 || h < 15) && v < 0.45 && s > 0.5) return "棕";
+
+        // 按色相判断
+        if (h >= 345 || h < 15) return "红";
+        if (h >= 15 && h < 45) return "橙";
+        if (h >= 45 && h < 75) return "黄";
+        if (h >= 75 && h < 165) return "绿";
+        if (h >= 165 && h < 195) return "青";
+        if (h >= 195 && h < 255) return "蓝";
+        if (h >= 255 && h < 285) return "紫";
+        if (h >= 285 && h < 345) return "粉";
+
+        return "灰";
+    }
+
     private ColorMath() {}
 }
