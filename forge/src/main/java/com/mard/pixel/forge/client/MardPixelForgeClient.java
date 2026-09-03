@@ -57,7 +57,7 @@ public class MardPixelForgeClient {
     @Mod.EventBusSubscriber(modid = MardPixelForge.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
     public static class ForgeBus {
         @SubscribeEvent
-        public static void onTick(TickEvent.ClientTickEvent.Post event) {
+        public static void onTick(TickEvent.ClientTickEvent event) {
             Minecraft mc = Minecraft.getInstance();
             if (OPEN_KEY.consumeClick() && mc.player != null) {
                 mc.setScreen(new MardColorScreen());

@@ -10,6 +10,7 @@ import com.mard.pixel.common.ExternalBrandStore;
 import com.mard.pixel.common.ImportedPaletteStore;
 import com.mard.pixel.common.MardColor;
 import com.mard.pixel.common.MardPalette;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.Registry;
@@ -122,19 +123,20 @@ public class MardPixelForge {
                                 .then(Commands.argument("hex", net.minecraft.commands.arguments.ColorArgument.color())
                                         .executes(ctx -> {
                                             ServerPlayer p = ctx.getSource().getPlayerOrException();
-                                            MardColor nearest = MardPalette.nearest(
-                                                    net.minecraft.commands.arguments.ColorArgument.getColor(ctx, "hex"));
+                                            ChatFormatting cf = net.minecraft.commands.arguments.ColorArgument.getColor(ctx, "hex");
+                                            int rgb = cf.getColor() != null ? cf.getColor() : 0xFFFFFF;
+                                            MardColor nearest = MardPalette.nearest(rgb);
                                             p.sendSystemMessage(Component.literal("最近 MARD 色："
                                                     + nearest.code() + " " + ColorMath.toHex(nearest.rgb())));
                                             return 1;
                                         })))
                         .then(Commands.literal("convert")
-                                .then(Commands.argument("brand", net.minecraft.commands.arguments.StringArgumentType.word())
-                                        .then(Commands.argument("code", net.minecraft.commands.arguments.StringArgumentType.word())
+                                .then(Commands.argument("brand", StringArgumentType.word())
+                                        .then(Commands.argument("code", StringArgumentType.word())
                                                 .executes(ctx -> {
                                                     ServerPlayer p = ctx.getSource().getPlayerOrException();
-                                                    String brand = net.minecraft.commands.arguments.StringArgumentType.getString(ctx, "brand");
-                                                    String code = net.minecraft.commands.arguments.StringArgumentType.getString(ctx, "code");
+                                                    String brand = StringArgumentType.getString(ctx, "brand");
+                                                    String code = StringArgumentType.getString(ctx, "code");
                                                     BrandColor bc = lookupBrand(brand, code);
                                                     if (bc == null) {
                                                         p.sendSystemMessage(Component.literal("未找到品牌色 " + brand + " " + code).withStyle(ChatFormatting.RED));
@@ -147,18 +149,18 @@ public class MardPixelForge {
                                                     return 1;
                                                 }))))
                         .then(Commands.literal("give")
-                                .then(Commands.argument("target", net.minecraft.commands.arguments.StringArgumentType.greedyString())
+                                .then(Commands.argument("target", StringArgumentType.greedyString())
                                         .executes(ctx -> {
                                             ServerPlayer p = ctx.getSource().getPlayerOrException();
-                                            String t = net.minecraft.commands.arguments.StringArgumentType.getString(ctx, "target");
+                                            String t = StringArgumentType.getString(ctx, "target");
                                             giveRequestedItem(p, t);
                                             return 1;
                                         })))
                         .then(Commands.literal("switch")
-                                .then(Commands.argument("system", net.minecraft.commands.arguments.StringArgumentType.word())
+                                .then(Commands.argument("system", StringArgumentType.word())
                                         .executes(ctx -> {
                                             ServerPlayer p = ctx.getSource().getPlayerOrException();
-                                            switchBagSystem(p, net.minecraft.commands.arguments.StringArgumentType.getString(ctx, "system"));
+                                            switchBagSystem(p, StringArgumentType.getString(ctx, "system"));
                                             return 1;
                                         })))
                         .then(Commands.literal("reload")

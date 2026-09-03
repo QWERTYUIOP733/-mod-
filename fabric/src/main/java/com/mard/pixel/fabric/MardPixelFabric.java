@@ -108,7 +108,9 @@ public class MardPixelFabric implements ModInitializer {
                             .then(CommandManager.argument("hex", ColorArgument.color())
                                     .executes(ctx -> {
                                         ServerPlayerEntity p = ctx.getSource().getPlayerOrThrow();
-                                        MardColor nearest = MardPalette.nearest(ColorArgument.getColor(ctx, "hex"));
+                                        Formatting cf = ColorArgument.getColor(ctx, "hex");
+                                        int rgb = cf.getColorValue() != null ? cf.getColorValue() : 0xFFFFFF;
+                                        MardColor nearest = MardPalette.nearest(rgb);
                                         p.sendMessage(Text.literal("最近 MARD 色：" + nearest.code() + " " + ColorMath.toHex(nearest.rgb())), false);
                                         return 1;
                                     })))
