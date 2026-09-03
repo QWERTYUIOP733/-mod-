@@ -230,11 +230,18 @@ public class MardPixelForge {
     }
 
     public static void addCustom(ServerPlayer player, String name, int rgb) {
-        // 检测背包中自定义颜色物品数量上限（64个）
+        // 检测1：背包中自定义颜色物品数量上限（64个）
         int customCount = countCustomItemsInInventory(player);
         if (customCount >= 64) {
             player.sendSystemMessage(Component.literal("背包中自定义颜色物品已达上限（64个），无法新增。请清空背包中部分物品后继续。").withStyle(ChatFormatting.RED));
             player.sendSystemMessage(Component.literal("也可以将物品移至箱子或其他地方以腾出背包空间。").withStyle(ChatFormatting.GRAY));
+            return;
+        }
+
+        // 检测2：自定义颜色编号种类上限（64种）
+        if (CustomColorStore.size() >= 64) {
+            player.sendSystemMessage(Component.literal("自定义颜色编号已达上限（64种），无法新增。请删除部分不需要的自定义颜色后继续。").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(Component.literal("也可以将常用颜色移至箱子或其他地方保存。").withStyle(ChatFormatting.GRAY));
             return;
         }
 
