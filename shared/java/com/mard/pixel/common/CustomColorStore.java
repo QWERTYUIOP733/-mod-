@@ -46,10 +46,11 @@ public final class CustomColorStore {
         String code = CustomColor.nextCode(used);
         if (code == null) return null;
 
-        // 自动生成"颜色名 编号 #RRGGBB"形式的显示名，如"黄 A1 #FFFF00"
+        // 自动生成"颜色名 编号"形式的显示名，如"黄 A1"
+        // RGB值作为第二行显示在物品lore中，不存储在名称里
         // 编号循环利用：找最小可用编号（遗失的编号会被回收，可重新分配）
         String serial = nextAvailableSerial(colorName);
-        String displayName = colorName + " " + serial + " #" + ColorMath.toHex(rgb);
+        String displayName = colorName + " " + serial;
         CustomColor c = new CustomColor(displayName, code, rgb);
         COLORS.add(c);
         return c;

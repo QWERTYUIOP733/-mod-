@@ -87,7 +87,7 @@ public class MardPixelForge {
         for (MardColor mc : MardPalette.COLORS) {
             String name = mc.blockName();
             RegistryObject<Block> ro = BLOCKS.register(name, () -> new MardBlock(mc.code(), mc.rgb()));
-            ITEMS.register(name, () -> new BlockItem(ro.get(), new Item.Properties()));
+            ITEMS.register(name, () -> new MardBlockItem(ro.get(), mc.code(), mc.rgb(), new Item.Properties()));
             MARD_BLOCK_REFS.add(ro);
         }
 
@@ -470,7 +470,16 @@ public class MardPixelForge {
         tag.putInt("mard_color", bc.rgb());
         tag.putString("mard_brand", bc.brand());
         tag.putString("mard_brand_code", bc.code());
+        // 第一行：品牌+色号（如"Perler P20"）
         stack.setHoverName(Component.literal(brandDisplay(brand) + " " + bc.code()));
+        // 第二行：RGB值（如"#FF0000"）
+        CompoundTag display = tag.getCompound("display");
+        net.minecraft.nbt.ListTag lore = new net.minecraft.nbt.ListTag();
+        lore.add(net.minecraft.nbt.StringTag.valueOf(
+                net.minecraft.network.chat.Component.Serializer.toJson(
+                        Component.literal("#" + ColorMath.toHex(bc.rgb())).withStyle(ChatFormatting.GRAY))));
+        display.put("Lore", lore);
+        tag.put("display", display);
         return stack;
     }
 
@@ -482,10 +491,22 @@ public class MardPixelForge {
         if (cc != null && cc.code() != null) {
             tag.putString("mard_code", cc.code());
         }
+        // 第一行：颜色编号（如"黄 A1"）
         String name = displayName != null ? displayName
                 : cc != null ? cc.displayName()
-                : "MARD Custom " + ColorMath.toHex(rgb);
+                : "MARD Custom";
         stack.setHoverName(Component.literal(name));
+
+        // 第二行：RGB值（如"#FFFF00"），添加到物品lore
+        CompoundTag display = tag.getCompound("display");
+        net.minecraft.nbt.ListTag lore = new net.minecraft.nbt.ListTag();
+        String rgbText = "#" + ColorMath.toHex(rgb);
+        lore.add(net.minecraft.nbt.StringTag.valueOf(
+                net.minecraft.network.chat.Component.Serializer.toJson(
+                        Component.literal(rgbText).withStyle(ChatFormatting.GRAY))));
+        display.put("Lore", lore);
+        tag.put("display", display);
+
         return stack;
     }
 
