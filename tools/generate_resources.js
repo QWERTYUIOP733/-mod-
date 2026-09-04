@@ -49,18 +49,15 @@ function main() {
     }));
 
     // 2. item models
+    // 所有颜色（包括透明色）的物品模型都使用 mard_base（不透明白色混凝土纹理），
+    // 这样物品栏中的颜色就会和世界中的方块颜色完全一致，不会因为玻璃纹理的
+    // 透明部分在物品栏中渲染不正确而导致颜色偏差。
     const imDir = path.join(ASSETS, 'models', 'item');
     fs.mkdirSync(imDir, { recursive: true });
     for (const c of colors) {
         const name = 'mard_' + c.code.toLowerCase();
-        // 根据效果类型选择物品模型父级
-        let parent = "mard_pixel:block/mard_base";
-        if (c.effect && c.effect.includes('果冻')) {
-            parent = "mard_pixel:block/mard_glass";
-        } else if (c.effect && c.effect.includes('闪粉')) {
-            parent = "mard_pixel:block/mard_frosted_glass";
-        }
-        const im = { parent: parent };
+        // 物品统一使用不透明基础模型，确保颜色一致
+        const im = { parent: "mard_pixel:block/mard_base" };
         fs.writeFileSync(path.join(imDir, name + '.json'), JSON.stringify(im));
     }
     // mard_custom 物品的 item model（手持尺寸与标准色块一致）
