@@ -2,6 +2,7 @@ package com.mard.pixel.forge;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 
@@ -40,10 +41,23 @@ public class MardEffectBlock extends MardBlock {
     private final String nameCn;
 
     public MardEffectBlock(String code, int rgb, String effect, String nameCn) {
-        super(code, rgb);
+        super(code, rgb, createProperties(EffectType.fromString(effect)));
         this.effectType = EffectType.fromString(effect);
         this.effectName = effect;
         this.nameCn = nameCn;
+    }
+
+    /**
+     * 创建方块属性，夜光方块设置光照等级。
+     */
+    private static BlockBehaviour.Properties createProperties(EffectType type) {
+        BlockBehaviour.Properties props = BlockBehaviour.Properties.of()
+                .mapColor(MapColor.NONE)
+                .strength(0.6f, 1.0f);
+        if (type == EffectType.GLOW) {
+            props.lightLevel(state -> 8); // 夜光方块发出8级光
+        }
+        return props;
     }
 
     public EffectType getEffectType() { return effectType; }
@@ -68,26 +82,6 @@ public class MardEffectBlock extends MardBlock {
 
     /** 是否为闪粉效果 */
     public boolean isGlitter() { return effectType == EffectType.GLITTER; }
-
-    /**
-     * 夜光方块的光照等级（0-15）。
-     * 夜光色在黑暗中发出微光。
-     */
-    @Override
-    public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
-        if (isGlow()) {
-            return 8; // 夜光方块发出8级光（约半亮度）
-        }
-        return super.getLightEmission(state, level, pos);
-    }
-
-    /**
-     * 获取方块的地图颜色。
-     */
-    @Override
-    public MapColor getMapColor(BlockState state) {
-        return MapColor.NONE;
-    }
 
     /**
      * 半透明方块的渲染提示。

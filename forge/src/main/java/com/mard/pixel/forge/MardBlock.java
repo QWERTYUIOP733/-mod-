@@ -9,9 +9,13 @@ public class MardBlock extends Block {
     private final int rgb;
 
     public MardBlock(String code, int rgb) {
-        super(BlockBehaviour.Properties.of()
+        this(code, rgb, BlockBehaviour.Properties.of()
                 .mapColor(MapColor.NONE)
                 .strength(0.6f, 1.0f));
+    }
+
+    protected MardBlock(String code, int rgb, BlockBehaviour.Properties properties) {
+        super(properties);
         this.code = code;
         this.rgb = rgb;
     }
