@@ -1,8 +1,7 @@
 package com.mard.pixel.forge;
 
-import com.mard.pixel.common.CustomColor;
-import com.mard.pixel.common.CustomColorStore;
 import com.mard.pixel.common.CustomColorFile;
+import com.mard.pixel.common.CustomColorStore;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -10,9 +9,17 @@ import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
-import java.util.Map;
 import java.util.function.Supplier;
 
+/**
+ * MARD Pixel Mod 网络包管理。
+ *
+ * 网络包列表：
+ * 1. RequestItemPacket - 客户端请求物品（/mardp give 的 UI 版本）
+ * 2. SyncCustomPacket - 服务端→客户端同步自定义色列表
+ * 3. AddCustomPacket - 客户端→服务端新增自定义色
+ * 4. RemoveCustomPacket - 客户端→服务端删除自定义色
+ */
 public final class MardNetwork {
     public static final String VERSION = "2";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -41,18 +48,13 @@ public final class MardNetwork {
                 .decoder(RemoveCustomPacket::decode)
                 .consumerMainThread(MardNetwork::handleRemoveCustom)
                 .add();
-        CHANNEL.messageBuilder(SwitchBagSystemPacket.class, id++)
-                .encoder(SwitchBagSystemPacket::encode)
-                .decoder(SwitchBagSystemPacket::decode)
-                .consumerMainThread(MardNetwork::handleSwitchBag)
-                .add();
-        CHANNEL.messageBuilder(SyncExternalBrandsPacket.class, id++)
-                .encoder(SyncExternalBrandsPacket::encode)
-                .decoder(SyncExternalBrandsPacket::decode)
-                .consumerMainThread(MardNetwork::handleSyncExternal)
-                .add();
     }
 
+    // ==================== 网络包定义 ====================
+
+    /**
+     * 客户端请求物品（UI 中点击获取物品）。
+     */
     public static class RequestItemPacket {
         public final String target;
         public RequestItemPacket(String target) { this.target = target; }
@@ -60,6 +62,9 @@ public final class MardNetwork {
         public static RequestItemPacket decode(FriendlyByteBuf b) { return new RequestItemPacket(b.readUtf()); }
     }
 
+    /**
+     * 服务端→客户端同步自定义色列表（JSON 格式）。
+     */
     public static class SyncCustomPacket {
         public final String json;
         public SyncCustomPacket(String json) { this.json = json; }
@@ -67,13 +72,20 @@ public final class MardNetwork {
         public static SyncCustomPacket decode(FriendlyByteBuf b) { return new SyncCustomPacket(b.readUtf()); }
     }
 
+    /**
+     * 客户端→服务端新增自定义色。
+     */
     public static class AddCustomPacket {
-        public final String name; public final int rgb;
+        public final String name;
+        public final int rgb;
         public AddCustomPacket(String name, int rgb) { this.name = name; this.rgb = rgb; }
         public static void encode(AddCustomPacket p, FriendlyByteBuf b) { b.writeUtf(p.name); b.writeInt(p.rgb); }
         public static AddCustomPacket decode(FriendlyByteBuf b) { return new AddCustomPacket(b.readUtf(), b.readInt()); }
     }
 
+    /**
+     * 客户端→服务端删除自定义色。
+     */
     public static class RemoveCustomPacket {
         public final String code;
         public RemoveCustomPacket(String code) { this.code = code; }
@@ -81,29 +93,7 @@ public final class MardNetwork {
         public static RemoveCustomPacket decode(FriendlyByteBuf b) { return new RemoveCustomPacket(b.readUtf()); }
     }
 
-    public static class SwitchBagSystemPacket {
-        public final String system;
-        public SwitchBagSystemPacket(String system) { this.system = system; }
-        public static void encode(SwitchBagSystemPacket p, FriendlyByteBuf b) { b.writeUtf(p.system); }
-        public static SwitchBagSystemPacket decode(FriendlyByteBuf b) { return new SwitchBagSystemPacket(b.readUtf()); }
-    }
-
-    public static class SyncExternalBrandsPacket {
-        public final Map<String, String> brands;
-        public SyncExternalBrandsPacket(Map<String, String> brands) { this.brands = brands; }
-        public static void encode(SyncExternalBrandsPacket p, FriendlyByteBuf b) {
-            b.writeInt(p.brands.size());
-            for (Map.Entry<String, String> e : p.brands.entrySet()) {
-                b.writeUtf(e.getKey()); b.writeUtf(e.getValue());
-            }
-        }
-        public static SyncExternalBrandsPacket decode(FriendlyByteBuf b) {
-            int n = b.readInt();
-            java.util.HashMap<String, String> m = new java.util.HashMap<>();
-            for (int i = 0; i < n; i++) m.put(b.readUtf(), b.readUtf());
-            return new SyncExternalBrandsPacket(m);
-        }
-    }
+    // ==================== 网络包处理 ====================
 
     private static void handleRequestItem(RequestItemPacket p, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
@@ -132,21 +122,6 @@ public final class MardNetwork {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
             if (player != null) MardPixelForge.removeCustom(player, p.code);
-        });
-        ctx.get().setPacketHandled(true);
-    }
-
-    private static void handleSwitchBag(SwitchBagSystemPacket p, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            ServerPlayer player = ctx.get().getSender();
-            if (player != null) MardPixelForge.switchBagSystem(player, p.system);
-        });
-        ctx.get().setPacketHandled(true);
-    }
-
-    private static void handleSyncExternal(SyncExternalBrandsPacket p, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            MardPixelForge.clientExternalBrands = new java.util.LinkedHashMap<>(p.brands);
         });
         ctx.get().setPacketHandled(true);
     }

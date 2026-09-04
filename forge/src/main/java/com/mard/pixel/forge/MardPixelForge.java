@@ -1,23 +1,18 @@
 package com.mard.pixel.forge;
 
-import com.mard.pixel.common.BrandColor;
-import com.mard.pixel.common.BrandPalette;
 import com.mard.pixel.common.ColorMath;
 import com.mard.pixel.common.CustomColor;
 import com.mard.pixel.common.CustomColorFile;
 import com.mard.pixel.common.CustomColorStore;
-import com.mard.pixel.common.ExternalBrandStore;
 import com.mard.pixel.common.ImportedPaletteStore;
 import com.mard.pixel.common.MardColor;
 import com.mard.pixel.common.MardPalette;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.Commands;
-import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.BlockItem;
@@ -38,61 +33,105 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+/**
+ * MARD Pixel Mod 主类。
+ *
+ * 核心功能：
+ * 1. MARD 295 色基础色块（程序染色，色标准确）
+ * 2. 自定义色号（PS风格取色器，增删管理）
+ * 3. 物品两行名称（色号编号 + RGB值）
+ * 4. 按系列分类的创造模式标签页
+ * 5. PNG色卡导入功能
+ * 6. 编号循环回收机制（遗失编号自动回收重用）
+ * 7. 快速物品检索（/mardp give）
+ *
+ * 已移除：品牌色号转换功能（Perler/Hama/Artkal等），改为PNG导入
+ */
 @Mod(MardPixelForge.MODID)
 public class MardPixelForge {
     public static final String MODID = "mard_pixel";
 
+    // ==================== 注册器 ====================
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
-    public static final DeferredRegister<BlockEntityType<?>> BE = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
-    public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
+    public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
 
+    // ==================== 色块引用 ====================
+    /** 构造函数中填充的方块引用（用于颜色处理器注册） */
     public static final List<RegistryObject<Block>> MARD_BLOCK_REFS = new ArrayList<>();
+    /** 游戏运行时填充的方块列表（用于标签页显示） */
     public static final List<MardBlock> MARD_BLOCKS = new ArrayList<>();
 
+    // ==================== 自定义方块 ====================
     public static final RegistryObject<MardCustomBlock> CUSTOM_BLOCK =
             BLOCKS.register("mard_custom", MardCustomBlock::new);
     public static final RegistryObject<BlockItem> CUSTOM_ITEM =
             ITEMS.register("mard_custom", () -> new BlockItem(CUSTOM_BLOCK.get(), new Item.Properties()));
-    public static final RegistryObject<BlockEntityType<MardCustomBlockEntity>> CUSTOM_BE_TYPE =
-            BE.register("mard_custom_be",
+    public static final RegistryObject<BlockEntityType<MardCustomBlockEntity>> CUSTOM_BLOCK_ENTITY =
+            BLOCK_ENTITIES.register("mard_custom_be",
                     () -> BlockEntityType.Builder.of(MardCustomBlockEntity::new, CUSTOM_BLOCK.get()).build(null));
 
-    public static final Path CUSTOM_FILE = FMLPaths.CONFIGDIR.get().resolve("mard_pixel_custom.json");
-    public static final Path EXTERNAL_DIR = FMLPaths.CONFIGDIR.get().resolve("mard_pixel_brands");
-
-    public static Map<String, List<BrandColor>> externalBrands = new LinkedHashMap<>();
-    public static Map<String, String> externalBrandsJson = new LinkedHashMap<>();
-    public static Map<String, String> clientExternalBrands = new LinkedHashMap<>();
+    // ==================== 配置文件路径 ====================
+    public static final Path CUSTOM_COLORS_FILE = FMLPaths.CONFIGDIR.get().resolve("mard_pixel_custom.json");
+    public static final Path IMPORTED_PALETTES_DIR = FMLPaths.CONFIGDIR.get().resolve("mard_pixel");
 
     public MardPixelForge() {
-        IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
-        BLOCKS.register(bus);
-        ITEMS.register(bus);
-        BE.register(bus);
-        TABS.register(bus);
+        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 
+        // 注册所有注册器
+        BLOCKS.register(modBus);
+        ITEMS.register(modBus);
+        BLOCK_ENTITIES.register(modBus);
+        CREATIVE_TABS.register(modBus);
+
+        // 注册 295 个 MARD 基础色块
+        registerMardBlocks();
+
+        // 注册创造模式标签页（主标签页 + 按系列分类）
+        registerCreativeTabs();
+
+        // 注册 Forge 事件总线
+        MinecraftForge.EVENT_BUS.register(this);
+        modBus.addListener(this::onCommonSetup);
+
+        // 初始化网络和存储
+        MardNetwork.init();
+        ImportedPaletteStore.init(IMPORTED_PALETTES_DIR);
+    }
+
+    // ==================== 注册逻辑 ====================
+
+    /**
+     * 注册 295 个 MARD 基础色块（方块 + 物品）。
+     * 每个色块使用程序染色（tintindex），色值来自 MardPalette。
+     */
+    private void registerMardBlocks() {
         for (MardColor mc : MardPalette.COLORS) {
-            String name = mc.blockName();
-            RegistryObject<Block> ro = BLOCKS.register(name, () -> new MardBlock(mc.code(), mc.rgb()));
-            ITEMS.register(name, () -> new MardBlockItem(ro.get(), mc.code(), mc.rgb(), new Item.Properties()));
-            MARD_BLOCK_REFS.add(ro);
+            String blockName = mc.blockName();
+            RegistryObject<Block> blockRef = BLOCKS.register(blockName,
+                    () -> new MardBlock(mc.code(), mc.rgb()));
+            ITEMS.register(blockName,
+                    () -> new MardBlockItem(blockRef.get(), mc.code(), mc.rgb(), new Item.Properties()));
+            MARD_BLOCK_REFS.add(blockRef);
         }
+    }
 
-        // 按系列（字母）分类的创造模式标签页
-        java.util.Set<String> seriesSet = new java.util.LinkedHashSet<>();
+    /**
+     * 注册创造模式标签页：
+     * 1. 主标签页：全部 295 色 + 自定义色块
+     * 2. 按系列（字母）分类的子标签页：A系列、B系列、...、ZG系列
+     */
+    private void registerCreativeTabs() {
+        // 收集所有系列（去重并排序）
+        Set<String> seriesSet = new LinkedHashSet<>();
         for (MardColor mc : MardPalette.COLORS) {
             seriesSet.add(mc.series());
         }
@@ -100,7 +139,7 @@ public class MardPixelForge {
         java.util.Collections.sort(seriesList);
 
         // 主标签页：全部色块 + 自定义色块
-        TABS.register("mard_pixel", () -> CreativeModeTab.builder()
+        CREATIVE_TABS.register("mard_pixel", () -> CreativeModeTab.builder()
                 .title(Component.translatable("itemGroup.mard_pixel"))
                 .icon(() -> new ItemStack(CUSTOM_ITEM.get()))
                 .displayItems((params, output) -> {
@@ -109,24 +148,12 @@ public class MardPixelForge {
                 })
                 .build());
 
-        // 按系列分类的标签页
+        // 按系列分类的子标签页
         for (String series : seriesList) {
             final String s = series;
-            TABS.register("mard_pixel_" + series.toLowerCase(), () -> CreativeModeTab.builder()
+            CREATIVE_TABS.register("mard_pixel_" + series.toLowerCase(), () -> CreativeModeTab.builder()
                     .title(Component.literal("MARD " + series + " 系列"))
-                    .icon(() -> {
-                        // 用该系列第一个色块作为图标，使用MARD_BLOCKS（游戏运行时onCommonSetup已填充）
-                        for (MardColor mc : MardPalette.COLORS) {
-                            if (mc.series().equals(s)) {
-                                for (MardBlock mb : MARD_BLOCKS) {
-                                    if (mb.code().equalsIgnoreCase(mc.code())) {
-                                        return new ItemStack(mb);
-                                    }
-                                }
-                            }
-                        }
-                        return new ItemStack(CUSTOM_ITEM.get());
-                    })
+                    .icon(() -> findFirstBlockOfSeries(s))
                     .displayItems((params, output) -> {
                         for (MardColor mc : MardPalette.COLORS) {
                             if (mc.series().equals(s)) {
@@ -141,13 +168,25 @@ public class MardPixelForge {
                     })
                     .build());
         }
-
-        MinecraftForge.EVENT_BUS.register(this);
-        bus.addListener(this::onCommonSetup);
-        MardNetwork.init();
-        BrandPalette.load();
-        ImportedPaletteStore.init(FMLPaths.CONFIGDIR.get().resolve("mard_pixel"));
     }
+
+    /**
+     * 查找指定系列的第一个色块，用作标签页图标。
+     */
+    private ItemStack findFirstBlockOfSeries(String series) {
+        for (MardColor mc : MardPalette.COLORS) {
+            if (mc.series().equals(series)) {
+                for (MardBlock mb : MARD_BLOCKS) {
+                    if (mb.code().equalsIgnoreCase(mc.code())) {
+                        return new ItemStack(mb);
+                    }
+                }
+            }
+        }
+        return new ItemStack(CUSTOM_ITEM.get());
+    }
+
+    // ==================== 生命周期事件 ====================
 
     private void onCommonSetup(net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent event) {
         MARD_BLOCKS.clear();
@@ -158,11 +197,22 @@ public class MardPixelForge {
     }
 
     @SubscribeEvent
+    public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer sp) {
+            loadCustomColorsFromFile();
+            MardNetwork.CHANNEL.send(
+                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> sp),
+                    new MardNetwork.SyncCustomPacket(CustomColorFile.serialize(CustomColorStore.all())));
+        }
+    }
+
+    // ==================== 命令注册 ====================
+
+    @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
-        var root = event.getDispatcher().register(
+        event.getDispatcher().register(
                 Commands.literal("mardp")
-                        .then(Commands.literal("brands")
-                                .executes(ctx -> { listBrands(ctx.getSource().getPlayerOrException()); return 1; }))
+                        // 查找最近的 MARD 色
                         .then(Commands.literal("find")
                                 .then(Commands.argument("hex", net.minecraft.commands.arguments.ColorArgument.color())
                                         .executes(ctx -> {
@@ -174,52 +224,22 @@ public class MardPixelForge {
                                                     + nearest.code() + " " + ColorMath.toHex(nearest.rgb())));
                                             return 1;
                                         })))
-                        .then(Commands.literal("convert")
-                                .then(Commands.argument("brand", StringArgumentType.word())
-                                        .then(Commands.argument("code", StringArgumentType.word())
-                                                .executes(ctx -> {
-                                                    ServerPlayer p = ctx.getSource().getPlayerOrException();
-                                                    String brand = StringArgumentType.getString(ctx, "brand");
-                                                    String code = StringArgumentType.getString(ctx, "code");
-                                                    BrandColor bc = lookupBrand(brand, code);
-                                                    if (bc == null) {
-                                                        p.sendSystemMessage(Component.literal("未找到品牌色 " + brand + " " + code).withStyle(ChatFormatting.RED));
-                                                    } else {
-                                                        MardColor nearest = MardPalette.nearest(bc.rgb());
-                                                        p.sendSystemMessage(Component.literal(brandDisplay(brand) + " " + bc.code()
-                                                                + " (" + ColorMath.toHex(bc.rgb()) + ") → MARD "
-                                                                + nearest.code() + " " + ColorMath.toHex(nearest.rgb())));
-                                                    }
-                                                    return 1;
-                                                }))))
+                        // 快速给予物品（MARD:<色号> / CUSTOM:<编号> / IMPORTED:<名称>:<索引> / CUSTOM_RAW:<rgb>）
                         .then(Commands.literal("give")
                                 .then(Commands.argument("target", StringArgumentType.greedyString())
                                         .executes(ctx -> {
                                             ServerPlayer p = ctx.getSource().getPlayerOrException();
-                                            String t = StringArgumentType.getString(ctx, "target");
-                                            giveRequestedItem(p, t);
+                                            giveRequestedItem(p, StringArgumentType.getString(ctx, "target"));
                                             return 1;
                                         })))
-                        .then(Commands.literal("switch")
-                                .then(Commands.argument("system", StringArgumentType.word())
-                                        .executes(ctx -> {
-                                            ServerPlayer p = ctx.getSource().getPlayerOrException();
-                                            switchBagSystem(p, StringArgumentType.getString(ctx, "system"));
-                                            return 1;
-                                        })))
-                        .then(Commands.literal("reload")
-                                .executes(ctx -> {
-                                    ServerPlayer p = ctx.getSource().getPlayerOrException();
-                                    scanExternalBrands();
-                                    p.sendSystemMessage(Component.literal("已重新扫描外部色系：" + externalBrands.size() + " 个"));
-                                    return 1;
-                                }))
+                        // 扫描遗失的自定义颜色编号并回收
                         .then(Commands.literal("scan")
                                 .executes(ctx -> {
                                     ServerPlayer p = ctx.getSource().getPlayerOrException();
                                     scanCustomItems(p);
                                     return 1;
                                 }))
+                        // 补全遗失的自定义颜色物品
                         .then(Commands.literal("restore")
                                 .executes(ctx -> {
                                     ServerPlayer p = ctx.getSource().getPlayerOrException();
@@ -228,23 +248,18 @@ public class MardPixelForge {
                                 })));
     }
 
-    @SubscribeEvent
-    public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (event.getEntity() instanceof ServerPlayer sp) {
-            loadCustomFromFile();
-            MardNetwork.CHANNEL.send(
-                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> sp),
-                    new MardNetwork.SyncCustomPacket(CustomColorFile.serialize(CustomColorStore.all())));
-            sendExternalBrands(sp);
-        }
+    // ==================== 自定义色管理 ====================
+
+    public static void loadCustomColorsFromFile() {
+        CustomColorStore.loadFrom(CustomColorFile.load(CUSTOM_COLORS_FILE));
     }
 
-    public static void loadCustomFromFile() {
-        CustomColorStore.loadFrom(CustomColorFile.load(CUSTOM_FILE));
-    }
-
+    /**
+     * 新增自定义颜色。
+     * 检测：背包已满（36格全满）则阻止新增并提示。
+     * 新增后自动给玩家对应的物品（快捷栏→背包→扔地面）。
+     */
     public static void addCustom(ServerPlayer player, String name, int rgb) {
-        // 检测1：背包是否已满（无空槽位），全满则阻止新增并弹出提示
         if (isInventoryFull(player)) {
             player.sendSystemMessage(Component.literal("背包已满，无法新增自定义色块。").withStyle(ChatFormatting.RED));
             player.sendSystemMessage(Component.literal("请丢弃或移走部分物品后再试，也可将物品存入箱子腾出空间。").withStyle(ChatFormatting.GRAY));
@@ -257,44 +272,150 @@ public class MardPixelForge {
             player.sendSystemMessage(Component.literal("可使用 /mardp scan 扫描并回收遗失编号，或删除不需要的颜色后再试。").withStyle(ChatFormatting.GRAY));
             return;
         }
-        CustomColorFile.save(CUSTOM_FILE, CustomColorStore.all());
-        broadcastCustom();
+
+        CustomColorFile.save(CUSTOM_COLORS_FILE, CustomColorStore.all());
+        broadcastCustomColors();
         player.sendSystemMessage(Component.literal("已新增自定义色 " + c.code() + " " + ColorMath.toHex(rgb)));
 
-        // 自动给玩家对应的自定义方块物品：快捷栏 → 主物品栏 → 扔地面
-        ItemStack stack = customStack(c, rgb, c.displayName());
+        // 自动给玩家对应的自定义方块物品
+        ItemStack stack = createCustomItemStack(c, rgb, c.displayName());
         giveItemSmart(player, stack);
     }
+
+    public static void removeCustom(ServerPlayer player, String code) {
+        boolean ok = CustomColorStore.remove(code);
+        if (ok) {
+            CustomColorFile.save(CUSTOM_COLORS_FILE, CustomColorStore.all());
+            broadcastCustomColors();
+            player.sendSystemMessage(Component.literal("已删除自定义色 " + code));
+        } else {
+            player.sendSystemMessage(Component.literal("未找到自定义色 " + code).withStyle(ChatFormatting.RED));
+        }
+    }
+
+    /**
+     * 向所有在线玩家广播自定义色更新。
+     */
+    public static void broadcastCustomColors() {
+        String json = CustomColorFile.serialize(CustomColorStore.all());
+        for (ServerPlayer sp : net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
+            MardNetwork.CHANNEL.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> sp),
+                    new MardNetwork.SyncCustomPacket(json));
+        }
+    }
+
+    // ==================== 物品生成 ====================
+
+    /**
+     * 根据目标字符串生成物品栈。
+     * 支持格式：
+     * - MARD:<色号> - MARD基础色块
+     * - CUSTOM:<编号> - 已保存的自定义色
+     * - CUSTOM_RAW:<rgb> - 临时自定义色（不保存）
+     * - IMPORTED:<名称>:<索引> - 导入的色卡颜色
+     * - <色号> - 直接按MARD色号查找
+     */
+    public static ItemStack buildStack(String target) {
+        if (target == null) return ItemStack.EMPTY;
+        String t = target.trim();
+        if (t.isEmpty()) return ItemStack.EMPTY;
+
+        if (t.startsWith("MARD:")) {
+            return buildMardStack(t.substring(5).trim());
+        }
+        if (t.startsWith("IMPORTED:")) {
+            return buildImportedStack(t.substring(9));
+        }
+        if (t.startsWith("CUSTOM_RAW:")) {
+            try {
+                int rgb = Integer.parseInt(t.substring(11).trim());
+                return createCustomItemStack(null, rgb, null);
+            } catch (NumberFormatException e) {
+                return ItemStack.EMPTY;
+            }
+        }
+        if (t.startsWith("CUSTOM:")) {
+            CustomColor cc = CustomColorStore.byCode(t.substring(7).trim());
+            return cc != null ? createCustomItemStack(cc, cc.rgb(), null) : ItemStack.EMPTY;
+        }
+
+        // 直接按MARD色号查找
+        return buildMardStack(t);
+    }
+
+    private static ItemStack buildMardStack(String code) {
+        MardColor mc = MardPalette.byCode(code);
+        if (mc == null) return ItemStack.EMPTY;
+        for (MardBlock mb : MARD_BLOCKS) {
+            if (mb.code().equalsIgnoreCase(mc.code())) return new ItemStack(mb);
+        }
+        return ItemStack.EMPTY;
+    }
+
+    private static ItemStack buildImportedStack(String param) {
+        String[] parts = param.split(":", 2);
+        if (parts.length != 2) return ItemStack.EMPTY;
+        ImportedPaletteStore.Palette p = ImportedPaletteStore.get(parts[0]);
+        if (p == null) return ItemStack.EMPTY;
+        int idx;
+        try {
+            idx = Integer.parseInt(parts[1].trim());
+        } catch (NumberFormatException e) {
+            return ItemStack.EMPTY;
+        }
+        if (idx < 1 || idx > p.colors.size()) return ItemStack.EMPTY;
+        int rgb = p.colors.get(idx - 1);
+        return createCustomItemStack(null, rgb, p.name + " #" + idx);
+    }
+
+    /**
+     * 创建自定义色块物品栈。
+     * 物品名称两行显示：第一行色号编号（白色），第二行RGB值（灰色）。
+     */
+    public static ItemStack createCustomItemStack(CustomColor cc, int rgb, String displayName) {
+        ItemStack stack = new ItemStack(CUSTOM_ITEM.get());
+        CompoundTag tag = stack.getOrCreateTag();
+        tag.putInt("mard_color", rgb & 0xFFFFFF);
+
+        // 写入色号编号到NBT，用于扫描检测遗失编号
+        if (cc != null && cc.code() != null) {
+            tag.putString("mard_code", cc.code());
+        }
+
+        // 第一行（hoverName）：颜色编号（白色）
+        String name = displayName != null ? displayName
+                : cc != null ? cc.displayName()
+                : "MARD Custom";
+        stack.setHoverName(Component.literal(name));
+
+        // 第二行（lore）：RGB值（灰色），格式 "RGB #FF0000"
+        String hex = ColorMath.toHex(rgb);
+        CompoundTag display = tag.getCompound("display");
+        net.minecraft.nbt.ListTag lore = new net.minecraft.nbt.ListTag();
+        lore.add(net.minecraft.nbt.StringTag.valueOf(
+                net.minecraft.network.chat.Component.Serializer.toJson(
+                        Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY))));
+        display.put("Lore", lore);
+        tag.put("display", display);
+
+        return stack;
+    }
+
+    // ==================== 智能给予物品 ====================
 
     /**
      * 检测背包是否已满（快捷栏9格 + 主物品栏27格 = 36格全部被占用）。
      */
     private static boolean isInventoryFull(ServerPlayer player) {
         Inventory inv = player.getInventory();
-        // 检查快捷栏（0-8）和主物品栏（9-35）共36格
         for (int i = 0; i < 36; i++) {
-            if (inv.getItem(i).isEmpty()) return false; // 有空槽位
+            if (inv.getItem(i).isEmpty()) return false;
         }
-        return true; // 全部满了
+        return true;
     }
 
     /**
-     * 统计背包中自定义颜色物品的总数量。
-     */
-    private static int countCustomItemsInInventory(ServerPlayer player) {
-        int count = 0;
-        Inventory inv = player.getInventory();
-        for (int i = 0; i < inv.getContainerSize(); i++) {
-            ItemStack stack = inv.getItem(i);
-            if (!stack.isEmpty() && stack.getItem() == CUSTOM_ITEM.get()) {
-                count += stack.getCount();
-            }
-        }
-        return count;
-    }
-
-    /**
-     * 智能给予物品：先放快捷栏，再放主物品栏，都满则扔到地面
+     * 智能给予物品：先放快捷栏，再放主物品栏，都满则扔到地面。
      */
     private static void giveItemSmart(ServerPlayer player, ItemStack stack) {
         if (stack == null || stack.isEmpty()) return;
@@ -302,8 +423,7 @@ public class MardPixelForge {
 
         // 1. 先尝试放快捷栏（0-8槽位）
         for (int i = 0; i < 9; i++) {
-            ItemStack slot = inv.getItem(i);
-            if (slot.isEmpty()) {
+            if (inv.getItem(i).isEmpty()) {
                 inv.setItem(i, stack.copy());
                 player.sendSystemMessage(Component.literal("已放入快捷栏").withStyle(ChatFormatting.GRAY));
                 return;
@@ -312,8 +432,7 @@ public class MardPixelForge {
 
         // 2. 再尝试放主物品栏（9-35槽位）
         for (int i = 9; i < 36; i++) {
-            ItemStack slot = inv.getItem(i);
-            if (slot.isEmpty()) {
+            if (inv.getItem(i).isEmpty()) {
                 inv.setItem(i, stack.copy());
                 player.sendSystemMessage(Component.literal("已放入背包").withStyle(ChatFormatting.GRAY));
                 return;
@@ -325,86 +444,12 @@ public class MardPixelForge {
         player.sendSystemMessage(Component.literal("背包已满，已扔到地面").withStyle(ChatFormatting.YELLOW));
     }
 
-    public static void removeCustom(ServerPlayer player, String code) {
-        boolean ok = CustomColorStore.remove(code);
-        if (ok) {
-            CustomColorFile.save(CUSTOM_FILE, CustomColorStore.all());
-            broadcastCustom();
-            player.sendSystemMessage(Component.literal("已删除自定义色 " + code));
-        } else {
-            player.sendSystemMessage(Component.literal("未找到自定义色 " + code).withStyle(ChatFormatting.RED));
-        }
-    }
-
-    public static void broadcastCustom() {
-        String json = CustomColorFile.serialize(CustomColorStore.all());
-        for (ServerPlayer sp : net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
-            MardNetwork.CHANNEL.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> sp),
-                    new MardNetwork.SyncCustomPacket(json));
-        }
-    }
-
-    public static void scanExternalBrands() {
-        Map<String, List<BrandColor>> colors = new LinkedHashMap<>();
-        Map<String, String> jsons = new LinkedHashMap<>();
-        try {
-            if (Files.exists(EXTERNAL_DIR)) {
-                try (DirectoryStream<Path> ds = Files.newDirectoryStream(EXTERNAL_DIR, "*.json")) {
-                    for (Path p : ds) {
-                        String fileName = p.getFileName().toString();
-                        String json = Files.readString(p, StandardCharsets.UTF_8);
-                        List<BrandColor> list = ExternalBrandStore.parseBrandFile(fileName, json);
-                        if (!list.isEmpty()) {
-                            String key = ExternalBrandStore.brandKey(fileName);
-                            colors.put(key, list);
-                            jsons.put(key, ExternalBrandStore.serialize(key, list));
-                        }
-                    }
-                }
-            }
-        } catch (Exception ignored) {
-        }
-        externalBrands = colors;
-        externalBrandsJson = jsons;
-    }
-
-    public static void sendExternalBrands(ServerPlayer sp) {
-        scanExternalBrands();
-        MardNetwork.CHANNEL.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> sp),
-                new MardNetwork.SyncExternalBrandsPacket(new LinkedHashMap<>(externalBrandsJson)));
-    }
-
-    public static BrandColor lookupBrand(String brand, String code) {
-        if (brand == null) return null;
-        BrandColor bc = BrandPalette.lookup(brand, code);
-        if (bc != null) return bc;
-        List<BrandColor> ext = externalBrands.get(brand.trim().toUpperCase(Locale.ROOT));
-        if (ext != null) {
-            String c = BrandPalette.normalizeCode(code);
-            for (BrandColor x : ext) if (x.code().equalsIgnoreCase(c) || BrandPalette.normalizeCode(x.code()).equals(c)) return x;
-        }
-        return null;
-    }
-
-    public static List<BrandColor> brandColors(String system) {
-        if (system == null) return null;
-        List<BrandColor> b = BrandPalette.brandColors(system);
-        if (b != null) return b;
-        return externalBrands.get(system.trim().toUpperCase(Locale.ROOT));
-    }
-
-    public static String brandDisplay(String brand) {
-        if (brand == null) return "";
-        String b = brand.toLowerCase(Locale.ROOT);
-        if (b.equals("perler")) return "Perler";
-        if (b.equals("hama")) return "Hama";
-        if (b.equals("artkal")) return "Artkal";
-        return brand.toUpperCase(Locale.ROOT);
-    }
-
+    /**
+     * 快速给予指定物品（/mardp give 命令）。
+     */
     public static void giveRequestedItem(ServerPlayer player, String target) {
         if (target == null || target.isBlank()) {
-            player.sendSystemMessage(Component.literal("用法：MARD:<色号> / BRAND:<品牌>:<色号> / CUSTOM:<编号> / CUSTOM_RAW:<rgb>").withStyle(ChatFormatting.GRAY));
+            player.sendSystemMessage(Component.literal("用法：MARD:<色号> / CUSTOM:<编号> / IMPORTED:<名称>:<索引> / CUSTOM_RAW:<rgb>").withStyle(ChatFormatting.GRAY));
             return;
         }
         ItemStack stack = buildStack(target);
@@ -416,173 +461,7 @@ public class MardPixelForge {
         player.sendSystemMessage(Component.literal("已给予 ").append(stack.getHoverName()).append(" x" + stack.getCount()));
     }
 
-    public static ItemStack buildStack(String target) {
-        if (target == null) return ItemStack.EMPTY;
-        String t = target.trim();
-        if (t.isEmpty()) return ItemStack.EMPTY;
-        if (t.startsWith("MARD:")) {
-            String code = t.substring(5).trim();
-            MardColor mc = MardPalette.byCode(code);
-            if (mc == null) return ItemStack.EMPTY;
-            Block b = null;
-            for (MardBlock mb : MARD_BLOCKS) if (mb.code().equalsIgnoreCase(mc.code())) { b = mb; break; }
-            if (b == null) return ItemStack.EMPTY;
-            return new ItemStack(b);
-        }
-        if (t.startsWith("IMPORTED:")) {
-            String[] parts = t.substring(9).split(":", 2);
-            if (parts.length != 2) return ItemStack.EMPTY;
-            ImportedPaletteStore.Palette p = ImportedPaletteStore.get(parts[0]);
-            if (p == null) return ItemStack.EMPTY;
-            int idx;
-            try { idx = Integer.parseInt(parts[1].trim()); } catch (NumberFormatException e) { return ItemStack.EMPTY; }
-            if (idx < 1 || idx > p.colors.size()) return ItemStack.EMPTY;
-            int rgb = p.colors.get(idx - 1);
-            return customStack(null, rgb, p.name + " #" + idx);
-        }
-        if (t.startsWith("BRAND:")) {
-            String[] parts = t.substring(6).split(":", 2);
-            if (parts.length != 2) return ItemStack.EMPTY;
-            return brandedStack(parts[0].trim(), parts[1].trim());
-        }
-        if (t.startsWith("CUSTOM_RAW:")) {
-            try {
-                int rgb = Integer.parseInt(t.substring(11).trim());
-                return customStack(null, rgb, null);
-            } catch (NumberFormatException e) { return ItemStack.EMPTY; }
-        }
-        if (t.startsWith("CUSTOM:")) {
-            CustomColor cc = CustomColorStore.byCode(t.substring(7).trim());
-            if (cc == null) return ItemStack.EMPTY;
-            return customStack(cc, cc.rgb(), null);
-        }
-        MardColor mc = MardPalette.byCode(t);
-        if (mc == null) return ItemStack.EMPTY;
-        for (MardBlock mb : MARD_BLOCKS) if (mb.code().equalsIgnoreCase(mc.code())) return new ItemStack(mb);
-        return ItemStack.EMPTY;
-    }
-
-    public static ItemStack brandedStack(String brand, String code) {
-        BrandColor bc = lookupBrand(brand, code);
-        if (bc == null) return ItemStack.EMPTY;
-        ItemStack stack = new ItemStack(CUSTOM_ITEM.get());
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.putInt("mard_color", bc.rgb());
-        tag.putString("mard_brand", bc.brand());
-        tag.putString("mard_brand_code", bc.code());
-        // 第一行（hoverName）：品牌色号（白色）
-        String name = brandDisplay(brand) + " " + bc.code();
-        stack.setHoverName(Component.literal(name));
-        // 第二行（lore）：RGB值（灰色），格式 "RGB #FF0000"
-        String hex = ColorMath.toHex(bc.rgb());
-        CompoundTag display = tag.getCompound("display");
-        net.minecraft.nbt.ListTag lore = new net.minecraft.nbt.ListTag();
-        lore.add(net.minecraft.nbt.StringTag.valueOf(
-                net.minecraft.network.chat.Component.Serializer.toJson(
-                        Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY))));
-        display.put("Lore", lore);
-        tag.put("display", display);
-        return stack;
-    }
-
-    public static ItemStack customStack(CustomColor cc, int rgb, String displayName) {
-        ItemStack stack = new ItemStack(CUSTOM_ITEM.get());
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.putInt("mard_color", rgb & 0xFFFFFF);
-        // 写入色号编号到NBT，用于扫描检测遗失编号
-        if (cc != null && cc.code() != null) {
-            tag.putString("mard_code", cc.code());
-        }
-        // 第一行（hoverName）：颜色编号（白色）
-        String name = displayName != null ? displayName
-                : cc != null ? cc.displayName()
-                : "MARD Custom";
-        stack.setHoverName(Component.literal(name));
-        // 第二行（lore）：RGB值（灰色），格式 "RGB #FF0000"
-        String hex = ColorMath.toHex(rgb);
-        CompoundTag display = tag.getCompound("display");
-        net.minecraft.nbt.ListTag lore = new net.minecraft.nbt.ListTag();
-        lore.add(net.minecraft.nbt.StringTag.valueOf(
-                net.minecraft.network.chat.Component.Serializer.toJson(
-                        Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY))));
-        display.put("Lore", lore);
-        tag.put("display", display);
-        return stack;
-    }
-
-    public static void switchBagSystem(ServerPlayer player, String system) {
-        if (system == null || system.isBlank()) return;
-        String sys = system.trim().toUpperCase(Locale.ROOT);
-        boolean isMard = sys.equals("MARD");
-        boolean isCustom = sys.equals("CUSTOM");
-        List<BrandColor> targetBrand = isMard || isCustom ? null : brandColors(system);
-        if (!isMard && !isCustom && targetBrand == null) {
-            player.sendSystemMessage(Component.literal("色系不存在：" + system).withStyle(ChatFormatting.RED));
-            return;
-        }
-        Inventory inv = player.getInventory();
-        int changed = 0;
-        for (int i = 0; i < inv.getContainerSize(); i++) {
-            ItemStack stack = inv.getItem(i);
-            if (stack.isEmpty()) continue;
-            int color = colorOf(stack);
-            if (color < 0) continue;
-            ItemStack target = null;
-            if (isMard) {
-                MardColor mc = MardPalette.nearest(color);
-                target = buildStack("MARD:" + mc.code());
-            } else if (isCustom) {
-                target = customStack(null, color, "MARD Custom " + ColorMath.toHex(color));
-            } else {
-                BrandColor nearest = nearestBrandColor(targetBrand, color);
-                if (nearest != null) target = brandedStack(nearest.brand(), nearest.code());
-            }
-            if (target != null) {
-                target.setCount(stack.getCount());
-                inv.setItem(i, target);
-                changed += stack.getCount();
-            }
-        }
-        player.sendSystemMessage(Component.literal("已切换为 " + (isMard ? "MARD" : brandDisplay(sys))
-                + " 色系，转换 " + changed + " 个色块").withStyle(ChatFormatting.GREEN));
-    }
-
-    public static int colorOf(ItemStack stack) {
-        if (stack.isEmpty()) return -1;
-        Item item = stack.getItem();
-        if (item instanceof BlockItem bi && bi.getBlock() instanceof MardBlock mb) return mb.rgb();
-        if (item == CUSTOM_ITEM.get()) {
-            CompoundTag tag = stack.getTag();
-            return (tag != null && tag.contains("mard_color")) ? tag.getInt("mard_color") & 0xFFFFFF : -1;
-        }
-        return -1;
-    }
-
-    public static BrandColor nearestBrandColor(List<BrandColor> list, int color) {
-        BrandColor best = null;
-        double bestD = Double.MAX_VALUE;
-        for (BrandColor bc : list) {
-            double d = ColorMath.deltaE2000(color, bc.rgb());
-            if (d < bestD) { bestD = d; best = bc; }
-        }
-        return best;
-    }
-
-    public static void listBrands(ServerPlayer player) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("内置品牌：");
-        for (String name : BrandPalette.brandNames()) {
-            List<BrandColor> list = BrandPalette.brandColors(name);
-            sb.append(name).append("(").append(list == null ? 0 : list.size()).append(") ");
-        }
-        sb.append("\n外部色系：");
-        scanExternalBrands();
-        for (Map.Entry<String, List<BrandColor>> e : externalBrands.entrySet()) {
-            sb.append(e.getKey()).append("(").append(e.getValue().size()).append(") ");
-        }
-        if (externalBrands.isEmpty()) sb.append("无（把 .json 放到 config/mard_pixel_brands/ 即可导入）");
-        player.sendSystemMessage(Component.literal(sb.toString()));
-    }
+    // ==================== 编号循环回收 ====================
 
     /**
      * 扫描玩家背包和附近5格内的箱子，检测遗失的自定义颜色编号并回收。
@@ -592,21 +471,21 @@ public class MardPixelForge {
         Set<String> foundCodes = new TreeSet<>();
         int chestCount = 0;
         int itemCount = 0;
+        int range = 5;
 
         // 1. 扫描玩家背包（36格）
         Inventory inv = player.getInventory();
         for (int i = 0; i < 36; i++) {
             ItemStack stack = inv.getItem(i);
             if (!stack.isEmpty() && stack.getItem() == CUSTOM_ITEM.get()) {
-                String code = customCodeOf(stack);
+                String code = readCustomCodeFromStack(stack);
                 if (code != null) { foundCodes.add(code); itemCount++; }
             }
         }
 
-        // 2. 扫描附近5格内的箱子（箱子/陷阱箱/木桶/潜影盒）
+        // 2. 扫描附近5格内的箱子（箱子/陷阱箱/木桶/潜影盒等容器）
         net.minecraft.server.level.ServerLevel level = player.serverLevel();
         net.minecraft.core.BlockPos pp = player.blockPosition();
-        int range = 5;
         for (int dx = -range; dx <= range; dx++) {
             for (int dy = -range; dy <= range; dy++) {
                 for (int dz = -range; dz <= range; dz++) {
@@ -617,7 +496,7 @@ public class MardPixelForge {
                         for (int slot = 0; slot < container.getContainerSize(); slot++) {
                             ItemStack stack = container.getItem(slot);
                             if (!stack.isEmpty() && stack.getItem() == CUSTOM_ITEM.get()) {
-                                String code = customCodeOf(stack);
+                                String code = readCustomCodeFromStack(stack);
                                 if (code != null) { foundCodes.add(code); itemCount++; }
                             }
                         }
@@ -641,8 +520,8 @@ public class MardPixelForge {
             if (CustomColorStore.remove(code)) recycled++;
         }
         if (recycled > 0) {
-            CustomColorFile.save(CUSTOM_FILE, CustomColorStore.all());
-            broadcastCustom();
+            CustomColorFile.save(CUSTOM_COLORS_FILE, CustomColorStore.all());
+            broadcastCustomColors();
         }
 
         // 5. 输出检测报告
@@ -671,13 +550,14 @@ public class MardPixelForge {
      */
     public static void restoreCustomItems(ServerPlayer player) {
         Set<String> foundCodes = new TreeSet<>();
+        int range = 5;
 
         // 1. 扫描玩家背包
         Inventory inv = player.getInventory();
         for (int i = 0; i < 36; i++) {
             ItemStack stack = inv.getItem(i);
             if (!stack.isEmpty() && stack.getItem() == CUSTOM_ITEM.get()) {
-                String code = customCodeOf(stack);
+                String code = readCustomCodeFromStack(stack);
                 if (code != null) foundCodes.add(code);
             }
         }
@@ -685,7 +565,6 @@ public class MardPixelForge {
         // 2. 扫描附近5格内的箱子
         net.minecraft.server.level.ServerLevel level = player.serverLevel();
         net.minecraft.core.BlockPos pp = player.blockPosition();
-        int range = 5;
         for (int dx = -range; dx <= range; dx++) {
             for (int dy = -range; dy <= range; dy++) {
                 for (int dz = -range; dz <= range; dz++) {
@@ -695,7 +574,7 @@ public class MardPixelForge {
                         for (int slot = 0; slot < container.getContainerSize(); slot++) {
                             ItemStack stack = container.getItem(slot);
                             if (!stack.isEmpty() && stack.getItem() == CUSTOM_ITEM.get()) {
-                                String code = customCodeOf(stack);
+                                String code = readCustomCodeFromStack(stack);
                                 if (code != null) foundCodes.add(code);
                             }
                         }
@@ -709,7 +588,7 @@ public class MardPixelForge {
         int restored = 0;
         for (CustomColor cc : all) {
             if (!foundCodes.contains(cc.code())) {
-                ItemStack stack = customStack(cc, cc.rgb(), cc.name());
+                ItemStack stack = createCustomItemStack(cc, cc.rgb(), cc.name());
                 giveItemSmart(player, stack);
                 restored++;
             }
@@ -722,15 +601,29 @@ public class MardPixelForge {
         }
     }
 
+    // ==================== 工具方法 ====================
+
     /**
      * 从自定义物品的NBT中读取色号编号（code）。
      */
-    private static String customCodeOf(ItemStack stack) {
+    private static String readCustomCodeFromStack(ItemStack stack) {
         if (stack.isEmpty() || stack.getItem() != CUSTOM_ITEM.get()) return null;
         CompoundTag tag = stack.getTag();
-        if (tag != null && tag.contains("mard_code")) {
-            return tag.getString("mard_code");
+        return (tag != null && tag.contains("mard_code")) ? tag.getString("mard_code") : null;
+    }
+
+    /**
+     * 获取物品的颜色值（MARD基础色块或自定义色块）。
+     * @return 颜色RGB值，或-1（非本模组物品）
+     */
+    public static int colorOf(ItemStack stack) {
+        if (stack.isEmpty()) return -1;
+        Item item = stack.getItem();
+        if (item instanceof BlockItem bi && bi.getBlock() instanceof MardBlock mb) return mb.rgb();
+        if (item == CUSTOM_ITEM.get()) {
+            CompoundTag tag = stack.getTag();
+            return (tag != null && tag.contains("mard_color")) ? tag.getInt("mard_color") & 0xFFFFFF : -1;
         }
-        return null;
+        return -1;
     }
 }

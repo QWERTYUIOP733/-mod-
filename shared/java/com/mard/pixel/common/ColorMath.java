@@ -163,5 +163,31 @@ public final class ColorMath {
         return "灰";
     }
 
+    /**
+     * 解析十六进制颜色字符串为 RGB 整数。
+     * 支持格式："#RRGGBB"、"RRGGBB"、"0xRRGGBB"、"#RGB"（简写）。
+     * 解析失败时返回白色（0xFFFFFF）。
+     *
+     * @param hex 十六进制颜色字符串
+     * @return RGB 整数（0xRRGGBB）
+     */
+    public static int parseHex(String hex) {
+        if (hex == null || hex.isBlank()) return 0xFFFFFF;
+        String s = hex.trim();
+        // 移除前缀
+        if (s.startsWith("#")) s = s.substring(1);
+        else if (s.startsWith("0x") || s.startsWith("0X")) s = s.substring(2);
+        // 处理简写格式 #RGB → #RRGGBB
+        if (s.length() == 3) {
+            s = "" + s.charAt(0) + s.charAt(0) + s.charAt(1) + s.charAt(1) + s.charAt(2) + s.charAt(2);
+        }
+        if (s.length() != 6) return 0xFFFFFF;
+        try {
+            return Integer.parseInt(s, 16) & 0xFFFFFF;
+        } catch (NumberFormatException e) {
+            return 0xFFFFFF;
+        }
+    }
+
     private ColorMath() {}
 }

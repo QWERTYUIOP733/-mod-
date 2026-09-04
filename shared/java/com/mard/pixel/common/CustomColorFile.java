@@ -34,7 +34,7 @@ public final class CustomColorFile {
                         for (Map.Entry<String, JsonElement> en : ce.getAsJsonObject().entrySet()) {
                             JsonObject v = en.getValue().getAsJsonObject();
                             String code = v.has("code") ? v.get("code").getAsString() : en.getKey();
-                            int rgb = BrandPalette.parseHex(v.has("rgb") ? v.get("rgb").getAsString()
+                            int rgb = ColorMath.parseHex(v.has("rgb") ? v.get("rgb").getAsString()
                                     : v.has("hex") ? v.get("hex").getAsString() : "#FFFFFF");
                             String name = v.has("name") ? v.get("name").getAsString() : null;
                             out.add(new CustomColor(name, code, rgb));
@@ -52,7 +52,7 @@ public final class CustomColorFile {
         String code = o.has("code") ? o.get("code").getAsString()
                 : o.has("id") ? o.get("id").getAsString() : null;
         if (code == null) return null;
-        int rgb = BrandPalette.parseHex(o.has("rgb") ? o.get("rgb").getAsString()
+        int rgb = ColorMath.parseHex(o.has("rgb") ? o.get("rgb").getAsString()
                 : o.has("hex") ? o.get("hex").getAsString() : "#FFFFFF");
         String name = o.has("name") ? o.get("name").getAsString() : null;
         return new CustomColor(name, code, rgb);
