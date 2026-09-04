@@ -118,6 +118,15 @@ public class MardColorScreen extends Screen {
         }
         int sysBottom = y + bh + 4;
 
+        // 主标签页开关按钮：切换创造模式背包中主标签页的显示/隐藏
+        boolean mainTabVisible = MardClientConfig.isMainTabVisible();
+        String tabBtnLabel = mainTabVisible ? "主标签页: 开" : "主标签页: 关";
+        addRenderableWidget(Button.builder(Component.literal(tabBtnLabel), btn -> {
+            boolean newState = MardClientConfig.toggleMainTabVisible();
+            statusMsg = newState ? "主标签页已显示" : "主标签页已隐藏（按系列分类标签页仍可用）";
+            init(); // 刷新按钮文本
+        }).bounds(width - 200, 6, 90, 18).build());
+
         addRenderableWidget(Button.builder(Component.literal("导入PNG"), btn -> {
             importPngPalettes();
         }).bounds(width - 100, 6, 90, 18).build());

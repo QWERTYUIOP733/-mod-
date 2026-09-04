@@ -51,6 +51,15 @@ public final class MardPixelForgeClient {
     // ==================== MOD Bus 事件 ====================
 
     /**
+     * 客户端初始化：加载客户端配置。
+     * 触发时机：MOD 客户端初始化阶段。
+     */
+    @SubscribeEvent
+    public static void onClientSetup(net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent event) {
+        MardClientConfig.load();
+    }
+
+    /**
      * 注册快捷键映射。
      * 触发时机：MOD 初始化阶段，客户端专用。
      */
