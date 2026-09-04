@@ -10,8 +10,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -30,7 +30,6 @@ public class MardPixelForgeClient {
 
     @SubscribeEvent
     public static void onBlockColors(RegisterColorHandlersEvent.Block event) {
-        // 使用 MARD_BLOCK_REFS（构造函数中已填充）而非 MARD_BLOCKS（onCommonSetup才填充）
         Block[] arr = MardPixelForge.MARD_BLOCK_REFS.stream()
                 .map(ro -> ro.get())
                 .toArray(Block[]::new);
@@ -50,7 +49,6 @@ public class MardPixelForgeClient {
 
     @SubscribeEvent
     public static void onItemColors(RegisterColorHandlersEvent.Item event) {
-        // 使用 MARD_BLOCK_REFS 而非 MARD_BLOCKS
         for (var ro : MardPixelForge.MARD_BLOCK_REFS) {
             Block b = ro.get();
             if (b instanceof MardBlock mb) {
@@ -74,28 +72,26 @@ public class MardPixelForgeClient {
         }
 
         /**
-         * 使用 RenderTooltipEvent.GatherComponents（组件列表构建时触发）清除其他模组添加的蓝色字符。
-         * 这是Forge 1.20.1中专门用于修改tooltip组件列表的事件，比ItemTooltipEvent更底层。
+         * 使用ItemTooltipEvent清除其他模组添加的蓝色字符。
+         * 优先级设为LOWEST，确保在其他模组之后执行。
+         * 只保留第一行（物品名称）和包含"RGB"的行（RGB值）。
          */
         @SubscribeEvent(priority = EventPriority.LOWEST)
-        public static void onGatherTooltipComponents(RenderTooltipEvent.GatherComponents event) {
-            // 只处理本模组的物品（MARD色块和自定义色块）
+        public static void onItemTooltip(ItemTooltipEvent event) {
             var stack = event.getItemStack();
             var item = stack.getItem();
             boolean isMardItem = item instanceof com.mard.pixel.forge.MardBlockItem;
             boolean isCustomItem = item == MardPixelForge.CUSTOM_ITEM.get();
             if (!isMardItem && !isCustomItem) return;
 
-            // 获取 tooltip 元素列表（可修改）
-            var elements = event.getTooltipElements();
-            if (elements == null || elements.size() <= 1) return;
+            var tooltip = event.getToolTip();
+            if (tooltip == null || tooltip.size() <= 1) return;
 
-            // 从后往前移除，避免索引问题
-            // 只保留第一行（物品名称）和包含"RGB"的行（RGB值）
-            for (int i = elements.size() - 1; i >= 1; i--) {
-                String text = elements.get(i).getString();
+            // 从后往前移除，只保留第一行和包含"RGB"的行
+            for (int i = tooltip.size() - 1; i >= 1; i--) {
+                String text = tooltip.get(i).getString();
                 if (!text.contains("RGB")) {
-                    elements.remove(i);
+                    tooltip.remove(i);
                 }
             }
         }
