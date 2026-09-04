@@ -1,13 +1,13 @@
 # MARD 像素色块 Mod（Minecraft 1.20.1 · Forge）
 
-一套将 **MARD 拼豆 295 色系**标准色卡做成 Minecraft 实心色块的像素画 Mod。
+一套将 **MARD 拼豆官方 221 基础色**标准色卡做成 Minecraft 实心色块的像素画 Mod。
 
 > **当前版本仅支持 Forge 加载器。** Fabric 版本因构建兼容性问题已停止维护，后续如有需要可单独重启。
 
 - 版本：v1.2.0
 - 游戏版本：Minecraft 1.20.1
-- 加载器：Forge 47.2.0
-- 色卡：MARD 官方 295 色（221 标准 A–H/M + 74 特殊 P/Q/R/T/Y/ZG，dehumaker.cn 对照表）
+- 加载器：Forge 47.2.0+
+- 色卡：MARD 官方 221 基础色（A–H/M 系列，色准已校准与官方色卡完全一致）
 
 ---
 
@@ -15,14 +15,15 @@
 
 | 功能 | 说明 |
 |---|---|
-| 295 标准色块 | 每个色号一个实心色块，颜色使用 MARD 官方标准 RGB，色准标准 |
-| 创造标签页 | 「MARD 像素色块」标签页一键取用全部 295 色 + 自定义色块 |
-| 色板 UI（快捷键 **G**） | 打开色板，点色块即入包；顶部按钮切换色系 |
-| 色系切换 | MARD / 导入的 PNG 色系 / 自定义 一键切换 |
-| 整体换包 | 把背包里已有色块按当前色系整体就地转换（CIEDE2000 最近色） |
-| PNG 色卡导入 | 把自制色卡 PNG 放入 `config/mard_pixel/import/`，点「导入PNG」自动提取颜色生成色系 |
-| 自定义色号 | HSV 三角 + RGB 色环 + 屏幕吸取，自定义色全局共享（config 保存） |
-| 联机同步 | 自定义色随玩家加入自动同步 |
+| 221 基础色块 | 每个色号一个实心色块，颜色使用 MARD 官方标准 RGB，色准标准 |
+| 创造标签页 | 按字母系列分类（A、B、C、D、E、F、G、H、M），标签页名称仅为字母 |
+| 主 UI（快捷键 **G**） | 三按钮主界面：颜色选取 / 色号输入 / 图纸导入 |
+| 按钮1：颜色选取 | 浏览全部 221 色号网格，点击给一组（64个），支持连续选择 |
+| 按钮2：色号输入 | 输入色号（如 A1、B5、M3）后自动放入快捷栏一组（64个） |
+| 按钮3：图纸导入 | 开发中，敬请期待 |
+| 自定义颜色 | PS 风格取色器，支持新增/删除自定义色号，编号循环回收机制 |
+| PNG 色卡导入 | 支持导入自制色卡（PNG 格式），自动提取颜色生成色系 |
+| 物品名称双行显示 | 第一行：色号编号（白色）；第二行：RGB 值（灰色） |
 
 ---
 
@@ -30,71 +31,88 @@
 
 ### Forge 端
 
-1. 安装 Minecraft 1.20.1 + Forge 47.2.0
-2. 把 `MARD_Pixel_Forge_1.20.1_v1.2.0.jar` 放入 `mods/` 文件夹
+1. 安装 Minecraft 1.20.1 + Forge 47.2.0+
+2. 把 `mard_pixel_forge-1.2.0.jar` 放入 `mods/` 文件夹
 3. 启动游戏
 
 ---
 
 ## 使用方法
 
-### 色板（推荐）
+### 主 UI（推荐）
 
-- 按 **G** 打开色板
-- 顶部按钮切换色系（MARD / 导入的 PNG 色系 / CUSTOM）
-- 点击任意色块 → 对应物品进入背包
-- 点「整体换包」→ 背包内所有本模组色块按当前色系整体转换
-- 点「导入PNG」→ 扫描 `config/mard_pixel/import/` 目录，自动导入所有 PNG 色卡
-- 选中导入的色系后，点「删除该色系」可移除
+- 按 **G** 打开主界面
+- **按钮1：MARD颜色选取** — 浏览全部色号网格，点击任意色号 → 对应物品一组（64个）进入背包，支持连续选择
+- **按钮2：输入想用的色号** — 在输入框中输入色号（如 A1、B5、M3），点击确认 → 自动放入快捷栏一组（64个）
+- **按钮3：导入外部图纸** — 开发中，敬请期待
 
-### 自定义色号（CUSTOM 页）
+### 创造模式标签页
 
-1. 切换到 **CUSTOM** 色系
-2. 在 **RGB 色环** 上点选色相
-3. 在 **HSV 三角** 上点选饱和度/明度
-4. 输入名称 → 点「新增」→ 写入 `config/mard_pixel_custom.json`（全局共享，不按存档/版本隔离）
-5. 点「吸取颜色」后再点任意色块，可把该色作为当前编辑色
-6. 点「删除」移除最后一个自定义色（也可用命令精确删除）
+- 在创造模式物品栏中切换到 MARD 系列标签页
+- 标签页按字母分类：A、B、C、D、E、F、G、H、M
+- 每个标签页包含对应系列的所有色块
+- 自定义色块在最后一个系列标签页中
 
-### 命令
+### 自定义颜色
 
-| 命令 | 说明 |
-|---|---|
-| `/mardp brands` | 列出内置品牌 + 外部色系及色号数量 |
-| `/mardp find <#RRGGBB>` | 任意颜色 → 最近的 MARD 色 |
-| `/mardp convert <品牌> <色号>` | 品牌色 → 最近 MARD 色（例：`/mardp convert perler P20`） |
-| `/mardp give <目标>` | 直接给物品。目标格式：`MARD:A1` / `BRAND:perler:P20` / `CUSTOM:C0001` / `CUSTOM_RAW:16711680` |
-| `/mardp switch <色系>` | 整体换包（例：`/mardp switch perler`） |
-| `/mardp reload` | 重新扫描 `config/mard_pixel_brands/` |
+1. 按 **G** 打开主界面
+2. 进入自定义颜色功能
+3. 使用 PS 风格取色器选择颜色
+4. 点击「新增」创建自定义色块
+5. 自定义色块自动出现在物品栏中
+6. 若物品栏已满，自动加载到背包中
+7. 若都没有空间，则直接扔出到地面
+8. 支持删除自定义色号，编号会循环回收利用
+
+### 物品名称显示
+
+- 每个色块的物品名称采用双行显示格式
+- **第一行**：色号编号（白色，如 `A1`）
+- **第二行**：RGB 值（灰色，如 `RGB #FAF4C8`）
+- 悬停物品时可查看完整信息
+
+---
+
+## 色号格式
+
+支持以下色号格式：
+
+| 系列 | 色数 | 示例 |
+|---|---|---|
+| A 系列（黄橙系） | 26 色 | A1, A2, ..., A26 |
+| B 系列（绿色系） | 32 色 | B1, B2, ..., B32 |
+| C 系列（蓝青系） | 29 色 | C1, C2, ..., C29 |
+| D 系列（紫色系） | 26 色 | D1, D2, ..., D26 |
+| E 系列（粉色系） | 24 色 | E1, E2, ..., E24 |
+| F 系列（红色系） | 25 色 | F1, F2, ..., F25 |
+| G 系列（棕色系） | 21 色 | G1, G2, ..., G21 |
+| H 系列（灰黑系） | 23 色 | H1, H2, ..., H23 |
+| M 系列（混色系） | 15 色 | M1, M2, ..., M15 |
+| **合计** | **221 色** | |
 
 ---
 
 ## PNG 色卡导入
 
-把自制的色卡图片（PNG 格式）放入 **`config/mard_pixel/import/`** 目录，然后在色板 UI 中点「导入PNG」按钮，模组会自动：
+把自制的色卡图片（PNG 格式）放入 **`config/mard_pixel/import/`** 目录，然后在主 UI 中使用导入功能，模组会自动：
 
 1. 扫描目录下所有 `.png` 文件
 2. 读取每张图片的所有像素，提取独特颜色（自动去重）
-3. 跳过纯白、纯黑、透明像素（可在源码中调整）
+3. 跳过纯白、纯黑、透明像素
 4. 以文件名作为色系名，自动生成可切换的色系
-5. 保存到 `config/mard_pixel/mard_pixel_imported_palettes.json`（全局共享）
+5. 保存到配置文件（全局共享）
 
 ### 使用步骤
 
 1. 把色卡 PNG 复制到 `config/mard_pixel/import/`（首次运行会自动创建该目录）
-2. 进入游戏，按 **G** 打开色板
-3. 点右上角「导入PNG」按钮
-4. 顶部按钮列表会出现新导入的色系（以文件名命名）
-5. 点击色系按钮 → 显示该色系的所有色块 → 点击色块入包
-6. 选中导入的色系后，点「删除该色系」可移除
+2. 进入游戏，按 **G** 打开主界面
+3. 使用导入功能扫描色卡
+4. 导入的色系可在主 UI 中查看和使用
 
 ### 注意事项
 
 - 图片中的颜色会自动去重，相同颜色只保留一个
 - 色系中的颜色按图片中首次出现的顺序排列
-- 每个色块的编号格式为 `色系名前3字母+序号`（如 `MYC1`, `MYC2`）
-- 导入的色块使用 NBT 染色的自定义方块（`mard_custom`），颜色精确还原
-- 同名色系不会重复导入（跳过已存在的）
 - 支持任意尺寸的 PNG，建议色卡图片不要太大（颜色数量建议 < 500）
 
 ---
@@ -103,14 +121,23 @@
 
 需要：**JDK 17**、**Gradle 8.8**、**Node.js 18+**（都加入 PATH）。
 
-1. 双击运行 **`build.bat`**
-2. 脚本自动：生成资源 → 构建 Forge → 收集 JAR 到 `dist/`
-3. 首次构建会下载 Minecraft/Forge 依赖，耗时较长（网络需可达 maven.minecraftforge.net）
+### 本地构建
 
-也可手动：
+```bash
+cd forge
+gradle build
 ```
-cd forge && gradle build
-```
+
+构建产物位于 `forge/build/libs/` 目录。
+
+### GitHub Actions 云构建
+
+项目已配置 GitHub Actions 自动构建，每次提交到 `main` 分支会自动触发构建：
+
+1. 提交代码到 GitHub 仓库
+2. GitHub Actions 自动运行构建工作流
+3. 构建成功后可在 Actions 页面下载 Artifacts
+4. 下载并解压得到 `mard_pixel_forge-1.2.0.jar`
 
 ---
 
@@ -118,21 +145,54 @@ cd forge && gradle build
 
 ```
 mard-pixel-mod/
-├── build.bat                一键构建脚本
-├── colors/                  数据源（MARD 295 色、外部色卡示例）
-├── shared/                  共享：Java 源码(common) + 资源(assets)
-│   ├── java/com/mard/pixel/common/   共享逻辑（色卡/转换/存储/解析）
-│   └── assets/mard_pixel/            资源（模型、lang、内置品牌色卡）
-├── forge/                   Forge 工程（build.gradle + 主类 + UI）
-├── tools/generate_resources.js  资源生成脚本（Node）
-└── dist/                    构建产物（JAR）
+├── colors/                  颜色数据源（MARD 221 基础色）
+│   └── mard_295.json       221 色数据（code/hex/series）
+├── shared/                  共享：Java 源码 + 资源
+│   ├── java/com/mard/pixel/common/   共享逻辑（色卡/颜色数学/自定义色存储/PNG导入）
+│   └── assets/mard_pixel/            资源（模型、lang、blockstates、item models）
+├── forge/                   Forge 工程
+│   ├── build.gradle         构建配置
+│   └── src/main/java/com/mard/pixel/forge/
+│       ├── MardPixelForge.java       主类（方块/物品注册）
+│       ├── MardBlock.java            基础方块类
+│       ├── MardBlockItem.java        方块物品类（tooltip显示）
+│       ├── MardCustomBlock.java      自定义方块类
+│       ├── MardCustomBlockEntity.java 自定义方块实体
+│       ├── MardNetwork.java          网络包
+│       └── client/
+│           ├── MardPixelForgeClient.java  客户端主类（按键/颜色处理器/tooltip清理）
+│           └── MardColorScreen.java        主UI界面（三按钮/颜色选取/色号输入）
+├── tools/
+│   ├── generate_resources.js  资源生成脚本（Node，生成221个blockstates和item models）
+│   └── verify.js              验证脚本
+├── .github/workflows/
+│   └── build.yml              GitHub Actions 构建配置
+└── README.md                  本说明文件
 ```
+
+---
 
 ## 配置文件
 
-- `config/mard_pixel_custom.json` —— 自定义色号（全局共享）
-- `config/mard_pixel/import/` —— PNG 色卡导入目录（放入 .png 后点「导入PNG」）
+- `config/mard_pixel_custom.json` —— 自定义色号（全局共享，不按存档/版本隔离）
+- `config/mard_pixel/import/` —— PNG 色卡导入目录（放入 .png 后使用导入功能）
 - `config/mard_pixel/mard_pixel_imported_palettes.json` —— 已导入的 PNG 色系数据（自动生成）
+
+---
+
+## 版本历史
+
+| 版本 | 说明 |
+|---|---|
+| v1.2.0 | 清除70个扩展色，校准221基础色色准，优化UI引导词，重构主界面三按钮设计 |
+| v1.1.0 | 添加色号转换功能，支持品牌色号转换 |
+| v1.0.0 | 初始版本，295色基础功能 |
+
+---
+
+## 开源地址
+
+https://github.com/QWERTYUIOP733/-mod-
 
 ## 许可
 
