@@ -470,16 +470,13 @@ public class MardPixelForge {
         tag.putInt("mard_color", bc.rgb());
         tag.putString("mard_brand", bc.brand());
         tag.putString("mard_brand_code", bc.code());
-        // 第一行：品牌+色号（如"Perler P20"）
-        stack.setHoverName(Component.literal(brandDisplay(brand) + " " + bc.code()));
-        // 第二行：RGB值（如"#FF0000"）
-        CompoundTag display = tag.getCompound("display");
-        net.minecraft.nbt.ListTag lore = new net.minecraft.nbt.ListTag();
-        lore.add(net.minecraft.nbt.StringTag.valueOf(
-                net.minecraft.network.chat.Component.Serializer.toJson(
-                        Component.literal("#" + ColorMath.toHex(bc.rgb())).withStyle(ChatFormatting.GRAY))));
-        display.put("Lore", lore);
-        tag.put("display", display);
+        // 两行都作为物品名称：第一行白色品牌色号，第二行灰色RGB值
+        // 使用换行符分隔，中间无空行，背包和物品栏均显示
+        String name = brandDisplay(brand) + " " + bc.code();
+        String hex = "#" + ColorMath.toHex(bc.rgb());
+        stack.setHoverName(Component.literal(name)
+                .append(Component.literal("\n"))
+                .append(Component.literal(hex).withStyle(ChatFormatting.GRAY)));
         return stack;
     }
 
@@ -491,22 +488,15 @@ public class MardPixelForge {
         if (cc != null && cc.code() != null) {
             tag.putString("mard_code", cc.code());
         }
-        // 第一行：颜色编号（如"黄 A1"）
+        // 两行都作为物品名称：第一行白色颜色编号，第二行灰色RGB值
+        // 使用换行符分隔，中间无空行，背包和物品栏均显示
         String name = displayName != null ? displayName
                 : cc != null ? cc.displayName()
                 : "MARD Custom";
-        stack.setHoverName(Component.literal(name));
-
-        // 第二行：RGB值（如"#FFFF00"），添加到物品lore
-        CompoundTag display = tag.getCompound("display");
-        net.minecraft.nbt.ListTag lore = new net.minecraft.nbt.ListTag();
-        String rgbText = "#" + ColorMath.toHex(rgb);
-        lore.add(net.minecraft.nbt.StringTag.valueOf(
-                net.minecraft.network.chat.Component.Serializer.toJson(
-                        Component.literal(rgbText).withStyle(ChatFormatting.GRAY))));
-        display.put("Lore", lore);
-        tag.put("display", display);
-
+        String hex = "#" + ColorMath.toHex(rgb);
+        stack.setHoverName(Component.literal(name)
+                .append(Component.literal("\n"))
+                .append(Component.literal(hex).withStyle(ChatFormatting.GRAY)));
         return stack;
     }
 
