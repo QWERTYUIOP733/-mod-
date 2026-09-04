@@ -109,10 +109,40 @@ public class MardColorScreen extends Screen {
             init();
         }).bounds(btnX, centerY - btnH / 2, btnW, btnH).build());
 
-        // 按钮三：导入外部图纸（保留，附属模组开发中）
+        // 按钮三：导入外部图纸（检测附属模组是否安装）
         addRenderableWidget(Button.builder(Component.literal("导入外部图纸"), btn -> {
-            statusMsg = "导入外部图纸功能在开发中，敬请期待";
+            if (isBlueprintModLoaded()) {
+                // 附属模组已安装，打开图纸导入界面
+                openBlueprintScreen();
+            } else {
+                statusMsg = "导入外部图纸功能在开发中，敬请期待";
+            }
         }).bounds(btnX, centerY + gapY - btnH / 2, btnW, btnH).build());
+    }
+
+    /**
+     * 检测附属模组（MARD Pixel Blueprint）是否已安装。
+     */
+    private boolean isBlueprintModLoaded() {
+        try {
+            Class.forName("com.mard.blueprint.client.MardBlueprintClient");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
+     * 打开附属模组的图纸导入界面。
+     */
+    private void openBlueprintScreen() {
+        try {
+            Class<?> clientClass = Class.forName("com.mard.blueprint.client.MardBlueprintClient");
+            java.lang.reflect.Method openMethod = clientClass.getMethod("openBlueprintScreen");
+            openMethod.invoke(null);
+        } catch (Exception e) {
+            statusMsg = "打开图纸导入界面失败: " + e.getMessage();
+        }
     }
 
     /**
@@ -198,6 +228,7 @@ public class MardColorScreen extends Screen {
 
         g.drawString(font, Component.literal("mod 使用说明"), infoAreaX, infoY, 0xFFFFAA);
 
+        String button3Desc = isBlueprintModLoaded() ? "  导入拼豆图纸生成像素画" : "  附属模组开发中";
         String[] lines = {
             "",
             "MARD 221 色像素画模组",
@@ -210,7 +241,7 @@ public class MardColorScreen extends Screen {
             "  输入色号后放入快捷栏",
             "",
             "按钮三：导入外部图纸",
-            "  附属模组开发中",
+            button3Desc,
             "",
             "按 G 键打开/关闭本界面"
         };
@@ -224,8 +255,13 @@ public class MardColorScreen extends Screen {
             y += lineH;
         }
 
-        // 底部最后一行：按钮三在开发中，敬请期待
-        String bottomText = "按钮三在开发中，敬请期待";
+        // 底部最后一行：根据附属模组是否安装显示不同提示
+        String bottomText;
+        if (isBlueprintModLoaded()) {
+            bottomText = "图纸导入附属模组已加载，点击按钮三使用";
+        } else {
+            bottomText = "按钮三在开发中，敬请期待";
+        }
         g.drawString(font, Component.literal(bottomText),
                 (width - font.width(bottomText)) / 2, height - 35, 0x888888);
 
