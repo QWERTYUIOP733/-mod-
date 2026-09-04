@@ -301,7 +301,7 @@ public class MardColorScreen extends Screen {
         g.drawString(font, Component.literal(title),
                 (width - font.width(title)) / 2, height / 2 - 70, 0xFFFFFF);
 
-        String hint = "输入色号（如 A1、B5、Y7）后点击确认，自动放入快捷栏一组（64个）";
+        String hint = "输入MARD 221基础色色号（A-H/M系列，如 A1、B5、M3）后点击确认，自动放入快捷栏一组（64个）";
         g.drawString(font, Component.literal(hint),
                 (width - font.width(hint)) / 2, height / 2 + 50, 0xAAAAAA);
 
