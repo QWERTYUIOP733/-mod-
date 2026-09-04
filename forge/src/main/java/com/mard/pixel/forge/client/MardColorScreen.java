@@ -23,21 +23,19 @@ import java.util.List;
 /**
  * MARD Pixel Mod 主 UI 界面。
  *
- * 结构：主 UI + 子标签页
- * 1. 色块浏览器 - MARD 295色色块网格，点击给一组方块
- * 2. 自定义色 - PS风格取色器 + 自定义色管理
- * 3. 导入 - PNG色卡导入
+ * 按照设计模板布局：
+ * 主菜单：左侧3个按钮 + 右侧mod说明 + 底部提示
+ * 按钮一：MARD颜色选取 - 展开全部色号，点击给一组，支持连续选择
+ * 按钮二：输入想用的色号 - 输入框，输入后放快捷栏一组
+ * 按钮三：导入外部图纸 - 附属模组，开发中
  */
 public class MardColorScreen extends Screen {
 
-    // ==================== 子标签页枚举 ====================
-    private enum Tab {
-        SWATCHES("色块"),
-        CUSTOM("自定义"),
-        IMPORT("导入");
-
-        final String label;
-        Tab(String label) { this.label = label; }
+    // ==================== 页面枚举 ====================
+    private enum Page {
+        MAIN,       // 主菜单
+        SWATCHES,   // 颜色选取（按钮一）
+        INPUT       // 输入色号（按钮二）
     }
 
     // ==================== 色块数据 ====================
@@ -48,32 +46,17 @@ public class MardColorScreen extends Screen {
 
     // ==================== 布局常量 ====================
     private static final int SW = 20, GAP = 3, COLS = 18;
-    private static final int TAB_BAR_H = 28;
-    private static final int CONTENT_Y = 40;
     private static final Path IMPORT_DIR = FMLPaths.CONFIGDIR.get().resolve("mard_pixel").resolve("import");
 
-    // PS风格取色器布局
-    private static final int PICKER_X = 120, PICKER_Y = 60, PICKER_SIZE = 150;
-    private static final int HUE_X = 290, HUE_Y = 60, HUE_W = 18, HUE_H = 150;
-
     // ==================== 状态 ====================
-    private Tab currentTab = Tab.SWATCHES;
+    private Page currentPage = Page.MAIN;
     private final List<Entry> swatches = new ArrayList<>();
     private final List<Rect> swatchRects = new ArrayList<>();
-    private int scrollOffset = 0; // 色块浏览器滚动偏移
+    private int scrollOffset = 0;
 
-    // 自定义色状态
-    private List<CustomColor> customList = new ArrayList<>();
-    private boolean picking = false;
-    private int curHue = 200, curSat = 80, curVal = 90;
-    private int curColor() { return ColorMath.hsvToRgb(curHue, curSat / 100.0, curVal / 100.0); }
-    private String curName = "";
-    private EditBox nameBox;
+    // 输入色号页面
+    private EditBox inputBox;
     private String statusMsg = "";
-
-    // 拖动状态
-    private boolean draggingPicker = false;
-    private boolean draggingHue = false;
 
     public MardColorScreen() {
         super(Component.literal("MARD 色板"));
@@ -94,57 +77,85 @@ public class MardColorScreen extends Screen {
     protected void init() {
         this.clearWidgets();
 
-        // 子标签页按钮
-        int tabX = 10, tabY = 8, tabW = 70, tabH = 20;
-        for (Tab tab : Tab.values()) {
-            boolean selected = (tab == currentTab);
-            Button b = Button.builder(Component.literal(tab.label), btn -> {
-                currentTab = tab;
-                picking = false;
-                if (tab == Tab.CUSTOM) {
-                    customList = new ArrayList<>(CustomColorStore.all());
-                }
-                init();
-            }).bounds(tabX, tabY, tabW, tabH).build();
-            addRenderableWidget(b);
-            tabX += tabW + 4;
+        switch (currentPage) {
+            case MAIN -> initMainPage();
+            case SWATCHES -> initSwatchesPage();
+            case INPUT -> initInputPage();
         }
+    }
 
-        // 导入标签页：导入按钮
-        if (currentTab == Tab.IMPORT) {
-            addRenderableWidget(Button.builder(Component.literal("导入PNG色卡"), btn -> {
-                importPngPalettes();
-            }).bounds(width / 2 - 80, 80, 160, 24).build());
-        }
+    /**
+     * 主菜单页面：左侧3个按钮 + 右侧说明 + 底部提示。
+     */
+    private void initMainPage() {
+        int btnW = 280, btnH = 36;
+        int btnX = (width - btnW) / 2 - 80; // 偏左
+        int startY = height / 2 - 80;
+        int gapY = 50;
 
-        // 自定义标签页：取色器相关控件
-        if (currentTab == Tab.CUSTOM) {
-            addRenderableWidget(Button.builder(Component.literal(picking ? "取消吸取" : "吸取模式"), btn -> {
-                picking = !picking;
-                statusMsg = picking ? "吸取模式：点击任意色块取色" : "";
-                init();
-            }).bounds(10, height - 32, 90, 20).build());
+        // 按钮一：MARD 颜色选取
+        addRenderableWidget(Button.builder(Component.literal("MARD 颜色选取"), btn -> {
+            currentPage = Page.SWATCHES;
+            scrollOffset = 0;
+            init();
+        }).bounds(btnX, startY, btnW, btnH).build());
 
-            nameBox = new EditBox(font, 10, 230, 100, 16, Component.literal(""));
-            nameBox.setMaxLength(32);
-            nameBox.setValue(curName);
-            addRenderableWidget(nameBox);
+        // 按钮二：输入想用的色号
+        addRenderableWidget(Button.builder(Component.literal("输入想用的色号"), btn -> {
+            currentPage = Page.INPUT;
+            init();
+        }).bounds(btnX, startY + gapY, btnW, btnH).build());
 
-            addRenderableWidget(Button.builder(Component.literal("新增"), btn -> {
-                curName = nameBox.getValue();
-                if (curName.isBlank()) curName = "Custom " + ColorMath.toHex(curColor());
-                MardNetwork.CHANNEL.sendToServer(new MardNetwork.AddCustomPacket(curName, curColor()));
-                statusMsg = "已请求新增自定义色";
-            }).bounds(10, 250, 50, 18).build());
+        // 按钮三：导入外部图纸（占位，开发中）
+        addRenderableWidget(Button.builder(Component.literal("导入外部图纸"), btn -> {
+            statusMsg = "按钮三在开发中，敬请期待";
+        }).bounds(btnX, startY + gapY * 2, btnW, btnH).build());
+    }
 
-            addRenderableWidget(Button.builder(Component.literal("删除末位"), btn -> {
-                if (!customList.isEmpty()) {
-                    CustomColor cc = customList.get(customList.size() - 1);
-                    MardNetwork.CHANNEL.sendToServer(new MardNetwork.RemoveCustomPacket(cc.code()));
-                    statusMsg = "已请求删除 " + cc.code();
-                }
-            }).bounds(65, 250, 60, 18).build());
-        }
+    /**
+     * 颜色选取页面：全部色号网格，点击给一组，支持连续选择。
+     */
+    private void initSwatchesPage() {
+        // 返回按钮
+        addRenderableWidget(Button.builder(Component.literal("← 返回"), btn -> {
+            currentPage = Page.MAIN;
+            statusMsg = "";
+            init();
+        }).bounds(10, 6, 60, 20).build());
+    }
+
+    /**
+     * 输入色号页面：输入框 + 确认按钮。
+     */
+    private void initInputPage() {
+        // 返回按钮
+        addRenderableWidget(Button.builder(Component.literal("← 返回"), btn -> {
+            currentPage = Page.MAIN;
+            statusMsg = "";
+            init();
+        }).bounds(10, 6, 60, 20).build());
+
+        // 输入框
+        int boxW = 200, boxH = 20;
+        int boxX = (width - boxW) / 2;
+        int boxY = height / 2 - 20;
+
+        inputBox = new EditBox(font, boxX, boxY, boxW, boxH, Component.literal(""));
+        inputBox.setMaxLength(16);
+        inputBox.setFocused(true);
+        addRenderableWidget(inputBox);
+
+        // 确认按钮
+        addRenderableWidget(Button.builder(Component.literal("确认放入快捷栏"), btn -> {
+            String code = inputBox.getValue().trim().toUpperCase();
+            if (!code.isEmpty()) {
+                MardNetwork.CHANNEL.sendToServer(new MardNetwork.HotbarPacket(code));
+                statusMsg = "已请求放入快捷栏: " + code;
+                inputBox.setValue("");
+            } else {
+                statusMsg = "请输入色号";
+            }
+        }).bounds(boxX, boxY + 30, boxW, 20).build());
     }
 
     // ==================== 渲染 ====================
@@ -153,249 +164,160 @@ public class MardColorScreen extends Screen {
     public void render(GuiGraphics g, int mx, int my, float partialTick) {
         renderBackground(g);
 
-        // 标题
-        g.drawString(font, Component.literal("MARD 色板"), width - 80, 12, 0xFFFFFF);
-
-        // 状态信息
-        if (!statusMsg.isEmpty()) {
-            g.drawString(font, Component.literal(statusMsg), 10, height - 14, 0xFFFFAA);
-        }
-
-        // 渲染当前子标签页内容
-        switch (currentTab) {
-            case SWATCHES -> renderSwatchesTab(g, mx, my);
-            case CUSTOM -> renderCustomTab(g, mx, my);
-            case IMPORT -> renderImportTab(g);
+        switch (currentPage) {
+            case MAIN -> renderMainPage(g);
+            case SWATCHES -> renderSwatchesPage(g, mx, my);
+            case INPUT -> renderInputPage(g);
         }
 
         super.render(g, mx, my, partialTick);
     }
 
     /**
-     * 色块浏览器标签页：显示全部295色，支持滚动，点击给一组方块。
+     * 主菜单页面渲染。
      */
-    private void renderSwatchesTab(GuiGraphics g, int mx, int my) {
+    private void renderMainPage(GuiGraphics g) {
+        // 标题
+        g.drawString(font, Component.literal("MARD 像素色块 Mod"), width / 2 - 60, 30, 0xFFFFFF);
+
+        // 右侧：mod 使用说明
+        int infoX = width / 2 + 100;
+        int infoY = height / 2 - 100;
+        int infoW = 200;
+
+        // 说明框背景
+        g.fill(infoX - 5, infoY - 5, infoX + infoW + 5, infoY + 180, 0xFF1a1a1a);
+        g.fill(infoX - 4, infoY - 4, infoX + infoW + 4, infoY + 179, 0xFF2a2a2a);
+
+        g.drawString(font, Component.literal("mod 使用说明"), infoX, infoY, 0xFFFFAA);
+
+        String[] lines = {
+            "",
+            "MARD 295 色像素画模组",
+            "",
+            "按钮一：浏览全部色号",
+            "  点击色块获取一组方块",
+            "  支持连续选择",
+            "",
+            "按钮二：输入色号快速获取",
+            "  输入色号后放入快捷栏",
+            "",
+            "按钮三：导入外部图纸",
+            "  附属模组开发中",
+            "",
+            "按 G 键打开/关闭本界面"
+        };
+
+        int y = infoY + 15;
+        for (String line : lines) {
+            g.drawString(font, Component.literal(line), infoX, y, 0xCCCCCC);
+            y += 11;
+        }
+
+        // 底部最后一行：按钮三在开发中，敬请期待
+        g.drawString(font, Component.literal("按钮三在开发中，敬请期待"),
+                width / 2 - 80, height - 30, 0x888888);
+
+        // 状态信息
+        if (!statusMsg.isEmpty()) {
+            g.drawString(font, Component.literal(statusMsg), 10, height - 14, 0xFFFFAA);
+        }
+    }
+
+    /**
+     * 颜色选取页面渲染：全部色号网格，支持滚动。
+     */
+    private void renderSwatchesPage(GuiGraphics g, int mx, int my) {
+        // 标题
+        g.drawString(font, Component.literal("MARD 颜色选取 - 点击色块获取一组（64个）"),
+                80, 12, 0xFFFFFF);
+
         swatchRects.clear();
-        int contentH = height - CONTENT_Y - 20;
-        int cellH = SW + GAP;
+        int contentY = 40;
+        int contentH = height - contentY - 20;
+        int cellH = SW + GAP + 10; // 色块+标签
         int visibleRows = contentH / cellH;
         int totalRows = (int) Math.ceil((double) swatches.size() / COLS);
         int maxScroll = Math.max(0, totalRows - visibleRows);
         if (scrollOffset > maxScroll) scrollOffset = maxScroll;
 
         int startIdx = scrollOffset * COLS;
-        int y = CONTENT_Y;
 
         for (int i = startIdx; i < swatches.size(); i++) {
             int col = (i - startIdx) % COLS;
             int row = (i - startIdx) / COLS;
             if (row >= visibleRows) break;
 
-            int x = 10 + col * (SW + GAP);
-            int yy = y + row * cellH;
+            int x = 10 + col * (SW + GAP + 8);
+            int y = contentY + row * cellH;
             Entry e = swatches.get(i);
-            drawSwatch(g, x, yy, e.rgb(), e.code());
-            swatchRects.add(new Rect(x, yy, SW, SW));
+            drawSwatchWithLabel(g, x, y, e.rgb(), e.code());
+            swatchRects.add(new Rect(x, y, SW, SW + 10));
         }
 
         // 滚动条
         if (totalRows > visibleRows) {
             int barX = width - 8;
-            int barY = CONTENT_Y;
+            int barY = contentY;
             int barH = contentH;
             int thumbH = Math.max(20, barH * visibleRows / totalRows);
-            int thumbY = barY + (barH - thumbH) * scrollOffset / maxScroll;
+            int thumbY = barY + (barH - thumbH) * scrollOffset / Math.max(1, maxScroll);
             g.fill(barX, barY, barX + 4, barY + barH, 0xFF333333);
             g.fill(barX, thumbY, barX + 4, thumbY + thumbH, 0xFF888888);
         }
 
-        // 提示
-        g.drawString(font, Component.literal("点击色块获取一组（64个） | 共" + swatches.size() + "色"),
-                10, height - 14, 0xAAAAAA);
-    }
-
-    /**
-     * 自定义色标签页：PS风格取色器 + 自定义色列表。
-     */
-    private void renderCustomTab(GuiGraphics g, int mx, int my) {
-        // 左侧：当前颜色预览
-        int cur = curColor();
-        g.fill(10, 60, 100, 200, 0xFF000000 | cur);
-        g.drawString(font, Component.literal(String.format("R %d", (cur >> 16) & 0xFF)), 12, 206, 0xFFFFFF);
-        g.drawString(font, Component.literal(String.format("G %d", (cur >> 8) & 0xFF)), 12, 218, 0xFFFFFF);
-        g.drawString(font, Component.literal(String.format("B %d", cur & 0xFF)), 12, 230, 0xFFFFFF);
-        g.drawString(font, Component.literal("HEX " + ColorMath.toHex(cur)), 12, 244, 0xFFFFAA);
-
-        // 中间：PS风格取色方块
-        renderPsPicker(g, PICKER_X, PICKER_Y, PICKER_SIZE, mx, my);
-        g.drawString(font, Component.literal("取色区"), PICKER_X, PICKER_Y - 12, 0xAAAAAA);
-
-        // 右侧：垂直色相条
-        renderHueSlider(g, HUE_X, HUE_Y, HUE_W, HUE_H, mx, my);
-        g.drawString(font, Component.literal("色相"), HUE_X - 2, HUE_Y - 12, 0xAAAAAA);
-
-        // HSV数值
-        g.drawString(font, Component.literal("H " + curHue + "°"), PICKER_X, PICKER_Y + PICKER_SIZE + 6, 0xCCCCCC);
-        g.drawString(font, Component.literal("S " + curSat + "%"), PICKER_X + 50, PICKER_Y + PICKER_SIZE + 6, 0xCCCCCC);
-        g.drawString(font, Component.literal("V " + curVal + "%"), PICKER_X + 100, PICKER_Y + PICKER_SIZE + 6, 0xCCCCCC);
-
-        // 最右侧：已保存的自定义色列表
-        int ly = CONTENT_Y;
-        swatchRects.clear();
-        for (CustomColor cc : customList) {
-            drawSwatch(g, 340, ly, cc.rgb(), cc.displayName());
-            swatchRects.add(new Rect(340, ly, SW, SW));
-            ly += SW + GAP;
-            if (ly > height - 60) break;
+        // 状态信息
+        if (!statusMsg.isEmpty()) {
+            g.drawString(font, Component.literal(statusMsg), 10, height - 14, 0xFFFFAA);
         }
     }
 
     /**
-     * 导入标签页：显示已导入的色系列表。
+     * 输入色号页面渲染。
      */
-    private void renderImportTab(GuiGraphics g) {
-        g.drawString(font, Component.literal("将PNG色卡放入以下目录后点击导入："),
-                width / 2 - 150, 120, 0xAAAAAA);
-        g.drawString(font, Component.literal(IMPORT_DIR.toString()),
-                width / 2 - 150, 136, 0xFFFFAA);
+    private void renderInputPage(GuiGraphics g) {
+        // 标题
+        g.drawString(font, Component.literal("输入想用的色号"),
+                width / 2 - 50, height / 2 - 60, 0xFFFFFF);
 
-        // 已导入的色系列表
-        List<String> names = ImportedPaletteStore.names();
-        if (names.isEmpty()) {
-            g.drawString(font, Component.literal("暂无导入的色系"),
-                    width / 2 - 60, 180, 0x666666);
-        } else {
-            g.drawString(font, Component.literal("已导入的色系（" + names.size() + "个）："),
-                    width / 2 - 150, 170, 0xFFFFFF);
-            int y = 190;
-            for (String name : names) {
-                ImportedPaletteStore.Palette p = ImportedPaletteStore.get(name);
-                int count = p != null ? p.colors.size() : 0;
-                g.drawString(font, Component.literal("• " + name + " (" + count + "色)"),
-                        width / 2 - 140, y, 0xCCCCCC);
-                y += 14;
-                if (y > height - 60) break;
-            }
+        // 提示
+        g.drawString(font, Component.literal("输入色号（如 A1、B5、Y7）后点击确认，自动放入快捷栏一组（64个）"),
+                width / 2 - 200, height / 2 + 70, 0xAAAAAA);
+
+        // 状态信息
+        if (!statusMsg.isEmpty()) {
+            g.drawString(font, Component.literal(statusMsg),
+                    width / 2 - 100, height / 2 + 90, 0xFFFFAA);
         }
     }
 
     // ==================== 绘制辅助 ====================
 
-    private void drawSwatch(GuiGraphics g, int x, int y, int rgb, String label) {
+    private void drawSwatchWithLabel(GuiGraphics g, int x, int y, int rgb, String label) {
         // 边框
         g.fill(x - 1, y - 1, x + SW + 1, y + SW + 1, 0xFF333333);
         // 色块本体
         g.fill(x, y, x + SW, y + SW, 0xFF000000 | rgb);
-        // 色号标签（色块右下角，小字体）
-        String shortLabel = label.length() > 4 ? label.substring(0, 4) : label;
-        g.drawString(font, Component.literal(shortLabel), x + 1, y + SW + 1, 0x999999, false);
-    }
-
-    /**
-     * PS风格取色方块：X轴饱和度，Y轴明度。
-     */
-    private void renderPsPicker(GuiGraphics g, int x, int y, int size, int mx, int my) {
-        for (int py = 0; py < size; py++) {
-            for (int px = 0; px < size; px++) {
-                double sat = (double) px / (size - 1);
-                double val = 1.0 - (double) py / (size - 1);
-                int c = ColorMath.hsvToRgb(curHue, sat, val);
-                g.fill(x + px, y + py, x + px + 1, y + py + 1, 0xFF000000 | c);
-            }
-        }
-        // 边框
-        g.fill(x - 1, y - 1, x + size + 1, y, 0xFF888888);
-        g.fill(x - 1, y + size, x + size + 1, y + size + 1, 0xFF888888);
-        g.fill(x - 1, y - 1, x, y + size + 1, 0xFF888888);
-        g.fill(x + size, y - 1, x + size + 1, y + size + 1, 0xFF888888);
-
-        // 取色指示器
-        int ix = x + (int) ((curSat / 100.0) * (size - 1));
-        int iy = y + (int) ((1 - curVal / 100.0) * (size - 1));
-        for (int dy = -4; dy <= 4; dy++) {
-            for (int dx = -4; dx <= 4; dx++) {
-                double d = Math.sqrt(dx * dx + dy * dy);
-                if (d <= 4 && d >= 2) g.fill(ix + dx, iy + dy, ix + dx + 1, iy + dy + 1, 0xFFFFFFFF);
-                if (d <= 2) g.fill(ix + dx, iy + dy, ix + dx + 1, iy + dy + 1, 0xFF000000);
-            }
-        }
-    }
-
-    /**
-     * 垂直色相条。
-     */
-    private void renderHueSlider(GuiGraphics g, int x, int y, int w, int h, int mx, int my) {
-        for (int py = 0; py < h; py++) {
-            double hue = (double) py / (h - 1) * 360.0;
-            int c = ColorMath.hsvToRgb(hue, 1, 1);
-            g.fill(x, y + py, x + w, y + py + 1, 0xFF000000 | c);
-        }
-        g.fill(x - 1, y - 1, x + w + 1, y, 0xFF888888);
-        g.fill(x - 1, y + h, x + w + 1, y + h + 1, 0xFF888888);
-        g.fill(x - 1, y - 1, x, y + h + 1, 0xFF888888);
-        g.fill(x + w, y - 1, x + w + 1, y + h + 1, 0xFF888888);
-
-        // 色相指示器
-        int sy = y + (int) ((curHue / 360.0) * (h - 1));
-        g.fill(x - 3, sy - 2, x + w + 3, sy + 3, 0xFFFFFFFF);
-        g.fill(x - 2, sy - 1, x + w + 2, sy + 2, 0xFF000000);
+        // 色号标签（色块下方）
+        g.drawString(font, Component.literal(label), x, y + SW + 2, 0x999999, false);
     }
 
     // ==================== 鼠标交互 ====================
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
-        if (button == 0) {
-            // 色块浏览器：点击色块给一组方块
-            if (currentTab == Tab.SWATCHES) {
-                for (int i = 0; i < swatchRects.size(); i++) {
-                    Rect r = swatchRects.get(i);
-                    if (r.hit(mx, my)) {
-                        int idx = scrollOffset * COLS + i;
-                        if (idx < swatches.size()) {
-                            Entry e = swatches.get(idx);
-                            MardNetwork.CHANNEL.sendToServer(new MardNetwork.RequestItemPacket(e.target()));
-                            statusMsg = "已给予一组 " + e.code();
-                        }
-                        return true;
+        if (button == 0 && currentPage == Page.SWATCHES) {
+            // 点击色块给一组方块，支持连续选择（不关闭页面）
+            for (int i = 0; i < swatchRects.size(); i++) {
+                Rect r = swatchRects.get(i);
+                if (r.hit(mx, my)) {
+                    int idx = scrollOffset * COLS + i;
+                    if (idx < swatches.size()) {
+                        Entry e = swatches.get(idx);
+                        MardNetwork.CHANNEL.sendToServer(new MardNetwork.RequestItemPacket(e.target()));
+                        statusMsg = "已给予一组 " + e.code();
                     }
-                }
-            }
-
-            // 自定义色标签页
-            if (currentTab == Tab.CUSTOM) {
-                // PS取色方块点击
-                if (mx >= PICKER_X && mx < PICKER_X + PICKER_SIZE
-                        && my >= PICKER_Y && my < PICKER_Y + PICKER_SIZE) {
-                    curSat = (int) Math.round(Math.max(0, Math.min(1, (mx - PICKER_X) / (double) (PICKER_SIZE - 1))) * 100);
-                    curVal = (int) Math.round(Math.max(0, Math.min(1, 1 - (my - PICKER_Y) / (double) (PICKER_SIZE - 1))) * 100);
-                    draggingPicker = true;
-                    return true;
-                }
-                // 色相条点击
-                if (mx >= HUE_X - 2 && mx < HUE_X + HUE_W + 2
-                        && my >= HUE_Y && my < HUE_Y + HUE_H) {
-                    curHue = (int) Math.round(Math.max(0, Math.min(360, (my - HUE_Y) / (double) (HUE_H - 1) * 360)));
-                    if (curHue >= 360) curHue = 0;
-                    draggingHue = true;
-                    return true;
-                }
-                // 吸取模式：点击自定义色列表取色
-                if (picking) {
-                    for (int i = 0; i < swatchRects.size() && i < customList.size(); i++) {
-                        Rect r = swatchRects.get(i);
-                        if (r.hit(mx, my)) {
-                            CustomColor cc = customList.get(i);
-                            double[] hsv = ColorMath.rgbToHsv(cc.rgb());
-                            curHue = (int) hsv[0];
-                            curSat = (int) Math.round(hsv[1] * 100);
-                            curVal = (int) Math.round(hsv[2] * 100);
-                            statusMsg = "已吸取 " + cc.displayName();
-                            picking = false;
-                            init();
-                            return true;
-                        }
-                    }
+                    return true; // 不关闭页面，支持连续选择
                 }
             }
         }
@@ -403,33 +325,8 @@ public class MardColorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(double mx, double my, int button, double dragX, double dragY) {
-        if (button == 0 && currentTab == Tab.CUSTOM) {
-            if (draggingPicker) {
-                curSat = (int) Math.round(Math.max(0, Math.min(1, (mx - PICKER_X) / (double) (PICKER_SIZE - 1))) * 100);
-                curVal = (int) Math.round(Math.max(0, Math.min(1, 1 - (my - PICKER_Y) / (double) (PICKER_SIZE - 1))) * 100);
-                return true;
-            }
-            if (draggingHue) {
-                curHue = (int) Math.round(Math.max(0, Math.min(360, (my - HUE_Y) / (double) (HUE_H - 1) * 360)));
-                if (curHue >= 360) curHue = 0;
-                return true;
-            }
-        }
-        return super.mouseDragged(mx, my, button, dragX, dragY);
-    }
-
-    @Override
-    public boolean mouseReleased(double mx, double my, int button) {
-        draggingPicker = false;
-        draggingHue = false;
-        return super.mouseReleased(mx, my, button);
-    }
-
-    @Override
     public boolean mouseScrolled(double mx, double my, double delta) {
-        // 色块浏览器：鼠标滚轮滚动
-        if (currentTab == Tab.SWATCHES) {
+        if (currentPage == Page.SWATCHES) {
             scrollOffset -= (int) Math.signum(delta);
             if (scrollOffset < 0) scrollOffset = 0;
             return true;
@@ -439,52 +336,19 @@ public class MardColorScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (nameBox != null && nameBox.isFocused()) {
-            return nameBox.keyPressed(keyCode, scanCode, modifiers);
+        if (inputBox != null && inputBox.isFocused()) {
+            // 回车键确认
+            if (keyCode == 257 || keyCode == 335) { // Enter / Numpad Enter
+                String code = inputBox.getValue().trim().toUpperCase();
+                if (!code.isEmpty()) {
+                    MardNetwork.CHANNEL.sendToServer(new MardNetwork.HotbarPacket(code));
+                    statusMsg = "已请求放入快捷栏: " + code;
+                    inputBox.setValue("");
+                }
+                return true;
+            }
+            return inputBox.keyPressed(keyCode, scanCode, modifiers);
         }
         return super.keyPressed(keyCode, scanCode, modifiers);
-    }
-
-    // ==================== PNG导入 ====================
-
-    private void importPngPalettes() {
-        try {
-            java.nio.file.Files.createDirectories(IMPORT_DIR);
-        } catch (Exception ignored) {}
-
-        File dir = IMPORT_DIR.toFile();
-        if (!dir.exists() || !dir.isDirectory()) {
-            statusMsg = "导入目录不存在，已创建: " + IMPORT_DIR;
-            return;
-        }
-
-        File[] pngFiles = dir.listFiles((d, n) -> n.toLowerCase().endsWith(".png"));
-        if (pngFiles == null || pngFiles.length == 0) {
-            statusMsg = "目录中没有PNG文件: " + IMPORT_DIR;
-            return;
-        }
-
-        int imported = 0, skipped = 0;
-        for (File png : pngFiles) {
-            try {
-                String paletteName = PngImporter.paletteNameFromFile(png);
-                if (ImportedPaletteStore.get(paletteName) != null) {
-                    skipped++;
-                    continue;
-                }
-                PngImporter.Result result = PngImporter.importFromPng(
-                        png, paletteName, 500, true, true, true);
-                if (result.colors.isEmpty()) {
-                    skipped++;
-                    continue;
-                }
-                ImportedPaletteStore.add(paletteName, result.colors, png.getName());
-                imported++;
-            } catch (Exception e) {
-                skipped++;
-            }
-        }
-
-        statusMsg = String.format("导入完成: 新增 %d 个色系, 跳过 %d 个", imported, skipped);
     }
 }

@@ -468,6 +468,44 @@ public class MardPixelForge {
         player.sendSystemMessage(Component.literal("已给予一组 ").append(stack.getHoverName()));
     }
 
+    /**
+     * 输入色号后将一组（64个）对应颜色的方块放入快捷栏（0-8格）。
+     * 若快捷栏已满则放入背包，背包也满则扔到地面。
+     */
+    public static void giveToHotbar(ServerPlayer player, String code) {
+        if (code == null || code.isBlank()) {
+            player.sendSystemMessage(Component.literal("请输入色号").withStyle(ChatFormatting.RED));
+            return;
+        }
+        String target = "MARD:" + code.toUpperCase().trim();
+        ItemStack stack = buildStack(target);
+        if (stack == null || stack.isEmpty()) {
+            player.sendSystemMessage(Component.literal("色号不存在: " + code).withStyle(ChatFormatting.RED));
+            return;
+        }
+        stack.setCount(64);
+
+        // 优先放入快捷栏（0-8格）
+        Inventory inv = player.getInventory();
+        boolean placed = false;
+        for (int i = 0; i < 9; i++) {
+            if (inv.getItem(i).isEmpty()) {
+                inv.setItem(i, stack);
+                placed = true;
+                break;
+            }
+        }
+        // 快捷栏满则放入背包
+        if (!placed) {
+            placed = inv.add(stack);
+        }
+        // 背包也满则扔到地面
+        if (!placed) {
+            player.drop(stack, false);
+        }
+        player.sendSystemMessage(Component.literal("已放入快捷栏一组 ").append(stack.getHoverName()));
+    }
+
     // ==================== 编号循环回收 ====================
 
     /**

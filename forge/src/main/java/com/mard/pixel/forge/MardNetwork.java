@@ -48,6 +48,11 @@ public final class MardNetwork {
                 .decoder(RemoveCustomPacket::decode)
                 .consumerMainThread(MardNetwork::handleRemoveCustom)
                 .add();
+        CHANNEL.messageBuilder(HotbarPacket.class, id++)
+                .encoder(HotbarPacket::encode)
+                .decoder(HotbarPacket::decode)
+                .consumerMainThread(MardNetwork::handleHotbar)
+                .add();
     }
 
     // ==================== 网络包定义 ====================
@@ -125,6 +130,26 @@ public final class MardNetwork {
             if (player != null) MardPixelForge.removeCustom(player, p.code);
         });
         ctx.get().setPacketHandled(true);
+    }
+
+    private static void handleHotbar(HotbarPacket p, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> {
+            ServerPlayer player = ctx.get().getSender();
+            if (player != null) MardPixelForge.giveToHotbar(player, p.code);
+        });
+        ctx.get().setPacketHandled(true);
+    }
+
+    // ==================== 网络包类 ====================
+
+    /**
+     * 输入色号后放入快捷栏。
+     */
+    public static class HotbarPacket {
+        public final String code;
+        public HotbarPacket(String code) { this.code = code; }
+        public static void encode(HotbarPacket p, FriendlyByteBuf buf) { buf.writeUtf(p.code); }
+        public static HotbarPacket decode(FriendlyByteBuf buf) { return new HotbarPacket(buf.readUtf()); }
     }
 
     private MardNetwork() {}
