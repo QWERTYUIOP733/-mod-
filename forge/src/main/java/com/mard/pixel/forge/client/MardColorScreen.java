@@ -17,15 +17,16 @@ import java.util.List;
  * MARD Pixel Mod 主 UI 界面。
  *
  * 布局根据游戏窗口大小动态调整。
- * 主菜单：左侧3个按钮 + 右侧说明 + 底部提示
+ * 主菜单：左侧4个按钮 + 右侧说明 + 底部提示
  * 按钮一：颜色选取 - 全部色号网格，点击给一组，支持连续选择
  * 按钮二：输入色号 - 输入框，输入后放快捷栏一组
  * 按钮三：导入外部图纸 - 附属模组，开发中
+ * 按钮四：导入PNG色卡 - 从图片提取颜色生成色系
  */
 public class MardColorScreen extends Screen {
 
     // ==================== 页面枚举 ====================
-    private enum Page { MAIN, SWATCHES, INPUT }
+    private enum Page { MAIN, SWATCHES, INPUT, IMPORT_PNG }
 
     // ==================== 色块数据 ====================
     private record Entry(String code, int rgb, String target) {}
@@ -77,12 +78,17 @@ public class MardColorScreen extends Screen {
             case MAIN -> initMainPage();
             case SWATCHES -> initSwatchesPage();
             case INPUT -> initInputPage();
+            case IMPORT_PNG -> initImportPngPage();
         }
     }
 
     /**
-     * 主菜单页面：左侧3个按钮 + 右侧说明。
+     * 主菜单页面：左侧4个按钮 + 右侧说明。
      * 按钮区偏左且较窄，说明区保持不变。
+     * 按钮一：MARD 颜色选取
+     * 按钮二：输入想用的色号
+     * 按钮三：导入外部图纸（附属模组，开发中）
+     * 按钮四：导入PNG色卡（从图片提取颜色生成色系）
      */
     private void initMainPage() {
         // 按钮区域：左侧 30% 宽度，按钮偏左且较窄
@@ -91,25 +97,35 @@ public class MardColorScreen extends Screen {
         int btnH = 30;
         int btnX = Math.max(25, (btnAreaW - btnW) / 2 + 8);
         int centerY = height / 2;
-        int gapY = 48;
+        int gapY = 36; // 4个按钮，间距适当减小
+
+        // 4个按钮垂直居中排列
+        int totalH = 4 * btnH + 3 * gapY;
+        int startY = centerY - totalH / 2;
 
         // 按钮一：MARD 颜色选取
         addRenderableWidget(Button.builder(Component.literal("MARD 颜色选取"), btn -> {
             currentPage = Page.SWATCHES;
             scrollOffset = 0;
             init();
-        }).bounds(btnX, centerY - gapY - btnH / 2, btnW, btnH).build());
+        }).bounds(btnX, startY, btnW, btnH).build());
 
         // 按钮二：输入想用的色号
         addRenderableWidget(Button.builder(Component.literal("输入想用的色号"), btn -> {
             currentPage = Page.INPUT;
             init();
-        }).bounds(btnX, centerY - btnH / 2, btnW, btnH).build());
+        }).bounds(btnX, startY + btnH + gapY, btnW, btnH).build());
 
-        // 按钮三：导入外部图纸（占位）
+        // 按钮三：导入外部图纸（保留，附属模组开发中）
         addRenderableWidget(Button.builder(Component.literal("导入外部图纸"), btn -> {
-            statusMsg = "按钮三在开发中，敬请期待";
-        }).bounds(btnX, centerY + gapY - btnH / 2, btnW, btnH).build());
+            statusMsg = "导入外部图纸功能在开发中，敬请期待";
+        }).bounds(btnX, startY + 2 * (btnH + gapY), btnW, btnH).build());
+
+        // 按钮四：导入PNG色卡（新增功能）
+        addRenderableWidget(Button.builder(Component.literal("导入PNG色卡"), btn -> {
+            currentPage = Page.IMPORT_PNG;
+            init();
+        }).bounds(btnX, startY + 3 * (btnH + gapY), btnW, btnH).build());
     }
 
     /**
@@ -148,6 +164,18 @@ public class MardColorScreen extends Screen {
         }).bounds(boxX, boxY + 32, boxW, 22).build());
     }
 
+    /**
+     * 导入PNG色卡页面。
+     * 显示待导入的PNG文件列表和已导入的色系列表。
+     */
+    private void initImportPngPage() {
+        addRenderableWidget(Button.builder(Component.literal("← 返回"), btn -> {
+            currentPage = Page.MAIN;
+            statusMsg = "";
+            init();
+        }).bounds(10, 6, 60, 20).build());
+    }
+
     private void submitCode() {
         if (inputBox == null) return;
         String code = inputBox.getValue().trim().toUpperCase();
@@ -170,6 +198,7 @@ public class MardColorScreen extends Screen {
             case MAIN -> renderMainPage(g);
             case SWATCHES -> renderSwatchesPage(g);
             case INPUT -> renderInputPage(g);
+            case IMPORT_PNG -> renderImportPngPage(g);
         }
 
         super.render(g, mx, my, partialTick);
@@ -197,7 +226,7 @@ public class MardColorScreen extends Screen {
 
         String[] lines = {
             "",
-            "MARD 295 色像素画模组",
+            "MARD 221 色像素画模组",
             "",
             "按钮一：浏览全部色号",
             "  点击色块获取一组方块",
@@ -207,7 +236,10 @@ public class MardColorScreen extends Screen {
             "  输入色号后放入快捷栏",
             "",
             "按钮三：导入外部图纸",
-            "  附属模组开发中",
+            "  附属模组开发中，敬请期待",
+            "",
+            "按钮四：导入PNG色卡",
+            "  从图片提取颜色生成色系",
             "",
             "按 G 键打开/关闭本界面"
         };
@@ -220,11 +252,6 @@ public class MardColorScreen extends Screen {
             }
             y += lineH;
         }
-
-        // 底部最后一行：按钮三在开发中，敬请期待
-        String bottomText = "按钮三在开发中，敬请期待";
-        g.drawString(font, Component.literal(bottomText),
-                (width - font.width(bottomText)) / 2, height - 35, 0x888888);
 
         // 状态信息
         if (!statusMsg.isEmpty()) {
@@ -308,6 +335,82 @@ public class MardColorScreen extends Screen {
         if (!statusMsg.isEmpty()) {
             g.drawString(font, Component.literal(statusMsg),
                     (width - font.width(statusMsg)) / 2, height / 2 + 75, 0xFFFFAA);
+        }
+    }
+
+    /**
+     * 导入PNG色卡页面渲染。
+     * 显示待导入的PNG文件列表和已导入的色系列表。
+     */
+    private void renderImportPngPage(GuiGraphics g) {
+        // 标题
+        String title = "导入PNG色卡";
+        g.drawString(font, Component.literal(title), 80, 12, 0xFFFFFF);
+
+        int contentY = 40;
+        int halfW = (width - 40) / 2;
+
+        // 左侧：待导入的PNG文件
+        int leftX = 20;
+        int leftW = halfW - 10;
+        g.drawString(font, Component.literal("待导入的PNG文件"), leftX, contentY, 0xFFFFAA);
+        g.fill(leftX - 3, contentY + 12, leftX + leftW, contentY + 14, 0xFF444444);
+
+        String importDirHint = "将PNG色卡图片放入 config/mard_pixel/import/ 目录";
+        g.drawString(font, Component.literal(importDirHint), leftX, contentY + 22, 0x888888);
+
+        // 扫描import目录的PNG文件（客户端侧显示）
+        java.io.File importDir = new java.io.File("config/mard_pixel/import");
+        java.io.File[] pngFiles = importDir.exists() ? importDir.listFiles((d, n) -> n.toLowerCase().endsWith(".png")) : null;
+        int fileY = contentY + 40;
+        if (pngFiles != null && pngFiles.length > 0) {
+            for (java.io.File f : pngFiles) {
+                if (fileY + 20 < height - 30) {
+                    g.fill(leftX - 2, fileY - 2, leftX + leftW, fileY + 18, 0xFF2a2a2a);
+                    g.drawString(font, Component.literal("[点击导入] " + f.getName()), leftX, fileY, 0x88FF88);
+                    fileY += 22;
+                }
+            }
+        } else {
+            g.drawString(font, Component.literal("（目录为空或不存在）"), leftX, fileY, 0x666666);
+        }
+
+        // 右侧：已导入的色系
+        int rightX = halfW + 30;
+        int rightW = halfW - 10;
+        g.drawString(font, Component.literal("已导入的色系"), rightX, contentY, 0xFFFFAA);
+        g.fill(rightX - 3, contentY + 12, rightX + rightW, contentY + 14, 0xFF444444);
+
+        int palY = contentY + 22;
+        // 从ImportedPaletteStore获取已导入色系
+        try {
+            java.util.List<?> palettes = (java.util.List<?>) Class.forName("com.mard.pixel.common.ImportedPaletteStore")
+                    .getMethod("all").invoke(null);
+            if (palettes != null && !palettes.isEmpty()) {
+                for (Object p : palettes) {
+                    if (palY + 20 < height - 30) {
+                        String name = (String) p.getClass().getField("name").get(p);
+                        int size = (int) p.getClass().getMethod("size").invoke(p);
+                        g.fill(rightX - 2, palY - 2, rightX + rightW, palY + 18, 0xFF2a2a2a);
+                        g.drawString(font, Component.literal(name + " (" + size + "色)  [点击查看]"), rightX, palY, 0x88CCFF);
+                        palY += 22;
+                    }
+                }
+            } else {
+                g.drawString(font, Component.literal("（暂无已导入的色系）"), rightX, palY, 0x666666);
+            }
+        } catch (Exception e) {
+            g.drawString(font, Component.literal("（色系数据加载中...）"), rightX, palY, 0x666666);
+        }
+
+        // 底部提示
+        String bottomHint = "PNG导入功能：自动提取图片中的独特颜色，跳过纯白/纯黑/透明像素";
+        g.drawString(font, Component.literal(bottomHint),
+                (width - font.width(bottomHint)) / 2, height - 30, 0x888888);
+
+        // 状态信息
+        if (!statusMsg.isEmpty()) {
+            g.drawString(font, Component.literal(statusMsg), 10, height - 14, 0xFFFFAA);
         }
     }
 
