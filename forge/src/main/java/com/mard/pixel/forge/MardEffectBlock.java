@@ -1,9 +1,6 @@
 package com.mard.pixel.forge;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 
 /**
@@ -82,14 +79,4 @@ public class MardEffectBlock extends MardBlock {
 
     /** 是否为闪粉效果 */
     public boolean isGlitter() { return effectType == EffectType.GLITTER; }
-
-    /**
-     * 半透明方块的渲染提示。
-     * 果冻和闪粉方块使用半透明渲染。
-     */
-    public float getTransparency() {
-        if (effectType == EffectType.JELLY) return 0.65f; // 果冻约65%不透明度
-        if (effectType == EffectType.GLITTER) return 0.5f; // 闪粉约50%不透明度
-        return 1.0f;
-    }
 }

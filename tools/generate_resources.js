@@ -2,12 +2,12 @@
  * MARD 像素画 Mod —— 资源生成脚本（Node.js）
  *
  * 读取 colors/mard_295.json，生成：
- *   1. shared/assets/mard_pixel/blockstates/mard_<code>.json  （295 个）
- *   2. shared/assets/mard_pixel/models/item/mard_<code>.json  （295 个）
+ *   1. shared/assets/mard_pixel/blockstates/mard_<code>.json  （291 个）
+ *   2. shared/assets/mard_pixel/models/item/mard_<code>.json  （291 个）
  *   3. shared/assets/mard_pixel/lang/{en_us,zh_cn}.json        （物品名 + UI 文本）
  *
  * 用法：node tools/generate_resources.js
- * 在 build.bat 中会先运行本脚本再构建。
+ * 在 GitHub Actions 构建流程中会先运行本脚本再构建。
  */
 const fs = require('fs');
 const path = require('path');
