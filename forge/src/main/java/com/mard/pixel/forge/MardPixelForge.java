@@ -35,7 +35,6 @@ import net.minecraftforge.registries.RegistryObject;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -125,65 +124,23 @@ public class MardPixelForge {
     }
 
     /**
-     * 注册创造模式标签页：
-     * 1. 主标签页：全部 295 色 + 自定义色块
-     * 2. 按系列（字母）分类的子标签页：A系列、B系列、...、ZG系列
+     * 注册创造模式标签页。
+     * 只保留一个主标签页，避免标签页臃肿。
+     * 295个色块按色号排序显示，最后是自定义色块。
      */
     private void registerCreativeTabs() {
-        // 收集所有系列（去重并排序）
-        Set<String> seriesSet = new LinkedHashSet<>();
-        for (MardColor mc : MardPalette.COLORS) {
-            seriesSet.add(mc.series());
-        }
-        List<String> seriesList = new ArrayList<>(seriesSet);
-        java.util.Collections.sort(seriesList);
-
-        // 主标签页：全部色块 + 自定义色块
+        // 主标签页：全部295色块 + 自定义色块
         CREATIVE_TABS.register("mard_pixel", () -> CreativeModeTab.builder()
                 .title(Component.translatable("itemGroup.mard_pixel"))
                 .icon(() -> new ItemStack(CUSTOM_ITEM.get()))
                 .displayItems((params, output) -> {
-                    for (MardBlock mb : MARD_BLOCKS) output.accept(new ItemStack(mb));
+                    // 按色号排序显示295个色块
+                    List<MardBlock> sortedBlocks = new ArrayList<>(MARD_BLOCKS);
+                    sortedBlocks.sort((a, b) -> a.code().compareToIgnoreCase(b.code()));
+                    for (MardBlock mb : sortedBlocks) output.accept(new ItemStack(mb));
                     output.accept(new ItemStack(CUSTOM_ITEM.get()));
                 })
                 .build());
-
-        // 按系列分类的子标签页
-        for (String series : seriesList) {
-            final String s = series;
-            CREATIVE_TABS.register("mard_pixel_" + series.toLowerCase(), () -> CreativeModeTab.builder()
-                    .title(Component.literal("MARD " + series + " 系列"))
-                    .icon(() -> findFirstBlockOfSeries(s))
-                    .displayItems((params, output) -> {
-                        for (MardColor mc : MardPalette.COLORS) {
-                            if (mc.series().equals(s)) {
-                                for (MardBlock mb : MARD_BLOCKS) {
-                                    if (mb.code().equalsIgnoreCase(mc.code())) {
-                                        output.accept(new ItemStack(mb));
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    })
-                    .build());
-        }
-    }
-
-    /**
-     * 查找指定系列的第一个色块，用作标签页图标。
-     */
-    private ItemStack findFirstBlockOfSeries(String series) {
-        for (MardColor mc : MardPalette.COLORS) {
-            if (mc.series().equals(series)) {
-                for (MardBlock mb : MARD_BLOCKS) {
-                    if (mb.code().equalsIgnoreCase(mc.code())) {
-                        return new ItemStack(mb);
-                    }
-                }
-            }
-        }
-        return new ItemStack(CUSTOM_ITEM.get());
     }
 
     // ==================== 生命周期事件 ====================
