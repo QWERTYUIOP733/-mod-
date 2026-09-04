@@ -3,12 +3,9 @@ package com.mard.pixel.forge.client;
 import com.mard.pixel.forge.MardBlock;
 import com.mard.pixel.forge.MardBlockItem;
 import com.mard.pixel.forge.MardCustomBlockEntity;
-import com.mard.pixel.forge.MardEffectBlock;
 import com.mard.pixel.forge.MardPixelForge;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -51,8 +48,6 @@ public final class MardPixelForgeClient {
 
     /** Tooltip 中 RGB 值行的标识关键词 */
     private static final String RGB_IDENTIFIER = "RGB";
-    /** Tooltip 中效果类型行的标识关键词 */
-    private static final String EFFECT_IDENTIFIER = "效果:";
 
     // ==================== MOD Bus 事件 ====================
 
@@ -66,28 +61,19 @@ public final class MardPixelForgeClient {
     }
 
     /**
-     * 客户端设置：注册半透明渲染层。
-     * 果冻(R)和闪粉(T)方块使用半透明渲染。
+     * 客户端设置。
+     * 所有色块统一使用不透明渲染。
      */
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> {
-            for (var ro : MardPixelForge.MARD_BLOCK_REFS) {
-                Block block = ro.get();
-                if (block instanceof MardEffectBlock meb && meb.isTransparent()) {
-                    ItemBlockRenderTypes.setRenderLayer(block, RenderType.translucent());
-                }
-            }
-        });
+        // 所有色块统一使用不透明渲染，无需特殊设置
     }
 
     /**
      * 注册方块颜色处理器。
-     * 为 MARD 基础色块和自定义色块设置程序染色（tintindex:0）。
-     * 所有颜色（包括特殊效果色）都统一使用基础 rgb 值染色，
+     * 为 MARD 色块设置程序染色（tintindex:0）。
+     * 所有颜色统一使用基础 rgb 值染色，
      * 确保世界中方块颜色与手中物品颜色完全一致。
-     * 特殊效果（珠光/温变/光变/夜光等）通过方块属性和材质体现，
-     * 不再通过动态颜色变化体现，避免颜色不一致问题。
      *
      * 关键：使用 MARD_BLOCK_REFS（构造函数中已填充）而非 MARD_BLOCKS
      * （onCommonSetup 才填充），否则注册时列表为空导致染色失效。
@@ -105,7 +91,7 @@ public final class MardPixelForgeClient {
                 return mbe.getColor();
             }
             Block block = state.getBlock();
-            // 所有 MARD 色块（包括 MardEffectBlock）统一返回基础 rgb 值
+            // 所有 MARD 色块统一返回基础 rgb 值
             return block instanceof MardBlock mb ? mb.rgb() : 0xFFFFFF;
         }, mardBlocks);
 
@@ -195,14 +181,8 @@ public final class MardPixelForgeClient {
             for (int i = tooltip.size() - 1; i >= 1; i--) {
                 Component line = tooltip.get(i);
                 String text = line != null ? line.getString() : "";
-                // 保留 RGB 值行和效果类型行
-                if (!text.contains(RGB_IDENTIFIER) && !text.contains(EFFECT_IDENTIFIER)) {
-                    // 特殊效果色的中文名行也保留（通过判断物品是否为效果色）
-                    if (stack.getItem() instanceof MardBlockItem mbi
-                            && mbi.getBlock() instanceof MardEffectBlock meb
-                            && meb.getNameCn() != null && text.equals(meb.getNameCn())) {
-                        continue;
-                    }
+                // 只保留 RGB 值行
+                if (!text.contains(RGB_IDENTIFIER)) {
                     tooltip.remove(i);
                 }
             }

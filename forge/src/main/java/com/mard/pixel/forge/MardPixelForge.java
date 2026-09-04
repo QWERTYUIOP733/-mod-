@@ -130,22 +130,14 @@ public class MardPixelForge {
 
     /**
      * 注册 MARD 色块（方块 + 物品）。
-     * 基础色使用 MardBlock，扩展特殊效果色使用 MardEffectBlock。
+     * 所有颜色统一使用 MardBlock。
      * 每个色块使用程序染色（tintindex），色值来自 MardPalette。
      */
     private void registerMardBlocks() {
         for (MardColor mc : MardPalette.COLORS) {
             String blockName = mc.blockName();
-            RegistryObject<Block> blockRef;
-            if (mc.isEffectColor()) {
-                // 扩展特殊效果色：注册 MardEffectBlock
-                blockRef = BLOCKS.register(blockName,
-                        () -> new MardEffectBlock(mc.code(), mc.rgb(), mc.effect(), mc.nameCn()));
-            } else {
-                // 基础色：注册普通 MardBlock
-                blockRef = BLOCKS.register(blockName,
-                        () -> new MardBlock(mc.code(), mc.rgb()));
-            }
+            RegistryObject<Block> blockRef = BLOCKS.register(blockName,
+                    () -> new MardBlock(mc.code(), mc.rgb()));
             ITEMS.register(blockName,
                     () -> new MardBlockItem(blockRef.get(), mc.code(), mc.rgb(), new Item.Properties()));
             MARD_BLOCK_REFS.add(blockRef);

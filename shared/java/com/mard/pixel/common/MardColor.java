@@ -30,11 +30,6 @@ public record MardColor(String code, String hex, String series, int rgb, String 
     public int g() { return (rgb >> 8) & 0xFF; }
     public int b() { return rgb & 0xFF; }
 
-    /** 是否为特殊效果色 */
-    public boolean isEffectColor() {
-        return effect != null && !effect.isEmpty();
-    }
-
     /** 物品/方块注册名后缀：色号小写，如 mard_a1 */
     public String blockName() { return "mard_" + code.toLowerCase(); }
 }

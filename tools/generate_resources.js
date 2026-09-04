@@ -33,14 +33,8 @@ function main() {
     fs.mkdirSync(bsDir, { recursive: true });
     for (const c of colors) {
         const name = 'mard_' + c.code.toLowerCase();
-        // 根据效果类型选择模型：果冻透明用玻璃，透明闪粉用磨砂玻璃，其他用基础
-        let model = "mard_pixel:block/mard_base";
-        if (c.effect && c.effect.includes('果冻')) {
-            model = "mard_pixel:block/mard_glass";
-        } else if (c.effect && c.effect.includes('闪粉')) {
-            model = "mard_pixel:block/mard_frosted_glass";
-        }
-        const bs = { variants: { "": { model: model } } };
+        // 所有颜色统一使用基础模型
+        const bs = { variants: { "": { model: "mard_pixel:block/mard_base" } } };
         fs.writeFileSync(path.join(bsDir, name + '.json'), JSON.stringify(bs));
     }
     // mard_custom 方块的 blockstate

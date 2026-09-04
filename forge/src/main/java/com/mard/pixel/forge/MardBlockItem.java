@@ -42,17 +42,5 @@ public class MardBlockItem extends BlockItem {
         // 第二行：RGB值（灰色），格式 "RGB #FF0000"
         String hex = String.format("#%06X", rgb & 0xFFFFFF);
         tooltip.add(Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY));
-
-        // 特殊效果色：添加效果类型和中文名（青色）
-        if (getBlock() instanceof MardEffectBlock meb) {
-            String effectName = meb.getEffectName();
-            String nameCn = meb.getNameCn();
-            if (effectName != null && !effectName.isEmpty()) {
-                tooltip.add(Component.literal("效果: " + effectName).withStyle(ChatFormatting.AQUA));
-            }
-            if (nameCn != null && !nameCn.isEmpty()) {
-                tooltip.add(Component.literal(nameCn).withStyle(ChatFormatting.LIGHT_PURPLE));
-            }
-        }
     }
 }
