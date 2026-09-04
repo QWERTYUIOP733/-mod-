@@ -98,7 +98,8 @@ public final class MardNetwork {
     private static void handleRequestItem(RequestItemPacket p, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player != null) MardPixelForge.giveRequestedItem(player, p.target);
+            // UI 点击色块时给予一组（64个）方块
+            if (player != null) MardPixelForge.giveRequestedStack(player, p.target);
         });
         ctx.get().setPacketHandled(true);
     }

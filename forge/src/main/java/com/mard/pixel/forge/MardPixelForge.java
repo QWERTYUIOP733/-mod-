@@ -439,7 +439,7 @@ public class MardPixelForge {
     }
 
     /**
-     * 快速给予指定物品（/mardp give 命令）。
+     * 快速给予指定物品（/mardp give 命令），给予1个。
      */
     public static void giveRequestedItem(ServerPlayer player, String target) {
         if (target == null || target.isBlank()) {
@@ -453,6 +453,19 @@ public class MardPixelForge {
         }
         player.getInventory().add(stack);
         player.sendSystemMessage(Component.literal("已给予 ").append(stack.getHoverName()).append(" x" + stack.getCount()));
+    }
+
+    /**
+     * UI 点击色块时给予一组（64个）对应颜色的方块。
+     * 作为快捷标签页的快捷键使用。
+     */
+    public static void giveRequestedStack(ServerPlayer player, String target) {
+        if (target == null || target.isBlank()) return;
+        ItemStack stack = buildStack(target);
+        if (stack == null || stack.isEmpty()) return;
+        stack.setCount(64); // 给予一组（64个）
+        player.getInventory().add(stack);
+        player.sendSystemMessage(Component.literal("已给予一组 ").append(stack.getHoverName()));
     }
 
     // ==================== 编号循环回收 ====================
