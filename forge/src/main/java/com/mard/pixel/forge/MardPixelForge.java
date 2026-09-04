@@ -470,13 +470,18 @@ public class MardPixelForge {
         tag.putInt("mard_color", bc.rgb());
         tag.putString("mard_brand", bc.brand());
         tag.putString("mard_brand_code", bc.code());
-        // 两行都在物品名称中：第一行白色品牌色号，第二行灰色RGB值
-        // 使用换行符分隔，背包和物品栏均显示两行
+        // 第一行（hoverName）：品牌色号（白色）
         String name = brandDisplay(brand) + " " + bc.code();
-        String hex = ColorMath.toHex(bc.rgb()); // toHex()已返回带#号的字符串，如#FF0000
-        stack.setHoverName(Component.literal(name)
-                .append(Component.literal("\n"))
-                .append(Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY)));
+        stack.setHoverName(Component.literal(name));
+        // 第二行（lore）：RGB值（灰色），格式 "RGB #FF0000"
+        String hex = ColorMath.toHex(bc.rgb());
+        CompoundTag display = tag.getCompound("display");
+        net.minecraft.nbt.ListTag lore = new net.minecraft.nbt.ListTag();
+        lore.add(net.minecraft.nbt.StringTag.valueOf(
+                net.minecraft.network.chat.Component.Serializer.toJson(
+                        Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY))));
+        display.put("Lore", lore);
+        tag.put("display", display);
         return stack;
     }
 
@@ -488,15 +493,20 @@ public class MardPixelForge {
         if (cc != null && cc.code() != null) {
             tag.putString("mard_code", cc.code());
         }
-        // 两行都在物品名称中：第一行白色颜色编号，第二行灰色RGB值
-        // 使用换行符分隔，背包和物品栏均显示两行
+        // 第一行（hoverName）：颜色编号（白色）
         String name = displayName != null ? displayName
                 : cc != null ? cc.displayName()
                 : "MARD Custom";
-        String hex = ColorMath.toHex(rgb); // toHex()已返回带#号的字符串，如#FF0000
-        stack.setHoverName(Component.literal(name)
-                .append(Component.literal("\n"))
-                .append(Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY)));
+        stack.setHoverName(Component.literal(name));
+        // 第二行（lore）：RGB值（灰色），格式 "RGB #FF0000"
+        String hex = ColorMath.toHex(rgb);
+        CompoundTag display = tag.getCompound("display");
+        net.minecraft.nbt.ListTag lore = new net.minecraft.nbt.ListTag();
+        lore.add(net.minecraft.nbt.StringTag.valueOf(
+                net.minecraft.network.chat.Component.Serializer.toJson(
+                        Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY))));
+        display.put("Lore", lore);
+        tag.put("display", display);
         return stack;
     }
 
