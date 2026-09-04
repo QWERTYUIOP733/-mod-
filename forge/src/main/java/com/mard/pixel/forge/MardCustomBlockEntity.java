@@ -9,7 +9,7 @@ public class MardCustomBlockEntity extends BlockEntity {
     private int color = 0xFFFFFF;
 
     public MardCustomBlockEntity(BlockPos pos, BlockState state) {
-        super(MardPixelForge.CUSTOM_BE_TYPE.get(), pos, state);
+        super(MardPixelForge.CUSTOM_BLOCK_ENTITY.get(), pos, state);
     }
 
     public void setColor(int c) { this.color = c & 0xFFFFFF; setChanged(); }
