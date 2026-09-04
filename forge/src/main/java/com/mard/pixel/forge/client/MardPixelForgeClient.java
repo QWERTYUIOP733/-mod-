@@ -74,11 +74,11 @@ public class MardPixelForgeClient {
         }
 
         /**
-         * 使用 RenderTooltipEvent.Pre（渲染前最后一刻）清除其他模组添加的蓝色字符。
-         * 比 ItemTooltipEvent 更底层，执行更晚，能彻底清除 JEI/WTHIT 等模组添加的信息。
+         * 使用 RenderTooltipEvent.GatherComponents（组件列表构建时触发）清除其他模组添加的蓝色字符。
+         * 这是Forge 1.20.1中专门用于修改tooltip组件列表的事件，比ItemTooltipEvent更底层。
          */
         @SubscribeEvent(priority = EventPriority.LOWEST)
-        public static void onRenderTooltipPre(RenderTooltipEvent.Pre event) {
+        public static void onGatherTooltipComponents(RenderTooltipEvent.GatherComponents event) {
             // 只处理本模组的物品（MARD色块和自定义色块）
             var stack = event.getItemStack();
             var item = stack.getItem();
@@ -86,16 +86,16 @@ public class MardPixelForgeClient {
             boolean isCustomItem = item == MardPixelForge.CUSTOM_ITEM.get();
             if (!isMardItem && !isCustomItem) return;
 
-            // 获取 tooltip 组件列表（可修改）
-            var components = event.getComponents();
-            if (components == null || components.size() <= 1) return;
+            // 获取 tooltip 元素列表（可修改）
+            var elements = event.getTooltipElements();
+            if (elements == null || elements.size() <= 1) return;
 
             // 从后往前移除，避免索引问题
             // 只保留第一行（物品名称）和包含"RGB"的行（RGB值）
-            for (int i = components.size() - 1; i >= 1; i--) {
-                String text = components.get(i).getString();
+            for (int i = elements.size() - 1; i >= 1; i--) {
+                String text = elements.get(i).getComponent().getString();
                 if (!text.contains("RGB")) {
-                    components.remove(i);
+                    elements.remove(i);
                 }
             }
         }
