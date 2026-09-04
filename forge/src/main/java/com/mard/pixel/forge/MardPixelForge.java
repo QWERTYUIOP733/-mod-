@@ -477,7 +477,7 @@ public class MardPixelForge {
         // 第二行（lore）：RGB值（灰色），根据当前品牌色的rgb生成
         CompoundTag display = tag.getCompound("display");
         net.minecraft.nbt.ListTag lore = new net.minecraft.nbt.ListTag();
-        String hex = "#" + ColorMath.toHex(bc.rgb());
+        String hex = ColorMath.toHex(bc.rgb()); // toHex()已返回带#号的字符串，如#FF0000
         lore.add(net.minecraft.nbt.StringTag.valueOf(
                 net.minecraft.network.chat.Component.Serializer.toJson(
                         Component.literal(hex).withStyle(ChatFormatting.GRAY))));
@@ -504,7 +504,7 @@ public class MardPixelForge {
         // 第二行（lore）：RGB值（灰色），根据当前颜色的rgb生成
         CompoundTag display = tag.getCompound("display");
         net.minecraft.nbt.ListTag lore = new net.minecraft.nbt.ListTag();
-        String hex = "#" + ColorMath.toHex(rgb);
+        String hex = ColorMath.toHex(rgb); // toHex()已返回带#号的字符串，如#FF0000
         lore.add(net.minecraft.nbt.StringTag.valueOf(
                 net.minecraft.network.chat.Component.Serializer.toJson(
                         Component.literal(hex).withStyle(ChatFormatting.GRAY))));
