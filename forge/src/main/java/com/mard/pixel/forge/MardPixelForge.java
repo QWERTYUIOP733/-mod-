@@ -66,6 +66,8 @@ public class MardPixelForge {
     // ==================== 色块引用 ====================
     /** 构造函数中填充的方块引用（用于颜色处理器注册） */
     public static final List<RegistryObject<Block>> MARD_BLOCK_REFS = new ArrayList<>();
+    /** 色号 -> 方块 的快速查找缓存 */
+    public static final java.util.Map<String, MardBlock> MARD_BLOCK_MAP = new java.util.HashMap<>();
     /** 游戏运行时填充的方块列表（用于标签页显示） */
     public static final List<MardBlock> MARD_BLOCKS = new ArrayList<>();
 
@@ -184,9 +186,13 @@ public class MardPixelForge {
 
     private void onCommonSetup(net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent event) {
         MARD_BLOCKS.clear();
+        MARD_BLOCK_MAP.clear();
         for (RegistryObject<Block> ro : MARD_BLOCK_REFS) {
             Block b = ro.get();
-            if (b instanceof MardBlock mb) MARD_BLOCKS.add(mb);
+            if (b instanceof MardBlock mb) {
+                MARD_BLOCKS.add(mb);
+                MARD_BLOCK_MAP.put(mb.code().toUpperCase(), mb);
+            }
         }
     }
 
@@ -338,10 +344,19 @@ public class MardPixelForge {
     }
 
     private static ItemStack buildMardStack(String code) {
+        if (code == null || code.isBlank()) return ItemStack.EMPTY;
+        String key = code.trim().toUpperCase();
+        // 优先使用 Map 缓存（O(1) 查找）
+        MardBlock mb = MARD_BLOCK_MAP.get(key);
+        if (mb != null) return new ItemStack(mb);
+        // 缓存未命中时回退到遍历列表（兼容时序问题）
         MardColor mc = MardPalette.byCode(code);
         if (mc == null) return ItemStack.EMPTY;
-        for (MardBlock mb : MARD_BLOCKS) {
-            if (mb.code().equalsIgnoreCase(mc.code())) return new ItemStack(mb);
+        for (MardBlock block : MARD_BLOCKS) {
+            if (block.code().equalsIgnoreCase(mc.code())) {
+                MARD_BLOCK_MAP.put(block.code().toUpperCase(), block); // 回填缓存
+                return new ItemStack(block);
+            }
         }
         return ItemStack.EMPTY;
     }
