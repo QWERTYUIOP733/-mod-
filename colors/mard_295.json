@@ -1,7 +1,7 @@
 {
-  "palette": "MARD 291色（221基础+70扩展特殊效果色）",
-  "source": "MARD官方扩展色卡 2026修订版",
-  "total": 291,
+  "palette": "MARD 221基础色（官方色卡）",
+  "source": "MARD官方色卡 拼豆图鉴 pd.anqstar.com",
+  "total": 221,
   "series": {
     "A": 26,
     "B": 32,
@@ -11,263 +11,257 @@
     "F": 25,
     "G": 21,
     "H": 23,
-    "M": 15,
-    "P": 23,
-    "Q": 5,
-    "R": 28,
-    "T": 1,
-    "Y": 5,
-    "ZG": 8
+    "M": 15
   },
   "colors": [
     {
       "code": "A1",
-      "hex": "#FAF5CD",
+      "hex": "#FAF4C8",
       "series": "A"
     },
     {
       "code": "A2",
-      "hex": "#FCFED6",
+      "hex": "#FFFFD5",
       "series": "A"
     },
     {
       "code": "A3",
-      "hex": "#FCFF92",
+      "hex": "#FEFF8B",
       "series": "A"
     },
     {
       "code": "A4",
-      "hex": "#F7EC5C",
+      "hex": "#FBED56",
       "series": "A"
     },
     {
       "code": "A5",
-      "hex": "#FFE44B",
+      "hex": "#F4D738",
       "series": "A"
     },
     {
       "code": "A6",
-      "hex": "#FDA951",
+      "hex": "#FEAC4C",
       "series": "A"
     },
     {
       "code": "A7",
-      "hex": "#FA8C4F",
+      "hex": "#FE8B4C",
       "series": "A"
     },
     {
       "code": "A8",
-      "hex": "#F9E045",
+      "hex": "#FFDA45",
       "series": "A"
     },
     {
       "code": "A9",
-      "hex": "#F99C5F",
+      "hex": "#FF995B",
       "series": "A"
     },
     {
       "code": "A10",
-      "hex": "#F47E36",
+      "hex": "#F77C31",
       "series": "A"
     },
     {
       "code": "A11",
-      "hex": "#FEDB99",
+      "hex": "#FFDD99",
       "series": "A"
     },
     {
       "code": "A12",
-      "hex": "#FDA276",
+      "hex": "#FE9F72",
       "series": "A"
     },
     {
       "code": "A13",
-      "hex": "#FEC667",
+      "hex": "#FFC365",
       "series": "A"
     },
     {
       "code": "A14",
-      "hex": "#F85842",
+      "hex": "#FD543D",
       "series": "A"
     },
     {
       "code": "A15",
-      "hex": "#FBF65E",
+      "hex": "#FFF365",
       "series": "A"
     },
     {
       "code": "A16",
-      "hex": "#FEFF97",
+      "hex": "#FFFF9F",
       "series": "A"
     },
     {
       "code": "A17",
-      "hex": "#FDE173",
+      "hex": "#FFE36E",
       "series": "A"
     },
     {
       "code": "A18",
-      "hex": "#FCBF80",
+      "hex": "#FEBE7D",
       "series": "A"
     },
     {
       "code": "A19",
-      "hex": "#FD7E77",
+      "hex": "#FD7C72",
       "series": "A"
     },
     {
       "code": "A20",
-      "hex": "#F9D66E",
+      "hex": "#FFD568",
       "series": "A"
     },
     {
       "code": "A21",
-      "hex": "#FAE393",
+      "hex": "#FFE395",
       "series": "A"
     },
     {
       "code": "A22",
-      "hex": "#EDF878",
+      "hex": "#F4F57D",
       "series": "A"
     },
     {
       "code": "A23",
-      "hex": "#E1C9BD",
+      "hex": "#E6C9B7",
       "series": "A"
     },
     {
       "code": "A24",
-      "hex": "#F3F6A9",
+      "hex": "#F7F8A2",
       "series": "A"
     },
     {
       "code": "A25",
-      "hex": "#FFD785",
+      "hex": "#FFD67D",
       "series": "A"
     },
     {
       "code": "A26",
-      "hex": "#FEC832",
+      "hex": "#FFC830",
       "series": "A"
     },
     {
       "code": "B1",
-      "hex": "#DFF139",
+      "hex": "#E6EE31",
       "series": "B"
     },
     {
       "code": "B2",
-      "hex": "#64F343",
+      "hex": "#63F347",
       "series": "B"
     },
     {
       "code": "B3",
-      "hex": "#9FF685",
+      "hex": "#9EF780",
       "series": "B"
     },
     {
       "code": "B4",
-      "hex": "#5FDF34",
+      "hex": "#5DE035",
       "series": "B"
     },
     {
       "code": "B5",
-      "hex": "#39E158",
+      "hex": "#35E352",
       "series": "B"
     },
     {
       "code": "B6",
-      "hex": "#64E0A4",
+      "hex": "#65E2A6",
       "series": "B"
     },
     {
       "code": "B7",
-      "hex": "#3FAE7C",
+      "hex": "#3DAF80",
       "series": "B"
     },
     {
       "code": "B8",
-      "hex": "#1D9E54",
+      "hex": "#1C9C4F",
       "series": "B"
     },
     {
       "code": "B9",
-      "hex": "#2A5037",
+      "hex": "#27523A",
       "series": "B"
     },
     {
       "code": "B10",
-      "hex": "#9AD1BA",
+      "hex": "#95D3C2",
       "series": "B"
     },
     {
       "code": "B11",
-      "hex": "#627032",
+      "hex": "#5D722A",
       "series": "B"
     },
     {
       "code": "B12",
-      "hex": "#1A6E3D",
+      "hex": "#166F41",
       "series": "B"
     },
     {
       "code": "B13",
-      "hex": "#C8E87D",
+      "hex": "#CAEB7B",
       "series": "B"
     },
     {
       "code": "B14",
-      "hex": "#ACE84C",
+      "hex": "#ADE946",
       "series": "B"
     },
     {
       "code": "B15",
-      "hex": "#305335",
+      "hex": "#2E5132",
       "series": "B"
     },
     {
       "code": "B16",
-      "hex": "#C0ED9C",
+      "hex": "#C5ED9C",
       "series": "B"
     },
     {
       "code": "B17",
-      "hex": "#9EB33E",
+      "hex": "#9BB13A",
       "series": "B"
     },
     {
       "code": "B18",
-      "hex": "#E6ED4F",
+      "hex": "#E6EE49",
       "series": "B"
     },
     {
       "code": "B19",
-      "hex": "#26B78E",
+      "hex": "#24B88C",
       "series": "B"
     },
     {
       "code": "B20",
-      "hex": "#CAEDCF",
+      "hex": "#C2F0CC",
       "series": "B"
     },
     {
       "code": "B21",
-      "hex": "#176268",
+      "hex": "#156A6B",
       "series": "B"
     },
     {
       "code": "B22",
-      "hex": "#0A4241",
+      "hex": "#0B3C43",
       "series": "B"
     },
     {
       "code": "B23",
-      "hex": "#343B1A",
+      "hex": "#303A21",
       "series": "B"
     },
     {
       "code": "B24",
-      "hex": "#E8FAA6",
+      "hex": "#EEFCA5",
       "series": "B"
     },
     {
@@ -277,852 +271,852 @@
     },
     {
       "code": "B26",
-      "hex": "#907C35",
+      "hex": "#8D7A35",
       "series": "B"
     },
     {
       "code": "B27",
-      "hex": "#D0E0AF",
+      "hex": "#CCE1AF",
       "series": "B"
     },
     {
       "code": "B28",
-      "hex": "#9EE5BB",
+      "hex": "#9EE5B9",
       "series": "B"
     },
     {
       "code": "B29",
-      "hex": "#C6DF5F",
+      "hex": "#C5E254",
       "series": "B"
     },
     {
       "code": "B30",
-      "hex": "#E3FBB1",
+      "hex": "#E2FCB1",
       "series": "B"
     },
     {
       "code": "B31",
-      "hex": "#B2E694",
+      "hex": "#B0E792",
       "series": "B"
     },
     {
       "code": "B32",
-      "hex": "#92AD60",
+      "hex": "#9CAB5A",
       "series": "B"
     },
     {
       "code": "C1",
-      "hex": "#FFFEE4",
+      "hex": "#E8FFE7",
       "series": "C"
     },
     {
       "code": "C2",
-      "hex": "#ABF8FE",
+      "hex": "#A9F9FC",
       "series": "C"
     },
     {
       "code": "C3",
-      "hex": "#9EE0F8",
+      "hex": "#A0E2FB",
       "series": "C"
     },
     {
       "code": "C4",
-      "hex": "#44CDFB",
+      "hex": "#41CCFF",
       "series": "C"
     },
     {
       "code": "C5",
-      "hex": "#06ABE3",
+      "hex": "#01ACEB",
       "series": "C"
     },
     {
       "code": "C6",
-      "hex": "#54A7E9",
+      "hex": "#50AAF0",
       "series": "C"
     },
     {
       "code": "C7",
-      "hex": "#3977CC",
+      "hex": "#3677D2",
       "series": "C"
     },
     {
       "code": "C8",
-      "hex": "#0F52BD",
+      "hex": "#0F54C0",
       "series": "C"
     },
     {
       "code": "C9",
-      "hex": "#3349C3",
+      "hex": "#324BCA",
       "series": "C"
     },
     {
       "code": "C10",
-      "hex": "#3DBBE3",
+      "hex": "#3EBCE2",
       "series": "C"
     },
     {
       "code": "C11",
-      "hex": "#2ADED3",
+      "hex": "#28DDDE",
       "series": "C"
     },
     {
       "code": "C12",
-      "hex": "#1E334E",
+      "hex": "#1C334D",
       "series": "C"
     },
     {
       "code": "C13",
-      "hex": "#CDE7FE",
+      "hex": "#CDE8FF",
       "series": "C"
     },
     {
       "code": "C14",
-      "hex": "#D6FDFC",
+      "hex": "#D5FDFF",
       "series": "C"
     },
     {
       "code": "C15",
-      "hex": "#21C5C4",
+      "hex": "#22C4C6",
       "series": "C"
     },
     {
       "code": "C16",
-      "hex": "#1858A2",
+      "hex": "#1557A8",
       "series": "C"
     },
     {
       "code": "C17",
-      "hex": "#02D1F3",
+      "hex": "#04D1F6",
       "series": "C"
     },
     {
       "code": "C18",
-      "hex": "#213244",
+      "hex": "#1D3344",
       "series": "C"
     },
     {
       "code": "C19",
-      "hex": "#188690",
+      "hex": "#1887A2",
       "series": "C"
     },
     {
       "code": "C20",
-      "hex": "#1A70A9",
+      "hex": "#176DAF",
       "series": "C"
     },
     {
       "code": "C21",
-      "hex": "#BEDDFC",
+      "hex": "#BEDDFF",
       "series": "C"
     },
     {
       "code": "C22",
-      "hex": "#6BB1BB",
+      "hex": "#67B4BE",
       "series": "C"
     },
     {
       "code": "C23",
-      "hex": "#C8E2F9",
+      "hex": "#C8E2FF",
       "series": "C"
     },
     {
       "code": "C24",
-      "hex": "#7EC5F9",
+      "hex": "#7CC4FF",
       "series": "C"
     },
     {
       "code": "C25",
-      "hex": "#A9E8E0",
+      "hex": "#A9E5E5",
       "series": "C"
     },
     {
       "code": "C26",
-      "hex": "#42ADD1",
+      "hex": "#3CAED8",
       "series": "C"
     },
     {
       "code": "C27",
-      "hex": "#D0DEEF",
+      "hex": "#D3DFFA",
       "series": "C"
     },
     {
       "code": "C28",
-      "hex": "#BDCEED",
+      "hex": "#BBCFED",
       "series": "C"
     },
     {
       "code": "C29",
-      "hex": "#364A89",
+      "hex": "#34488E",
       "series": "C"
     },
     {
       "code": "D1",
-      "hex": "#ACB7EF",
+      "hex": "#AEB4F2",
       "series": "D"
     },
     {
       "code": "D2",
-      "hex": "#868DD3",
+      "hex": "#858EDD",
       "series": "D"
     },
     {
       "code": "D3",
-      "hex": "#3653AF",
+      "hex": "#2F54AF",
       "series": "D"
     },
     {
       "code": "D4",
-      "hex": "#162C7E",
+      "hex": "#182A84",
       "series": "D"
     },
     {
       "code": "D5",
-      "hex": "#B34EC6",
+      "hex": "#B843C5",
       "series": "D"
     },
     {
       "code": "D6",
-      "hex": "#B37BDC",
+      "hex": "#AC7BDE",
       "series": "D"
     },
     {
       "code": "D7",
-      "hex": "#8758A9",
+      "hex": "#8854B3",
       "series": "D"
     },
     {
       "code": "D8",
-      "hex": "#E3D2FE",
+      "hex": "#E2D3FF",
       "series": "D"
     },
     {
       "code": "D9",
-      "hex": "#D6BAF5",
+      "hex": "#D5B9F8",
       "series": "D"
     },
     {
       "code": "D10",
-      "hex": "#301A49",
+      "hex": "#361851",
       "series": "D"
     },
     {
       "code": "D11",
-      "hex": "#BCBAE2",
+      "hex": "#B9BAE1",
       "series": "D"
     },
     {
       "code": "D12",
-      "hex": "#DC99CE",
+      "hex": "#DE9AD4",
       "series": "D"
     },
     {
       "code": "D13",
-      "hex": "#B5038F",
+      "hex": "#B90095",
       "series": "D"
     },
     {
       "code": "D14",
-      "hex": "#882893",
+      "hex": "#8B279B",
       "series": "D"
     },
     {
       "code": "D15",
-      "hex": "#2F1E8E",
+      "hex": "#2F1F90",
       "series": "D"
     },
     {
       "code": "D16",
-      "hex": "#E2E4F0",
+      "hex": "#E3E1EE",
       "series": "D"
     },
     {
       "code": "D17",
-      "hex": "#C7D3F9",
+      "hex": "#C4D4F6",
       "series": "D"
     },
     {
       "code": "D18",
-      "hex": "#9A64B8",
+      "hex": "#A45EC7",
       "series": "D"
     },
     {
       "code": "D19",
-      "hex": "#D8C2D9",
+      "hex": "#D8C3D7",
       "series": "D"
     },
     {
       "code": "D20",
-      "hex": "#9C34AD",
+      "hex": "#9C32B2",
       "series": "D"
     },
     {
       "code": "D21",
-      "hex": "#940595",
+      "hex": "#9A009B",
       "series": "D"
     },
     {
       "code": "D22",
-      "hex": "#383995",
+      "hex": "#333A95",
       "series": "D"
     },
     {
       "code": "D23",
-      "hex": "#FADBF8",
+      "hex": "#EBDAFC",
       "series": "D"
     },
     {
       "code": "D24",
-      "hex": "#768AE1",
+      "hex": "#7786E5",
       "series": "D"
     },
     {
       "code": "D25",
-      "hex": "#4950C2",
+      "hex": "#494FC7",
       "series": "D"
     },
     {
       "code": "D26",
-      "hex": "#D6C6EB",
+      "hex": "#DFC2F8",
       "series": "D"
     },
     {
       "code": "E1",
-      "hex": "#F6D4CB",
+      "hex": "#FDD3CC",
       "series": "E"
     },
     {
       "code": "E2",
-      "hex": "#FCC1DD",
+      "hex": "#FEC0DF",
       "series": "E"
     },
     {
       "code": "E3",
-      "hex": "#F6BDE8",
+      "hex": "#FFB7E7",
       "series": "E"
     },
     {
       "code": "E4",
-      "hex": "#E9639E",
+      "hex": "#E8649E",
       "series": "E"
     },
     {
       "code": "E5",
-      "hex": "#F1559F",
+      "hex": "#F551A2",
       "series": "E"
     },
     {
       "code": "E6",
-      "hex": "#EC4072",
+      "hex": "#F13D74",
       "series": "E"
     },
     {
       "code": "E7",
-      "hex": "#C63674",
+      "hex": "#C63478",
       "series": "E"
     },
     {
       "code": "E8",
-      "hex": "#FDDBE9",
+      "hex": "#FFDBE9",
       "series": "E"
     },
     {
       "code": "E9",
-      "hex": "#E575C7",
+      "hex": "#E970CC",
       "series": "E"
     },
     {
       "code": "E10",
-      "hex": "#D33997",
+      "hex": "#D33793",
       "series": "E"
     },
     {
       "code": "E11",
-      "hex": "#F7DAD4",
+      "hex": "#FCDDD2",
       "series": "E"
     },
     {
       "code": "E12",
-      "hex": "#F893BF",
+      "hex": "#F78FC3",
       "series": "E"
     },
     {
       "code": "E13",
-      "hex": "#B5026A",
+      "hex": "#B5006D",
       "series": "E"
     },
     {
       "code": "E14",
-      "hex": "#FAD4BF",
+      "hex": "#FFD1BA",
       "series": "E"
     },
     {
       "code": "E15",
-      "hex": "#F5C9CA",
+      "hex": "#F8C7C9",
       "series": "E"
     },
     {
       "code": "E16",
-      "hex": "#FBF4EC",
+      "hex": "#FFF3EB",
       "series": "E"
     },
     {
       "code": "E17",
-      "hex": "#F7E3EC",
+      "hex": "#FFE2EA",
       "series": "E"
     },
     {
       "code": "E18",
-      "hex": "#FBCBDB",
+      "hex": "#FFC7DB",
       "series": "E"
     },
     {
       "code": "E19",
-      "hex": "#F6BBD1",
+      "hex": "#FEBAD5",
       "series": "E"
     },
     {
       "code": "E20",
-      "hex": "#D7C6CE",
+      "hex": "#D8C7D1",
       "series": "E"
     },
     {
       "code": "E21",
-      "hex": "#C09DA4",
+      "hex": "#BD9DA1",
       "series": "E"
     },
     {
       "code": "E22",
-      "hex": "#B58B9F",
+      "hex": "#B785A1",
       "series": "E"
     },
     {
       "code": "E23",
-      "hex": "#937D8A",
+      "hex": "#937A8D",
       "series": "E"
     },
     {
       "code": "E24",
-      "hex": "#DEBEE5",
+      "hex": "#E1BCE8",
       "series": "E"
     },
     {
       "code": "F1",
-      "hex": "#FF9280",
+      "hex": "#FD957B",
       "series": "F"
     },
     {
       "code": "F2",
-      "hex": "#F73D48",
+      "hex": "#FC3D46",
       "series": "F"
     },
     {
       "code": "F3",
-      "hex": "#EF4D3E",
+      "hex": "#F74941",
       "series": "F"
     },
     {
       "code": "F4",
-      "hex": "#F92B40",
+      "hex": "#FC283C",
       "series": "F"
     },
     {
       "code": "F5",
-      "hex": "#E30328",
+      "hex": "#E7002F",
       "series": "F"
     },
     {
       "code": "F6",
-      "hex": "#913635",
+      "hex": "#943630",
       "series": "F"
     },
     {
       "code": "F7",
-      "hex": "#911932",
+      "hex": "#971937",
       "series": "F"
     },
     {
       "code": "F8",
-      "hex": "#BB0126",
+      "hex": "#BC0028",
       "series": "F"
     },
     {
       "code": "F9",
-      "hex": "#E0677A",
+      "hex": "#E2677A",
       "series": "F"
     },
     {
       "code": "F10",
-      "hex": "#874628",
+      "hex": "#8A4526",
       "series": "F"
     },
     {
       "code": "F11",
-      "hex": "#6F321D",
+      "hex": "#5A2121",
       "series": "F"
     },
     {
       "code": "F12",
-      "hex": "#F8516D",
+      "hex": "#FD4E6A",
       "series": "F"
     },
     {
       "code": "F13",
-      "hex": "#F45C45",
+      "hex": "#F35744",
       "series": "F"
     },
     {
       "code": "F14",
-      "hex": "#FCADB2",
+      "hex": "#FFA9AD",
       "series": "F"
     },
     {
       "code": "F15",
-      "hex": "#D50527",
+      "hex": "#D30022",
       "series": "F"
     },
     {
       "code": "F16",
-      "hex": "#F8C0A9",
+      "hex": "#FEC2A6",
       "series": "F"
     },
     {
       "code": "F17",
-      "hex": "#E89B7D",
+      "hex": "#E69C79",
       "series": "F"
     },
     {
       "code": "F18",
-      "hex": "#D07E4A",
+      "hex": "#D37C46",
       "series": "F"
     },
     {
       "code": "F19",
-      "hex": "#BE454A",
+      "hex": "#C1444A",
       "series": "F"
     },
     {
       "code": "F20",
-      "hex": "#C69495",
+      "hex": "#CD9391",
       "series": "F"
     },
     {
       "code": "F21",
-      "hex": "#F2BBC6",
+      "hex": "#F7B4C6",
       "series": "F"
     },
     {
       "code": "F22",
-      "hex": "#F7C3D0",
+      "hex": "#FDC0D0",
       "series": "F"
     },
     {
       "code": "F23",
-      "hex": "#EC806D",
+      "hex": "#F67E66",
       "series": "F"
     },
     {
       "code": "F24",
-      "hex": "#E09DAF",
+      "hex": "#E698AA",
       "series": "F"
     },
     {
       "code": "F25",
-      "hex": "#E84854",
+      "hex": "#E54B4F",
       "series": "F"
     },
     {
       "code": "G1",
-      "hex": "#FFE4D3",
+      "hex": "#FFE2CE",
       "series": "G"
     },
     {
       "code": "G2",
-      "hex": "#FCC6AC",
+      "hex": "#FFC4AA",
       "series": "G"
     },
     {
       "code": "G3",
-      "hex": "#F1C4A5",
+      "hex": "#F4C3A5",
       "series": "G"
     },
     {
       "code": "G4",
-      "hex": "#DCB387",
+      "hex": "#E1B383",
       "series": "G"
     },
     {
       "code": "G5",
-      "hex": "#E7B34E",
+      "hex": "#EDB045",
       "series": "G"
     },
     {
       "code": "G6",
-      "hex": "#F3A014",
+      "hex": "#E99C17",
       "series": "G"
     },
     {
       "code": "G7",
-      "hex": "#98503A",
+      "hex": "#9D5B3E",
       "series": "G"
     },
     {
       "code": "G8",
-      "hex": "#4B2B1C",
+      "hex": "#753832",
       "series": "G"
     },
     {
       "code": "G9",
-      "hex": "#E4B685",
+      "hex": "#E6B483",
       "series": "G"
     },
     {
       "code": "G10",
-      "hex": "#DA8C42",
+      "hex": "#D98C39",
       "series": "G"
     },
     {
       "code": "G11",
-      "hex": "#DAC898",
+      "hex": "#E0C593",
       "series": "G"
     },
     {
       "code": "G12",
-      "hex": "#FEC993",
+      "hex": "#FFC890",
       "series": "G"
     },
     {
       "code": "G13",
-      "hex": "#B2714B",
+      "hex": "#B7714A",
       "series": "G"
     },
     {
       "code": "G14",
-      "hex": "#8B684C",
+      "hex": "#8D614C",
       "series": "G"
     },
     {
       "code": "G15",
-      "hex": "#F6F8E3",
+      "hex": "#FCF9E0",
       "series": "G"
     },
     {
       "code": "G16",
-      "hex": "#F2D8C1",
+      "hex": "#F2D9BA",
       "series": "G"
     },
     {
       "code": "G17",
-      "hex": "#79544E",
+      "hex": "#78524B",
       "series": "G"
     },
     {
       "code": "G18",
-      "hex": "#FFE4D6",
+      "hex": "#FFE4CC",
       "series": "G"
     },
     {
       "code": "G19",
-      "hex": "#DD7D41",
+      "hex": "#E07935",
       "series": "G"
     },
     {
       "code": "G20",
-      "hex": "#A5452F",
+      "hex": "#A94023",
       "series": "G"
     },
     {
       "code": "G21",
-      "hex": "#B38561",
+      "hex": "#B88558",
       "series": "G"
     },
     {
       "code": "H1",
-      "hex": "#FBFBFB",
+      "hex": "#FDFBFF",
       "series": "H"
     },
     {
       "code": "H2",
-      "hex": "#FFFFFF",
+      "hex": "#FEFFFF",
       "series": "H"
     },
     {
       "code": "H3",
-      "hex": "#B4B4B4",
+      "hex": "#B6B1BA",
       "series": "H"
     },
     {
       "code": "H4",
-      "hex": "#878787",
+      "hex": "#89858C",
       "series": "H"
     },
     {
       "code": "H5",
-      "hex": "#464648",
+      "hex": "#48464E",
       "series": "H"
     },
     {
       "code": "H6",
-      "hex": "#2C2C2C",
+      "hex": "#2F2B2F",
       "series": "H"
     },
     {
       "code": "H7",
-      "hex": "#010101",
+      "hex": "#000000",
       "series": "H"
     },
     {
       "code": "H8",
-      "hex": "#E7D6DC",
+      "hex": "#E7D6DB",
       "series": "H"
     },
     {
       "code": "H9",
-      "hex": "#EFEDEE",
+      "hex": "#EDEDED",
       "series": "H"
     },
     {
       "code": "H10",
-      "hex": "#ECEAEB",
+      "hex": "#EEE9EA",
       "series": "H"
     },
     {
       "code": "H11",
-      "hex": "#CDCDCD",
+      "hex": "#CECDD5",
       "series": "H"
     },
     {
       "code": "H12",
-      "hex": "#FDF6EE",
+      "hex": "#FFF5ED",
       "series": "H"
     },
     {
       "code": "H13",
-      "hex": "#F4EFD1",
+      "hex": "#F5ECD2",
       "series": "H"
     },
     {
       "code": "H14",
-      "hex": "#CED7D4",
+      "hex": "#CFD7D3",
       "series": "H"
     },
     {
       "code": "H15",
-      "hex": "#98A6A6",
+      "hex": "#98A6A8",
       "series": "H"
     },
     {
       "code": "H16",
-      "hex": "#1B1213",
+      "hex": "#1D1414",
       "series": "H"
     },
     {
       "code": "H17",
-      "hex": "#F0EEEF",
+      "hex": "#F1EDED",
       "series": "H"
     },
     {
       "code": "H18",
-      "hex": "#FCFFF8",
+      "hex": "#FFFDF0",
       "series": "H"
     },
     {
       "code": "H19",
-      "hex": "#F2EEE5",
+      "hex": "#F6EFE2",
       "series": "H"
     },
     {
       "code": "H20",
-      "hex": "#96A09F",
+      "hex": "#949FA3",
       "series": "H"
     },
     {
       "code": "H21",
-      "hex": "#F8FBE6",
+      "hex": "#FFFBE1",
       "series": "H"
     },
     {
       "code": "H22",
-      "hex": "#CACADA",
+      "hex": "#CACAD4",
       "series": "H"
     },
     {
       "code": "H23",
-      "hex": "#9B9C94",
+      "hex": "#9A9D94",
       "series": "H"
     },
     {
       "code": "M1",
-      "hex": "#BBC6B6",
+      "hex": "#BCC6B8",
       "series": "M"
     },
     {
       "code": "M2",
-      "hex": "#909994",
+      "hex": "#8AA386",
       "series": "M"
     },
     {
       "code": "M3",
-      "hex": "#697E80",
+      "hex": "#697D80",
       "series": "M"
     },
     {
       "code": "M4",
-      "hex": "#E0D4BC",
+      "hex": "#E3D2BC",
       "series": "M"
     },
     {
       "code": "M5",
-      "hex": "#D0CBAE",
+      "hex": "#D0CCAA",
       "series": "M"
     },
     {
       "code": "M6",
-      "hex": "#B0AA86",
+      "hex": "#B0A782",
       "series": "M"
     },
     {
       "code": "M7",
-      "hex": "#B0A796",
+      "hex": "#B4A497",
       "series": "M"
     },
     {
       "code": "M8",
-      "hex": "#AE8082",
+      "hex": "#B38281",
       "series": "M"
     },
     {
       "code": "M9",
-      "hex": "#A88764",
+      "hex": "#A58767",
       "series": "M"
     },
     {
       "code": "M10",
-      "hex": "#C6B2BB",
+      "hex": "#C5B2BC",
       "series": "M"
     },
     {
       "code": "M11",
-      "hex": "#9D7693",
+      "hex": "#9F7594",
       "series": "M"
     },
     {
       "code": "M12",
-      "hex": "#644B51",
+      "hex": "#644749",
       "series": "M"
     },
     {
       "code": "M13",
-      "hex": "#C79266",
+      "hex": "#D19066",
       "series": "M"
     },
     {
       "code": "M14",
-      "hex": "#C37463",
+      "hex": "#C77362",
       "series": "M"
     },
     {
       "code": "M15",
-      "hex": "#747D7A",
+      "hex": "#757D78",
       "series": "M"
     }
   ],
