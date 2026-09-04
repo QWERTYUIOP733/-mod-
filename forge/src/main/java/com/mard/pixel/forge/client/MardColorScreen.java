@@ -82,16 +82,16 @@ public class MardColorScreen extends Screen {
 
     /**
      * 主菜单页面：左侧3个按钮 + 右侧说明。
-     * 所有位置根据窗口大小动态计算。
+     * 按钮区偏左且较窄，说明区保持不变。
      */
     private void initMainPage() {
-        // 按钮区域：左侧 45% 宽度
-        int btnAreaW = (int) (width * 0.45);
-        int btnW = Math.min(300, btnAreaW - 40);
-        int btnH = 36;
-        int btnX = (btnAreaW - btnW) / 2 + 20;
+        // 按钮区域：左侧 35% 宽度，按钮偏左
+        int btnAreaW = (int) (width * 0.35);
+        int btnW = Math.min(220, btnAreaW - 30);
+        int btnH = 32;
+        int btnX = Math.max(30, (btnAreaW - btnW) / 2 + 10);
         int centerY = height / 2;
-        int gapY = 55;
+        int gapY = 50;
 
         // 按钮一：MARD 颜色选取
         addRenderableWidget(Button.builder(Component.literal("MARD 颜色选取"), btn -> {
