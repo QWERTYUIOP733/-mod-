@@ -93,7 +93,7 @@ public class MardPixelForgeClient {
             // 从后往前移除，避免索引问题
             // 只保留第一行（物品名称）和包含"RGB"的行（RGB值）
             for (int i = elements.size() - 1; i >= 1; i--) {
-                String text = elements.get(i).getComponent().getString();
+                String text = elements.get(i).getString();
                 if (!text.contains("RGB")) {
                     elements.remove(i);
                 }
