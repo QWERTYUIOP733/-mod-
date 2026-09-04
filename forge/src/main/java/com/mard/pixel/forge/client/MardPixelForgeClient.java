@@ -11,6 +11,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
@@ -68,6 +69,27 @@ public class MardPixelForgeClient {
             Minecraft mc = Minecraft.getInstance();
             if (OPEN_KEY.consumeClick() && mc.player != null) {
                 mc.setScreen(new MardColorScreen());
+            }
+        }
+
+        @SubscribeEvent
+        public static void onItemTooltip(ItemTooltipEvent event) {
+            // 只处理本模组的物品（MARD色块和自定义色块）
+            var item = event.getItemStack().getItem();
+            boolean isMardItem = item instanceof com.mard.pixel.forge.MardBlockItem;
+            boolean isCustomItem = item == MardPixelForge.CUSTOM_ITEM.get();
+            if (!isMardItem && !isCustomItem) return;
+
+            // 移除其他模组添加的额外信息行（模组名称、标签页名称等）
+            // 保留第一行（物品名称，包含色号和RGB值）
+            var tooltip = event.getToolTip();
+            // 从后往前移除，避免索引问题
+            for (int i = tooltip.size() - 1; i >= 1; i--) {
+                String text = tooltip.get(i).getString();
+                // 移除包含"像素色块"、"系列"、"MARD"等关键词的额外信息行
+                if (text.contains("像素色块") || text.contains("系列") || text.contains("MARD ")) {
+                    tooltip.remove(i);
+                }
             }
         }
     }

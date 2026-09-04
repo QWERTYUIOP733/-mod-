@@ -476,7 +476,7 @@ public class MardPixelForge {
         String hex = ColorMath.toHex(bc.rgb()); // toHex()已返回带#号的字符串，如#FF0000
         stack.setHoverName(Component.literal(name)
                 .append(Component.literal("\n"))
-                .append(Component.literal(hex).withStyle(ChatFormatting.GRAY)));
+                .append(Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY)));
         return stack;
     }
 
@@ -496,7 +496,7 @@ public class MardPixelForge {
         String hex = ColorMath.toHex(rgb); // toHex()已返回带#号的字符串，如#FF0000
         stack.setHoverName(Component.literal(name)
                 .append(Component.literal("\n"))
-                .append(Component.literal(hex).withStyle(ChatFormatting.GRAY)));
+                .append(Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY)));
         return stack;
     }
 
