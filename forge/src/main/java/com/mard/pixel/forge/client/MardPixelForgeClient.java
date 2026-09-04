@@ -10,8 +10,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -73,23 +73,29 @@ public class MardPixelForgeClient {
             }
         }
 
+        /**
+         * 使用 RenderTooltipEvent.Pre（渲染前最后一刻）清除其他模组添加的蓝色字符。
+         * 比 ItemTooltipEvent 更底层，执行更晚，能彻底清除 JEI/WTHIT 等模组添加的信息。
+         */
         @SubscribeEvent(priority = EventPriority.LOWEST)
-        public static void onItemTooltip(ItemTooltipEvent event) {
+        public static void onRenderTooltipPre(RenderTooltipEvent.Pre event) {
             // 只处理本模组的物品（MARD色块和自定义色块）
-            var item = event.getItemStack().getItem();
+            var stack = event.getItemStack();
+            var item = stack.getItem();
             boolean isMardItem = item instanceof com.mard.pixel.forge.MardBlockItem;
             boolean isCustomItem = item == MardPixelForge.CUSTOM_ITEM.get();
             if (!isMardItem && !isCustomItem) return;
 
-            // 移除其他模组添加的额外信息行（模组名称、标签页名称等蓝色字符）
-            // 只保留第一行（物品名称）和包含"RGB"的行（RGB值）
-            var tooltip = event.getToolTip();
+            // 获取 tooltip 组件列表（可修改）
+            var components = event.getComponents();
+            if (components == null || components.size() <= 1) return;
+
             // 从后往前移除，避免索引问题
-            for (int i = tooltip.size() - 1; i >= 1; i--) {
-                String text = tooltip.get(i).getString();
-                // 移除不包含"RGB"的所有额外行
+            // 只保留第一行（物品名称）和包含"RGB"的行（RGB值）
+            for (int i = components.size() - 1; i >= 1; i--) {
+                String text = components.get(i).getString();
                 if (!text.contains("RGB")) {
-                    tooltip.remove(i);
+                    components.remove(i);
                 }
             }
         }
