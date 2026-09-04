@@ -141,40 +141,55 @@ public final class MardPixelForgeClient {
 
     /**
      * 根据温度调整颜色（温变效果）。
-     * 温度高（>0.8）偏红，温度低（<0.2）偏蓝，中间保持原色。
+     * 温度高（>0.9）轻微偏红，温度低（<0.1）轻微偏蓝，中间保持原色。
+     * 效果柔和，确保大多数生物群系下颜色接近原色。
      */
     private static int adjustColorByTemperature(int rgb, float temp) {
         int r = (rgb >> 16) & 0xFF;
         int g = (rgb >> 8) & 0xFF;
         int b = rgb & 0xFF;
-        if (temp > 0.8f) {
-            // 高温：偏红
-            float factor = (temp - 0.8f) * 1.5f;
-            r = Math.min(255, (int)(r + factor * 40));
-            b = Math.max(0, (int)(b - factor * 30));
-        } else if (temp < 0.2f) {
-            // 低温：偏蓝
-            float factor = (0.2f - temp) * 1.5f;
-            b = Math.min(255, (int)(b + factor * 40));
-            r = Math.max(0, (int)(r - factor * 30));
+        if (temp > 0.9f) {
+            // 高温：轻微偏红（最大偏移15）
+            float factor = Math.min(1.0f, (temp - 0.9f) * 5.0f);
+            r = Math.min(255, (int)(r + factor * 15));
+            b = Math.max(0, (int)(b - factor * 10));
+        } else if (temp < 0.1f) {
+            // 低温：轻微偏蓝（最大偏移15）
+            float factor = Math.min(1.0f, (0.1f - temp) * 5.0f);
+            b = Math.min(255, (int)(b + factor * 15));
+            r = Math.max(0, (int)(r - factor * 10));
         }
         return (r << 16) | (g << 8) | b;
     }
 
     /**
      * 根据光照强度调整颜色（光变效果）。
-     * 光照强（>10）显色，光照弱（<5）变淡接近透明/白色。
+     * 强光（>=14）完全显色，弱光（<=2）显示淡色（非纯白），中间渐变。
+     * 效果柔和，确保大多数环境下颜色可辨识。
      */
     private static int adjustColorByLight(int rgb, int light) {
-        if (light >= 12) return rgb; // 强光：完全显色
-        if (light <= 3) return 0xF0F0F0; // 弱光：接近白色/透明
-        float factor = (light - 3) / 9.0f; // 3-12 之间渐变
+        if (light >= 14) return rgb; // 强光：完全显色
+        if (light <= 2) {
+            // 弱光：显示淡色（基础颜色的30%亮度 + 70%白色混合），非纯白
+            int r = (rgb >> 16) & 0xFF;
+            int g = (rgb >> 8) & 0xFF;
+            int b = rgb & 0xFF;
+            r = (int)(r * 0.3f + 0xFF * 0.7f);
+            g = (int)(g * 0.3f + 0xFF * 0.7f);
+            b = (int)(b * 0.3f + 0xFF * 0.7f);
+            return (r << 16) | (g << 8) | b;
+        }
+        // 3-13 之间渐变
+        float factor = (light - 2) / 12.0f;
         int r = (rgb >> 16) & 0xFF;
         int g = (rgb >> 8) & 0xFF;
         int b = rgb & 0xFF;
-        r = (int)(0xF0 + (r - 0xF0) * factor);
-        g = (int)(0xF0 + (g - 0xF0) * factor);
-        b = (int)(0xF0 + (b - 0xF0) * factor);
+        int baseR = (int)(r * 0.3f + 0xFF * 0.7f);
+        int baseG = (int)(g * 0.3f + 0xFF * 0.7f);
+        int baseB = (int)(b * 0.3f + 0xFF * 0.7f);
+        r = (int)(baseR + (r - baseR) * factor);
+        g = (int)(baseG + (g - baseG) * factor);
+        b = (int)(baseB + (b - baseB) * factor);
         return (r << 16) | (g << 8) | b;
     }
 
