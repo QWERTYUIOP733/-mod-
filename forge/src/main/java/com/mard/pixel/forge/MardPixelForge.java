@@ -106,19 +106,46 @@ public class MardPixelForge {
         // 初始化网络和存储
         MardNetwork.init();
         ImportedPaletteStore.init(IMPORTED_PALETTES_DIR);
+
+        // 加载内置颂拼豆标准295色色卡
+        loadBuiltinSongPinDouPalette();
+    }
+
+    /**
+     * 从资源文件加载内置颂拼豆标准295色色卡。
+     */
+    private void loadBuiltinSongPinDouPalette() {
+        try {
+            java.io.InputStream is = getClass().getResourceAsStream("/assets/mard_pixel/palettes/songpindou_295.json");
+            if (is != null) {
+                String json = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+                is.close();
+                ImportedPaletteStore.addBuiltin(json);
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     // ==================== 注册逻辑 ====================
 
     /**
-     * 注册 295 个 MARD 基础色块（方块 + 物品）。
+     * 注册 MARD 色块（方块 + 物品）。
+     * 基础色使用 MardBlock，扩展特殊效果色使用 MardEffectBlock。
      * 每个色块使用程序染色（tintindex），色值来自 MardPalette。
      */
     private void registerMardBlocks() {
         for (MardColor mc : MardPalette.COLORS) {
             String blockName = mc.blockName();
-            RegistryObject<Block> blockRef = BLOCKS.register(blockName,
-                    () -> new MardBlock(mc.code(), mc.rgb()));
+            RegistryObject<Block> blockRef;
+            if (mc.isEffectColor()) {
+                // 扩展特殊效果色：注册 MardEffectBlock
+                blockRef = BLOCKS.register(blockName,
+                        () -> new MardEffectBlock(mc.code(), mc.rgb(), mc.effect(), mc.nameCn()));
+            } else {
+                // 基础色：注册普通 MardBlock
+                blockRef = BLOCKS.register(blockName,
+                        () -> new MardBlock(mc.code(), mc.rgb()));
+            }
             ITEMS.register(blockName,
                     () -> new MardBlockItem(blockRef.get(), mc.code(), mc.rgb(), new Item.Properties()));
             MARD_BLOCK_REFS.add(blockRef);

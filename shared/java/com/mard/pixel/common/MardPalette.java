@@ -7,8 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * MARD 拼豆 295 色标准色卡（dehumaker.cn 拼豆色卡对照表 / MARD 官方色号）。
- * 221 标准 A–H/M + 74 特殊 P/Q/R/T/Y/ZG，共 295 色。
+ * MARD 拼豆标准色卡（MARD官方扩展色卡 2026修订版）。
+ * 221 标准 A–H/M + 70 扩展特殊效果色 P/Q/R/T/Y/ZG，共 291 色。
+ * 扩展色包含：珠光23/温变5/果冻28/闪粉1/夜光5/光变8。
  */
 public final class MardPalette {
 
@@ -89,33 +90,39 @@ public final class MardPalette {
         new MardColor("M7","#B0A796","M"), new MardColor("M8","#AE8082","M"), new MardColor("M9","#A88764","M"),
         new MardColor("M10","#C6B2BB","M"), new MardColor("M11","#9D7693","M"), new MardColor("M12","#644B51","M"),
         new MardColor("M13","#C79266","M"), new MardColor("M14","#C37463","M"), new MardColor("M15","#747D7A","M"),
-        new MardColor("P1","#F9F9F9","P"), new MardColor("P2","#ABABAB","P"), new MardColor("P3","#B6DBAF","P"),
-        new MardColor("P4","#FEA2A3","P"), new MardColor("P5","#EB903F","P"), new MardColor("P6","#63CEA2","P"),
-        new MardColor("P7","#E79273","P"), new MardColor("P8","#ECDB59","P"), new MardColor("P9","#DBD9DA","P"),
-        new MardColor("P10","#DBC7EA","P"), new MardColor("P11","#F1E9D4","P"), new MardColor("P12","#E9EDEE","P"),
-        new MardColor("P13","#ADCBF1","P"), new MardColor("P14","#337BAD","P"), new MardColor("P15","#668575","P"),
-        new MardColor("P16","#FDC24E","P"), new MardColor("P17","#FDA42E","P"), new MardColor("P18","#FEBDA7","P"),
-        new MardColor("P19","#FFDEE9","P"), new MardColor("P20","#FCBFD1","P"), new MardColor("P21","#E8BEC2","P"),
-        new MardColor("P22","#DFAAA4","P"), new MardColor("P23","#A3656A","P"),
-        new MardColor("Q1","#F2A5E8","Q"), new MardColor("Q2","#E9EC91","Q"), new MardColor("Q3","#FFFF00","Q"),
-        new MardColor("Q4","#FFEBFA","Q"), new MardColor("Q5","#76CEDE","Q"),
-        new MardColor("R1","#D40E1F","R"), new MardColor("R2","#F13484","R"), new MardColor("R3","#FB852B","R"),
-        new MardColor("R4","#F8ED33","R"), new MardColor("R5","#32C958","R"), new MardColor("R6","#1EBA93","R"),
-        new MardColor("R7","#1D779C","R"), new MardColor("R8","#1960C8","R"), new MardColor("R9","#945AB1","R"),
-        new MardColor("R10","#F8DA54","R"), new MardColor("R11","#FCECF7","R"), new MardColor("R12","#D8D4D3","R"),
-        new MardColor("R13","#56534E","R"), new MardColor("R14","#A3E7DC","R"), new MardColor("R15","#78CEE7","R"),
-        new MardColor("R16","#3FCDCE","R"), new MardColor("R17","#4E8379","R"), new MardColor("R18","#7DCA9C","R"),
-        new MardColor("R19","#C8E664","R"), new MardColor("R20","#E3CCBA","R"), new MardColor("R21","#A17140","R"),
-        new MardColor("R22","#6B372C","R"), new MardColor("R23","#F6BB6F","R"), new MardColor("R24","#F3C6C0","R"),
-        new MardColor("R25","#C76A62","R"), new MardColor("R26","#D093BC","R"), new MardColor("R27","#E58EAE","R"),
-        new MardColor("R28","#9F85CF","R"),
-        new MardColor("T1","#FCFDFF","T"),
-        new MardColor("Y1","#FF6FB7","Y"), new MardColor("Y2","#FDB583","Y"), new MardColor("Y3","#D8FCA4","Y"),
-        new MardColor("Y4","#91DAFB","Y"), new MardColor("Y5","#E987EA","Y"), new MardColor("Y6","#F7D4B8","Y"),
-        new MardColor("Y7","#F1FA7D","Y"), new MardColor("Y8","#5EE88C","Y"), new MardColor("Y9","#F8F5FE","Y"),
-        new MardColor("ZG1","#DAABB3","ZG"), new MardColor("ZG2","#D6AA87","ZG"), new MardColor("ZG3","#C1BD8D","ZG"),
-        new MardColor("ZG4","#96B69F","ZG"), new MardColor("ZG5","#849DC6","ZG"), new MardColor("ZG6","#94BFE2","ZG"),
-        new MardColor("ZG7","#E2A9D2","ZG"), new MardColor("ZG8","#AB91C0","ZG")
+        // === 扩展特殊效果色（70色，来自MARD官方扩展色卡）===
+        // P 珠光系 23色
+        new MardColor("P1","#FCF8F9","P","珠光","珠光白"), new MardColor("P2","#BDA9AB","P","珠光","珠光粉灰"), new MardColor("P3","#AEDDA9","P","珠光","珠光浅绿"),
+        new MardColor("P4","#FDA49E","P","珠光","珠光珊瑚粉"), new MardColor("P5","#EC8D3D","P","珠光","珠光橘"), new MardColor("P6","#60CFA8","P","珠光","珠光薄荷绿"),
+        new MardColor("P7","#EB9271","P","珠光","珠光肉粉"), new MardColor("P8","#F0D958","P","珠光","珠光金黄"), new MardColor("P9","#D9D9D9","P","珠光","珠光银"),
+        new MardColor("P10","#D5C8E9","P","珠光","珠光浅紫"), new MardColor("P11","#F3ECC8","P","珠光","珠光米黄"), new MardColor("P12","#E6EEF1","P","珠光","珠光浅蓝"),
+        new MardColor("P13","#A9CBF1","P","珠光","珠光天蓝"), new MardColor("P14","#3177B0","P","珠光","珠光湖蓝"), new MardColor("P15","#668575","P","珠光","珠光灰绿"),
+        new MardColor("P16","#FFBE46","P","珠光","珠光橘黄"), new MardColor("P17","#FFA324","P","珠光","珠光深橘"), new MardColor("P18","#FEB89F","P","珠光","珠光浅肤"),
+        new MardColor("P19","#FFE0E8","P","珠光","珠光婴儿粉"), new MardColor("P20","#FEBECF","P","珠光","珠光樱花粉"), new MardColor("P21","#ECBEC0","P","珠光","珠光灰粉"),
+        new MardColor("P22","#E4A89E","P","珠光","珠光暗粉"), new MardColor("P23","#A56269","P","珠光","珠光豆沙红"),
+        // Q 温变系 5色
+        new MardColor("Q1","#F2A5E8","Q","温变","温变粉紫"), new MardColor("Q2","#73B29E","Q","温变","温变青绿"), new MardColor("Q3","#FFFF00","Q","温变","温变亮黄"),
+        new MardColor("Q4","#FFEBFA","Q","温变","温变浅粉"), new MardColor("Q5","#4F5E5B","Q","温变","温变深绿"),
+        // R 果冻系 28色
+        new MardColor("R1","#D50E21","R","果冻透明","果冻红"), new MardColor("R2","#F92E83","R","果冻透明","果冻玫红"), new MardColor("R3","#FD8225","R","果冻透明","果冻橘"),
+        new MardColor("R4","#F8EC31","R","果冻透明","果冻黄"), new MardColor("R5","#34C75B","R","果冻透明","果冻绿"), new MardColor("R6","#25B891","R","果冻透明","果冻青绿"),
+        new MardColor("R7","#17779D","R","果冻透明","果冻湖蓝"), new MardColor("R8","#1B60C3","R","果冻透明","果冻蓝"), new MardColor("R9","#9A56B4","R","果冻透明","果冻紫"),
+        new MardColor("R10","#FFDB4D","R","果冻透明","果冻金黄"), new MardColor("R11","#FFEBFA","R","果冻透明","果冻透粉"), new MardColor("R12","#D8D5CE","R","果冻透明","果冻透灰"),
+        new MardColor("R13","#55514C","R","果冻透明","果冻透黑"), new MardColor("R14","#9EE4DF","R","果冻透明","果冻浅青"), new MardColor("R15","#77CEE9","R","果冻透明","果冻天蓝"),
+        new MardColor("R16","#3DCFCA","R","果冻透明","果冻青色"), new MardColor("R17","#4A867A","R","果冻透明","果冻深绿"), new MardColor("R18","#7FCD9D","R","果冻透明","果冻草绿"),
+        new MardColor("R19","#CDE55D","R","果冻透明","果冻黄绿"), new MardColor("R20","#E8C7B4","R","果冻透明","果冻肤色"), new MardColor("R21","#AD6F3C","R","果冻透明","果冻棕"),
+        new MardColor("R22","#6C372F","R","果冻透明","果冻深棕"), new MardColor("R23","#FEB872","R","果冻透明","果冻浅橘"), new MardColor("R24","#F2C1C0","R","果冻透明","果冻浅粉"),
+        new MardColor("R25","#C9675D","R","果冻透明","果冻豆沙"), new MardColor("R26","#D293BE","R","果冻透明","果冻粉紫"), new MardColor("R27","#EA8CB1","R","果冻透明","果冻玫瑰粉"),
+        new MardColor("R28","#9C87D6","R","果冻透明","果冻薰衣草"),
+        // T 透明闪粉系 1色
+        new MardColor("T1","#E2DFD7","T","透明闪粉","透明闪粉"),
+        // Y 夜光系 5色
+        new MardColor("Y1","#FD6FB4","Y","夜光","夜光粉"), new MardColor("Y2","#FEB481","Y","夜光","夜光橘"), new MardColor("Y3","#D7FAA0","Y","夜光","夜光绿"),
+        new MardColor("Y4","#8BDBFA","Y","夜光","夜光蓝"), new MardColor("Y5","#E987EA","Y","夜光","夜光紫"),
+        // ZG 光变系 8色（照射后参考显色）
+        new MardColor("ZG1","#F28985","ZG","光变(照射后)","光变粉红"), new MardColor("ZG2","#ECA55D","ZG","光变(照射后)","光变橘"), new MardColor("ZG3","#E8CE6A","ZG","光变(照射后)","光变黄"),
+        new MardColor("ZG4","#88C772","ZG","光变(照射后)","光变绿"), new MardColor("ZG5","#718CBF","ZG","光变(照射后)","光变蓝"), new MardColor("ZG6","#77ACD2","ZG","光变(照射后)","光变天蓝"),
+        new MardColor("ZG7","#E88F8C","ZG","光变(照射后)","光变玫红"), new MardColor("ZG8","#AE84BD","ZG","光变(照射后)","光变紫")
     });
 
     public static final Map<String, MardColor> BY_CODE;

@@ -3,9 +3,12 @@ package com.mard.pixel.forge.client;
 import com.mard.pixel.forge.MardBlock;
 import com.mard.pixel.forge.MardBlockItem;
 import com.mard.pixel.forge.MardCustomBlockEntity;
+import com.mard.pixel.forge.MardEffectBlock;
 import com.mard.pixel.forge.MardPixelForge;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -18,6 +21,7 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
@@ -47,6 +51,8 @@ public final class MardPixelForgeClient {
 
     /** Tooltip 中 RGB 值行的标识关键词 */
     private static final String RGB_IDENTIFIER = "RGB";
+    /** Tooltip 中效果类型行的标识关键词 */
+    private static final String EFFECT_IDENTIFIER = "效果:";
 
     // ==================== MOD Bus 事件 ====================
 
@@ -60,8 +66,25 @@ public final class MardPixelForgeClient {
     }
 
     /**
+     * 客户端设置：注册半透明渲染层。
+     * 果冻(R)和闪粉(T)方块使用半透明渲染。
+     */
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        event.enqueueWork(() -> {
+            for (var ro : MardPixelForge.MARD_BLOCK_REFS) {
+                Block block = ro.get();
+                if (block instanceof MardEffectBlock meb && meb.isTransparent()) {
+                    ItemBlockRenderTypes.setRenderLayer(block, RenderType.translucent());
+                }
+            }
+        });
+    }
+
+    /**
      * 注册方块颜色处理器。
      * 为 MARD 基础色块和自定义色块设置程序染色（tintindex:0）。
+     * 特殊效果色实现动态颜色：温变根据温度、光变根据光照。
      *
      * 关键：使用 MARD_BLOCK_REFS（构造函数中已填充）而非 MARD_BLOCKS
      * （onCommonSetup 才填充），否则注册时列表为空导致染色失效。
@@ -72,13 +95,30 @@ public final class MardPixelForgeClient {
                 .map(ro -> ro.get())
                 .toArray(Block[]::new);
 
-        // MARD 基础色块：使用方块本身存储的 rgb 值染色
+        // MARD 色块：使用方块本身存储的 rgb 值染色，特殊效果色实现动态颜色
         event.getBlockColors().register((state, level, pos, tint) -> {
             if (level != null && pos != null
                     && level.getBlockEntity(pos) instanceof MardCustomBlockEntity mbe) {
                 return mbe.getColor();
             }
-            return state.getBlock() instanceof MardBlock mb ? mb.rgb() : 0xFFFFFF;
+            Block block = state.getBlock();
+            if (block instanceof MardEffectBlock meb) {
+                int baseRgb = meb.rgb();
+                // 温变色：根据生物群系温度调整颜色（温度高偏红，温度低偏蓝）
+                if (meb.getEffectType() == MardEffectBlock.EffectType.THERMOCHROMIC
+                        && level != null && pos != null) {
+                    float temp = level.getBiome(pos).value().getTemperature(pos);
+                    return adjustColorByTemperature(baseRgb, temp);
+                }
+                // 光变色：根据天空光照强度调整颜色（光照强显色，光照弱变淡）
+                if (meb.getEffectType() == MardEffectBlock.EffectType.PHOTOCHROMIC
+                        && level != null && pos != null) {
+                    int light = level.getMaxLocalRawBrightness(pos);
+                    return adjustColorByLight(baseRgb, light);
+                }
+                return baseRgb;
+            }
+            return block instanceof MardBlock mb ? mb.rgb() : 0xFFFFFF;
         }, mardBlocks);
 
         // 自定义色块：从 BlockEntity 读取颜色
@@ -89,6 +129,45 @@ public final class MardPixelForgeClient {
             }
             return 0xFFFFFF;
         }, MardPixelForge.CUSTOM_BLOCK.get());
+    }
+
+    /**
+     * 根据温度调整颜色（温变效果）。
+     * 温度高（>0.8）偏红，温度低（<0.2）偏蓝，中间保持原色。
+     */
+    private static int adjustColorByTemperature(int rgb, float temp) {
+        int r = (rgb >> 16) & 0xFF;
+        int g = (rgb >> 8) & 0xFF;
+        int b = rgb & 0xFF;
+        if (temp > 0.8f) {
+            // 高温：偏红
+            float factor = (temp - 0.8f) * 1.5f;
+            r = Math.min(255, (int)(r + factor * 40));
+            b = Math.max(0, (int)(b - factor * 30));
+        } else if (temp < 0.2f) {
+            // 低温：偏蓝
+            float factor = (0.2f - temp) * 1.5f;
+            b = Math.min(255, (int)(b + factor * 40));
+            r = Math.max(0, (int)(r - factor * 30));
+        }
+        return (r << 16) | (g << 8) | b;
+    }
+
+    /**
+     * 根据光照强度调整颜色（光变效果）。
+     * 光照强（>10）显色，光照弱（<5）变淡接近透明/白色。
+     */
+    private static int adjustColorByLight(int rgb, int light) {
+        if (light >= 12) return rgb; // 强光：完全显色
+        if (light <= 3) return 0xF0F0F0; // 弱光：接近白色/透明
+        float factor = (light - 3) / 9.0f; // 3-12 之间渐变
+        int r = (rgb >> 16) & 0xFF;
+        int g = (rgb >> 8) & 0xFF;
+        int b = rgb & 0xFF;
+        r = (int)(0xF0 + (r - 0xF0) * factor);
+        g = (int)(0xF0 + (g - 0xF0) * factor);
+        b = (int)(0xF0 + (b - 0xF0) * factor);
+        return (r << 16) | (g << 8) | b;
     }
 
     /**
@@ -167,7 +246,14 @@ public final class MardPixelForgeClient {
             for (int i = tooltip.size() - 1; i >= 1; i--) {
                 Component line = tooltip.get(i);
                 String text = line != null ? line.getString() : "";
-                if (!text.contains(RGB_IDENTIFIER)) {
+                // 保留 RGB 值行和效果类型行
+                if (!text.contains(RGB_IDENTIFIER) && !text.contains(EFFECT_IDENTIFIER)) {
+                    // 特殊效果色的中文名行也保留（通过判断物品是否为效果色）
+                    if (stack.getItem() instanceof MardBlockItem mbi
+                            && mbi.getBlock() instanceof MardEffectBlock meb
+                            && meb.getNameCn() != null && text.equals(meb.getNameCn())) {
+                        continue;
+                    }
                     tooltip.remove(i);
                 }
             }

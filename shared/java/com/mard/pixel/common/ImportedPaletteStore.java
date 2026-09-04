@@ -138,6 +138,41 @@ public final class ImportedPaletteStore {
         return out;
     }
 
+    /**
+     * 加载内置色系（如颂拼豆标准295色），不保存到配置文件。
+     * 支持颂拼豆 JSON 格式：{ name, colors: [{ code, hex, rgb: [R,G,B] }] }
+     */
+    public static synchronized Palette addBuiltin(String jsonStr) {
+        try {
+            JsonObject root = JsonParser.parseString(jsonStr).getAsJsonObject();
+            String name = root.has("name") ? root.get("name").getAsString() : "Builtin";
+            List<Integer> colors = new ArrayList<>();
+            if (root.has("colors") && root.get("colors").isJsonArray()) {
+                for (JsonElement ce : root.getAsJsonArray("colors")) {
+                    if (ce.isJsonObject()) {
+                        JsonObject co = ce.getAsJsonObject();
+                        if (co.has("hex")) {
+                            colors.add(parseHex(co.get("hex").getAsString()));
+                        } else if (co.has("rgb") && co.get("rgb").isJsonArray()) {
+                            JsonArray rgb = co.getAsJsonArray("rgb");
+                            int r = rgb.get(0).getAsInt() & 0xFF;
+                            int g = rgb.get(1).getAsInt() & 0xFF;
+                            int b = rgb.get(2).getAsInt() & 0xFF;
+                            colors.add((r << 16) | (g << 8) | b);
+                        }
+                    }
+                }
+            }
+            if (!colors.isEmpty()) {
+                Palette p = new Palette(name, colors, "builtin", 0);
+                PALETTES.put(p.name.toLowerCase(Locale.ROOT), p);
+                return p;
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
     public static synchronized int size() { return PALETTES.size(); }
 
     public static synchronized void clear() {
