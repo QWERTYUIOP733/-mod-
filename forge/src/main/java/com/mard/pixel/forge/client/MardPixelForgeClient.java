@@ -106,15 +106,23 @@ public final class MardPixelForgeClient {
                 int baseRgb = meb.rgb();
                 // 温变色：根据生物群系温度调整颜色（温度高偏红，温度低偏蓝）
                 if (meb.getEffectType() == MardEffectBlock.EffectType.THERMOCHROMIC
-                        && level != null && pos != null) {
-                    float temp = level.getBiome(pos).value().getBaseTemperature();
-                    return adjustColorByTemperature(baseRgb, temp);
+                        && level instanceof net.minecraft.world.level.Level lvl && pos != null) {
+                    try {
+                        float temp = lvl.getBiome(pos).value().getBaseTemperature();
+                        return adjustColorByTemperature(baseRgb, temp);
+                    } catch (Exception e) {
+                        return baseRgb;
+                    }
                 }
                 // 光变色：根据天空光照强度调整颜色（光照强显色，光照弱变淡）
                 if (meb.getEffectType() == MardEffectBlock.EffectType.PHOTOCHROMIC
                         && level != null && pos != null) {
-                    int light = level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos);
-                    return adjustColorByLight(baseRgb, light);
+                    try {
+                        int light = level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos);
+                        return adjustColorByLight(baseRgb, light);
+                    } catch (Exception e) {
+                        return baseRgb;
+                    }
                 }
                 return baseRgb;
             }
