@@ -5,7 +5,6 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
@@ -69,19 +68,13 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
 
     /**
      * 更新合成结果。
-     * 只允许合成模组内物品（mard_pixel开头）。
+     * 只允许合成模组内物品。
      */
     private void updateCraftingResult() {
         if (level == null || level.isClientSide) return;
 
         // 创建临时合成容器
-        CraftingContainer craftingContainer = new CraftingContainer(null, 3, 3) {
-            {
-                for (int i = 0; i < GRID_SIZE; i++) {
-                    setItem(i, inventory.getStackInSlot(i).copy());
-                }
-            }
-        };
+        SimpleCraftingContainer craftingContainer = new SimpleCraftingContainer(3, 3, getGridItems());
 
         // 查找匹配的配方
         Optional<CraftingRecipe> recipe = level.getRecipeManager()
@@ -131,7 +124,7 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        ContainerHelper.saveAllItems(tag, getGridItems(), level.registryAccess());
+        ContainerHelper.saveAllItems(tag, getGridItems(), true, level.registryAccess());
         // 保存结果槽
         if (!inventory.getStackInSlot(RESULT_SLOT).isEmpty()) {
             CompoundTag resultTag = new CompoundTag();

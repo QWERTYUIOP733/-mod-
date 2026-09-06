@@ -11,11 +11,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.BlockItem;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -78,7 +78,7 @@ public class MardPixelForge {
                             MARD_CRAFTING_TABLE.get()).build(null));
     public static final RegistryObject<MenuType<MardCraftingMenu>> MARD_CRAFTING_MENU =
             MENUS.register("mard_crafting_menu",
-                    () -> new MenuType<>(MardCraftingMenu::new));
+                    () -> new MenuType<>((id, inv, buf) -> new MardCraftingMenu(id, inv, buf)));
 
     public MardPixelForge() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
