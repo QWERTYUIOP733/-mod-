@@ -25,13 +25,19 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     private static final int BASE_WIDTH = 176;
     private static final int BASE_HEIGHT = 166;
 
-    // 颜色选择列表面板尺寸
-    private static final int COLOR_PANEL_WIDTH = 150;
+    // 颜色选择列表面板尺寸（自适应）
+    private static final int COLOR_PANEL_DEFAULT_WIDTH = 150;
+    private static final int COLOR_PANEL_MIN_WIDTH = 110;
     private static final int COLOR_PANEL_HEIGHT = 166;
+    private static final int COLOR_PANEL_GAP = 6;
+    private static final int COLOR_PANEL_RIGHT_MARGIN = 4;
     private static final int COLOR_ITEM_HEIGHT = 22;
     private static final int COLOR_SWATCH_SIZE = 16;
     private static final int COLOR_TEXT_PADDING = 6;
-    private static final int MAX_VISIBLE_COLORS = (COLOR_PANEL_HEIGHT - 20) / COLOR_ITEM_HEIGHT;
+
+    // 运行时计算的面板宽度（根据窗口大小自适应）
+    private int panelWidth = COLOR_PANEL_DEFAULT_WIDTH;
+    private int maxVisibleColors = (COLOR_PANEL_HEIGHT - 20) / COLOR_ITEM_HEIGHT;
 
     // 颜色选择列表滚动偏移
     private int scrollOffset = 0;
@@ -52,6 +58,30 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
         // 玩家背包标签位置
         this.inventoryLabelX = 8;
         this.inventoryLabelY = this.imageHeight - 94;
+
+        // 根据窗口大小计算面板宽度（自适应）
+        updatePanelWidth();
+    }
+
+    /**
+     * 根据窗口大小计算颜色面板宽度。
+     * 面板始终放在主界面右侧，宽度根据可用空间动态调整。
+     */
+    private void updatePanelWidth() {
+        int screenWidth = this.minecraft.getWindow().getGuiScaledWidth();
+        int mainRight = this.leftPos + BASE_WIDTH;
+        int availableWidth = screenWidth - mainRight - COLOR_PANEL_GAP - COLOR_PANEL_RIGHT_MARGIN;
+
+        // 面板宽度：在最小值和默认值之间取合适值
+        panelWidth = Math.max(COLOR_PANEL_MIN_WIDTH, Math.min(COLOR_PANEL_DEFAULT_WIDTH, availableWidth));
+
+        // 重新计算可见颜色数
+        maxVisibleColors = (COLOR_PANEL_HEIGHT - 20) / COLOR_ITEM_HEIGHT;
+
+        // 确保滚动偏移在有效范围内
+        int totalColors = MardPalette.COLORS.size();
+        int maxOffset = Math.max(0, totalColors - maxVisibleColors);
+        scrollOffset = Math.min(scrollOffset, maxOffset);
     }
 
     @Override
@@ -142,22 +172,22 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
         int panelY = bounds[1];
 
         // 绘制面板背景
-        graphics.fill(panelX, panelY, panelX + COLOR_PANEL_WIDTH, panelY + COLOR_PANEL_HEIGHT, 0xFFC6C6C6);
+        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + COLOR_PANEL_HEIGHT, 0xFFC6C6C6);
         // 面板边框
-        graphics.fill(panelX, panelY, panelX + COLOR_PANEL_WIDTH, panelY + 1, 0xFFFFFFFF);
+        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + 1, 0xFFFFFFFF);
         graphics.fill(panelX, panelY, panelX + 1, panelY + COLOR_PANEL_HEIGHT, 0xFFFFFFFF);
-        graphics.fill(panelX, panelY + COLOR_PANEL_HEIGHT - 1, panelX + COLOR_PANEL_WIDTH, panelY + COLOR_PANEL_HEIGHT, 0xFF373737);
-        graphics.fill(panelX + COLOR_PANEL_WIDTH - 1, panelY, panelX + COLOR_PANEL_WIDTH, panelY + COLOR_PANEL_HEIGHT, 0xFF373737);
+        graphics.fill(panelX, panelY + COLOR_PANEL_HEIGHT - 1, panelX + panelWidth, panelY + COLOR_PANEL_HEIGHT, 0xFF373737);
+        graphics.fill(panelX + panelWidth - 1, panelY, panelX + panelWidth, panelY + COLOR_PANEL_HEIGHT, 0xFF373737);
 
         // 绘制标题栏背景
-        graphics.fill(panelX + 1, panelY + 1, panelX + COLOR_PANEL_WIDTH - 1, panelY + 14, 0xFF8B8B8B);
+        graphics.fill(panelX + 1, panelY + 1, panelX + panelWidth - 1, panelY + 14, 0xFF8B8B8B);
         // 绘制标题
         graphics.drawString(this.font, net.minecraft.network.chat.Component.translatable("screen.mard_pixel.crafting.select_color"), panelX + 4, panelY + 4, 0xFFFFFFFF, false);
 
         // 计算可见的颜色范围
         int totalColors = MardPalette.COLORS.size();
         int startIndex = Math.max(0, Math.min(scrollOffset, totalColors - 1));
-        int endIndex = Math.min(startIndex + MAX_VISIBLE_COLORS, totalColors);
+        int endIndex = Math.min(startIndex + maxVisibleColors, totalColors);
 
         // 颜色列表起始Y位置
         int listStartY = panelY + 18;
@@ -169,7 +199,7 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
 
             // 选中项高亮背景
             if (color.code().equals(selectedColor)) {
-                graphics.fill(panelX + 2, itemY, panelX + COLOR_PANEL_WIDTH - 2, itemY + COLOR_ITEM_HEIGHT - 1, 0xFF90EE90);
+                graphics.fill(panelX + 2, itemY, panelX + panelWidth - 2, itemY + COLOR_ITEM_HEIGHT - 1, 0xFF90EE90);
             }
 
             // 绘制颜色方块（带边框）
@@ -180,7 +210,7 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
 
             // 文字区域起始X位置
             int textX = swatchX + COLOR_SWATCH_SIZE + COLOR_TEXT_PADDING;
-            int textWidth = COLOR_PANEL_WIDTH - (textX - panelX) - 8; // 留出滚动条空间
+            int textWidth = panelWidth - (textX - panelX) - 8; // 留出滚动条空间
 
             // 绘制颜色介绍（色号 + RGB）
             String codeText = color.code();
@@ -193,12 +223,12 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
         }
 
         // 绘制滚动条
-        if (totalColors > MAX_VISIBLE_COLORS) {
-            int scrollbarX = panelX + COLOR_PANEL_WIDTH - 6;
+        if (totalColors > maxVisibleColors) {
+            int scrollbarX = panelX + panelWidth - 6;
             int scrollbarY = listStartY;
             int scrollbarHeight = COLOR_PANEL_HEIGHT - 22;
-            int thumbHeight = Math.max(20, (int) ((float) MAX_VISIBLE_COLORS / totalColors * scrollbarHeight));
-            int maxOffset = Math.max(0, totalColors - MAX_VISIBLE_COLORS);
+            int thumbHeight = Math.max(20, (int) ((float) maxVisibleColors / totalColors * scrollbarHeight));
+            int maxOffset = Math.max(0, totalColors - maxVisibleColors);
             int thumbY = scrollbarY + (maxOffset > 0 ? (int) ((float) scrollOffset / maxOffset * (scrollbarHeight - thumbHeight)) : 0);
 
             // 滚动条背景
@@ -209,17 +239,14 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     }
 
     /**
-     * 计算颜色选择面板的位置（包含屏幕边界检测）。
+     * 计算颜色选择面板的位置（始终在主界面右侧，宽度已自适应）。
      */
     private int[] getColorPanelBounds() {
-        int panelX = this.leftPos + BASE_WIDTH + 6;
-        int panelY = this.topPos;
+        // 每次调用时重新计算宽度，确保窗口大小变化时及时响应
+        updatePanelWidth();
 
-        // 屏幕边界检测
-        int screenWidth = this.minecraft.getWindow().getGuiScaledWidth();
-        if (panelX + COLOR_PANEL_WIDTH > screenWidth) {
-            panelX = this.leftPos - COLOR_PANEL_WIDTH - 6;
-        }
+        int panelX = this.leftPos + BASE_WIDTH + COLOR_PANEL_GAP;
+        int panelY = this.topPos;
 
         return new int[]{panelX, panelY};
     }
@@ -233,10 +260,10 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
             int panelY = bounds[1];
             int listStartY = panelY + 18;
 
-            if (mouseX >= panelX && mouseX <= panelX + COLOR_PANEL_WIDTH &&
+            if (mouseX >= panelX && mouseX <= panelX + panelWidth &&
                 mouseY >= listStartY && mouseY <= panelY + COLOR_PANEL_HEIGHT) {
                 int totalColors = MardPalette.COLORS.size();
-                int maxOffset = Math.max(0, totalColors - MAX_VISIBLE_COLORS);
+                int maxOffset = Math.max(0, totalColors - maxVisibleColors);
                 scrollOffset = Math.max(0, Math.min(scrollOffset - (int) delta, maxOffset));
                 return true;
             }
@@ -253,7 +280,7 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
             int panelY = bounds[1];
             int listStartY = panelY + 18;
 
-            if (mouseX >= panelX && mouseX <= panelX + COLOR_PANEL_WIDTH &&
+            if (mouseX >= panelX && mouseX <= panelX + panelWidth &&
                 mouseY >= listStartY && mouseY <= panelY + COLOR_PANEL_HEIGHT) {
 
                 int itemIndex = (int) ((mouseY - listStartY) / COLOR_ITEM_HEIGHT);
@@ -281,7 +308,7 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
             int panelY = bounds[1];
             int listStartY = panelY + 18;
 
-            if (mouseX >= panelX && mouseX <= panelX + COLOR_PANEL_WIDTH &&
+            if (mouseX >= panelX && mouseX <= panelX + panelWidth &&
                 mouseY >= listStartY && mouseY <= panelY + COLOR_PANEL_HEIGHT) {
 
                 int itemIndex = (int) ((mouseY - listStartY) / COLOR_ITEM_HEIGHT);
