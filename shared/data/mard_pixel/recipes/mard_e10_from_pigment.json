@@ -1,12 +1,12 @@
 {
-    "ingredients":  [
-                        {
-                            "item":  "mard_pixel:mard_pigment"
-                        }
-                    ],
-    "result":  {
-                   "count":  64,
-                   "item":  "mard_pixel:mard_e10"
-               },
-    "type":  "minecraft:crafting_shapeless"
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    {
+      "item": "mard_pixel:mard_pigment"
+    }
+  ],
+  "result": {
+    "item": "mard_pixel:mard_e10",
+    "count": 64
+  }
 }
