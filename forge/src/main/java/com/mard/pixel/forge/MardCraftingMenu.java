@@ -37,7 +37,7 @@ public class MardCraftingMenu extends AbstractContainerMenu {
                 .getBlockEntity(buf.readBlockPos()));
     }
 
-    public MardCraftingMenu(int containerId, Inventory playerInventory, MardCraftingTableBlockEntity blockEntity) {
+    private MardCraftingMenu(int containerId, Inventory playerInventory, MardCraftingTableBlockEntity blockEntity) {
         super(MardPixelForge.MARD_CRAFTING_MENU.get(), containerId);
         this.blockEntity = blockEntity;
         this.player = playerInventory.player;
@@ -140,5 +140,12 @@ public class MardCraftingMenu extends AbstractContainerMenu {
 
     public MardCraftingTableBlockEntity getBlockEntity() {
         return blockEntity;
+    }
+
+    /**
+     * 服务端创建菜单的静态工厂方法。
+     */
+    public static MardCraftingMenu create(int containerId, Inventory playerInventory, MardCraftingTableBlockEntity blockEntity) {
+        return new MardCraftingMenu(containerId, playerInventory, blockEntity);
     }
 }

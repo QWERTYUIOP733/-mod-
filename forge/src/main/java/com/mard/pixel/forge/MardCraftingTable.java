@@ -78,7 +78,7 @@ public class MardCraftingTable extends BaseEntityBlock {
                     @Nullable
                     @Override
                     public AbstractContainerMenu createMenu(int containerId, Inventory inventory, Player p) {
-                        return new MardCraftingMenu(containerId, inventory, craftingTable);
+                        return MardCraftingMenu.create(containerId, inventory, craftingTable);
                     }
                 };
                 NetworkHooks.openScreen((ServerPlayer) player, menuProvider, pos);
