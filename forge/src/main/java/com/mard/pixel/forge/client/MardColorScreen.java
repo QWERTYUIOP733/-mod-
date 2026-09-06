@@ -146,13 +146,36 @@ public class MardColorScreen extends Screen {
 
     private void submitCode() {
         if (inputBox == null) return;
-        String code = inputBox.getValue().trim().toUpperCase();
-        if (!code.isEmpty()) {
-            MardNetwork.CHANNEL.sendToServer(new MardNetwork.HotbarPacket(code));
-            statusMsg = "已请求放入快捷栏: " + code;
+        String input = inputBox.getValue().trim();
+        if (input.isEmpty()) {
+            statusMsg = "请输入色号";
+            return;
+        }
+
+        // 支持多种分隔符：空格、逗号、分号、顿号、斜杠
+        String[] codes = input.split("[\\s,;、/]+");
+        int validCount = 0;
+        StringBuilder successMsg = new StringBuilder();
+
+        for (String code : codes) {
+            String trimmed = code.trim().toUpperCase();
+            if (!trimmed.isEmpty()) {
+                MardNetwork.CHANNEL.sendToServer(new MardNetwork.HotbarPacket(trimmed));
+                if (validCount > 0) successMsg.append(", ");
+                successMsg.append(trimmed);
+                validCount++;
+            }
+        }
+
+        if (validCount > 0) {
+            if (validCount == 1) {
+                statusMsg = "已请求放入快捷栏: " + successMsg;
+            } else {
+                statusMsg = "已批量请求 " + validCount + " 个色号: " + successMsg;
+            }
             inputBox.setValue("");
         } else {
-            statusMsg = "请输入色号";
+            statusMsg = "未识别到有效色号";
         }
     }
 
@@ -201,6 +224,7 @@ public class MardColorScreen extends Screen {
             "",
             "按钮二：输入色号快速获取",
             "  输入色号后放入快捷栏",
+            "  支持批量输入（空格/逗号分隔）",
             "",
             "按 G 键打开/关闭本界面"
         };
@@ -290,17 +314,21 @@ public class MardColorScreen extends Screen {
      * 输入色号页面渲染。
      */
     private void renderInputPage(GuiGraphics g) {
-        String title = "输入想用的色号";
+        String title = "输入想用的色号（支持批量输入）";
         g.drawString(font, Component.literal(title),
                 (width - font.width(title)) / 2, height / 2 - 70, 0xFFFFFF);
 
-        String hint = "输入MARD 221基础色色号（A-H/M系列，如 A1、B5、M3）后点击确认，自动放入快捷栏一组（64个）";
+        String hint = "输入MARD色号（如 A1、B5、M3），支持批量输入多个色号";
         g.drawString(font, Component.literal(hint),
-                (width - font.width(hint)) / 2, height / 2 + 50, 0xAAAAAA);
+                (width - font.width(hint)) / 2, height / 2 + 45, 0xAAAAAA);
+
+        String hint2 = "用空格/逗号/分号分隔，例如：A1 B2 C3 或 A1,B2,C3";
+        g.drawString(font, Component.literal(hint2),
+                (width - font.width(hint2)) / 2, height / 2 + 60, 0x888888);
 
         if (!statusMsg.isEmpty()) {
             g.drawString(font, Component.literal(statusMsg),
-                    (width - font.width(statusMsg)) / 2, height / 2 + 75, 0xFFFFAA);
+                    (width - font.width(statusMsg)) / 2, height / 2 + 85, 0xFFFFAA);
         }
     }
 
