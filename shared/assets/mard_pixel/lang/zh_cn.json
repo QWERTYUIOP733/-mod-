@@ -225,5 +225,6 @@
  "block.mard_pixel.mard_crafting_table": "MARD 合成台",
  "key.mard_pixel.open": "打开 MARD 色板",
  "key.categories.mard_pixel": "MARD 像素画",
- "screen.mard_pixel.title": "MARD 色板"
+ "screen.mard_pixel.title": "MARD 色板",
+ "screen.mard_pixel.crafting.select_color": "选择颜色"
 }

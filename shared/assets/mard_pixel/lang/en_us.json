@@ -225,5 +225,6 @@
  "block.mard_pixel.mard_crafting_table": "MARD Crafting Table",
  "key.mard_pixel.open": "Open MARD Color Palette",
  "key.categories.mard_pixel": "MARD Pixel",
- "screen.mard_pixel.title": "MARD Color Palette"
+ "screen.mard_pixel.title": "MARD Color Palette",
+ "screen.mard_pixel.crafting.select_color": "Select Color"
 }
