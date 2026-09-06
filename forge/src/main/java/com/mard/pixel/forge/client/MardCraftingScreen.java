@@ -26,11 +26,12 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     private static final int BASE_HEIGHT = 166;
 
     // 颜色选择列表面板尺寸
-    private static final int COLOR_PANEL_WIDTH = 120;
-    private static final int COLOR_PANEL_HEIGHT = 140;
-    private static final int COLOR_ITEM_HEIGHT = 20;
-    private static final int COLOR_SWATCH_SIZE = 14;
-    private static final int MAX_VISIBLE_COLORS = COLOR_PANEL_HEIGHT / COLOR_ITEM_HEIGHT;
+    private static final int COLOR_PANEL_WIDTH = 150;
+    private static final int COLOR_PANEL_HEIGHT = 166;
+    private static final int COLOR_ITEM_HEIGHT = 22;
+    private static final int COLOR_SWATCH_SIZE = 16;
+    private static final int COLOR_TEXT_PADDING = 6;
+    private static final int MAX_VISIBLE_COLORS = (COLOR_PANEL_HEIGHT - 20) / COLOR_ITEM_HEIGHT;
 
     // 颜色选择列表滚动偏移
     private int scrollOffset = 0;
@@ -135,8 +136,10 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
      * 渲染颜色选择列表面板。
      */
     private void renderColorPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-        int panelX = this.leftPos + BASE_WIDTH + 4;
-        int panelY = this.topPos + 10;
+        // 计算面板位置（包含屏幕边界检测）
+        int[] bounds = getColorPanelBounds();
+        int panelX = bounds[0];
+        int panelY = bounds[1];
 
         // 绘制面板背景
         graphics.fill(panelX, panelY, panelX + COLOR_PANEL_WIDTH, panelY + COLOR_PANEL_HEIGHT, 0xFFC6C6C6);
@@ -146,44 +149,57 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
         graphics.fill(panelX, panelY + COLOR_PANEL_HEIGHT - 1, panelX + COLOR_PANEL_WIDTH, panelY + COLOR_PANEL_HEIGHT, 0xFF373737);
         graphics.fill(panelX + COLOR_PANEL_WIDTH - 1, panelY, panelX + COLOR_PANEL_WIDTH, panelY + COLOR_PANEL_HEIGHT, 0xFF373737);
 
+        // 绘制标题栏背景
+        graphics.fill(panelX + 1, panelY + 1, panelX + COLOR_PANEL_WIDTH - 1, panelY + 14, 0xFF8B8B8B);
         // 绘制标题
-        graphics.drawString(this.font, net.minecraft.network.chat.Component.translatable("screen.mard_pixel.crafting.select_color"), panelX + 4, panelY + 4, 0x404040, false);
+        graphics.drawString(this.font, net.minecraft.network.chat.Component.translatable("screen.mard_pixel.crafting.select_color"), panelX + 4, panelY + 4, 0xFFFFFFFF, false);
 
         // 计算可见的颜色范围
         int totalColors = MardPalette.COLORS.size();
         int startIndex = Math.max(0, Math.min(scrollOffset, totalColors - 1));
         int endIndex = Math.min(startIndex + MAX_VISIBLE_COLORS, totalColors);
 
+        // 颜色列表起始Y位置
+        int listStartY = panelY + 18;
+
         // 绘制颜色列表项
         for (int i = startIndex; i < endIndex; i++) {
             MardColor color = MardPalette.COLORS.get(i);
-            int itemY = panelY + 16 + (i - startIndex) * COLOR_ITEM_HEIGHT;
+            int itemY = listStartY + (i - startIndex) * COLOR_ITEM_HEIGHT;
 
             // 选中项高亮背景
             if (color.code().equals(selectedColor)) {
-                graphics.fill(panelX + 2, itemY, panelX + COLOR_PANEL_WIDTH - 2, itemY + COLOR_ITEM_HEIGHT - 2, 0xFF90EE90);
+                graphics.fill(panelX + 2, itemY, panelX + COLOR_PANEL_WIDTH - 2, itemY + COLOR_ITEM_HEIGHT - 1, 0xFF90EE90);
             }
 
-            // 绘制颜色方块
+            // 绘制颜色方块（带边框）
             int swatchX = panelX + 4;
             int swatchY = itemY + 3;
             graphics.fill(swatchX, swatchY, swatchX + COLOR_SWATCH_SIZE, swatchY + COLOR_SWATCH_SIZE, 0xFF000000);
             graphics.fill(swatchX + 1, swatchY + 1, swatchX + COLOR_SWATCH_SIZE - 1, swatchY + COLOR_SWATCH_SIZE - 1, 0xFF000000 | color.rgb());
 
+            // 文字区域起始X位置
+            int textX = swatchX + COLOR_SWATCH_SIZE + COLOR_TEXT_PADDING;
+            int textWidth = COLOR_PANEL_WIDTH - (textX - panelX) - 8; // 留出滚动条空间
+
             // 绘制颜色介绍（色号 + RGB）
             String codeText = color.code();
             String rgbText = String.format("RGB:%d,%d,%d", color.r(), color.g(), color.b());
-            graphics.drawString(this.font, codeText, swatchX + COLOR_SWATCH_SIZE + 4, itemY + 2, 0x404040, false);
-            graphics.drawString(this.font, rgbText, swatchX + COLOR_SWATCH_SIZE + 4, itemY + 11, 0x606060, false);
+
+            // 色号
+            graphics.drawString(this.font, codeText, textX, itemY + 3, 0x404040, false);
+            // RGB值
+            graphics.drawString(this.font, rgbText, textX, itemY + 13, 0x606060, false);
         }
 
         // 绘制滚动条
         if (totalColors > MAX_VISIBLE_COLORS) {
             int scrollbarX = panelX + COLOR_PANEL_WIDTH - 6;
-            int scrollbarY = panelY + 16;
-            int scrollbarHeight = COLOR_PANEL_HEIGHT - 20;
+            int scrollbarY = listStartY;
+            int scrollbarHeight = COLOR_PANEL_HEIGHT - 22;
             int thumbHeight = Math.max(20, (int) ((float) MAX_VISIBLE_COLORS / totalColors * scrollbarHeight));
-            int thumbY = scrollbarY + (int) ((float) scrollOffset / (totalColors - MAX_VISIBLE_COLORS) * (scrollbarHeight - thumbHeight));
+            int maxOffset = Math.max(0, totalColors - MAX_VISIBLE_COLORS);
+            int thumbY = scrollbarY + (maxOffset > 0 ? (int) ((float) scrollOffset / maxOffset * (scrollbarHeight - thumbHeight)) : 0);
 
             // 滚动条背景
             graphics.fill(scrollbarX, scrollbarY, scrollbarX + 4, scrollbarY + scrollbarHeight, 0xFF8B8B8B);
@@ -192,15 +208,33 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
         }
     }
 
+    /**
+     * 计算颜色选择面板的位置（包含屏幕边界检测）。
+     */
+    private int[] getColorPanelBounds() {
+        int panelX = this.leftPos + BASE_WIDTH + 6;
+        int panelY = this.topPos;
+
+        // 屏幕边界检测
+        int screenWidth = this.minecraft.getWindow().getGuiScaledWidth();
+        if (panelX + COLOR_PANEL_WIDTH > screenWidth) {
+            panelX = this.leftPos - COLOR_PANEL_WIDTH - 6;
+        }
+
+        return new int[]{panelX, panelY};
+    }
+
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         // 颜色选择列表滚动
         if (menu.hasPigment()) {
-            int panelX = this.leftPos + BASE_WIDTH + 4;
-            int panelY = this.topPos + 10;
+            int[] bounds = getColorPanelBounds();
+            int panelX = bounds[0];
+            int panelY = bounds[1];
+            int listStartY = panelY + 18;
 
             if (mouseX >= panelX && mouseX <= panelX + COLOR_PANEL_WIDTH &&
-                mouseY >= panelY && mouseY <= panelY + COLOR_PANEL_HEIGHT) {
+                mouseY >= listStartY && mouseY <= panelY + COLOR_PANEL_HEIGHT) {
                 int totalColors = MardPalette.COLORS.size();
                 int maxOffset = Math.max(0, totalColors - MAX_VISIBLE_COLORS);
                 scrollOffset = Math.max(0, Math.min(scrollOffset - (int) delta, maxOffset));
@@ -214,13 +248,15 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         // 颜色选择列表点击
         if (menu.hasPigment() && button == 0) {
-            int panelX = this.leftPos + BASE_WIDTH + 4;
-            int panelY = this.topPos + 10;
+            int[] bounds = getColorPanelBounds();
+            int panelX = bounds[0];
+            int panelY = bounds[1];
+            int listStartY = panelY + 18;
 
             if (mouseX >= panelX && mouseX <= panelX + COLOR_PANEL_WIDTH &&
-                mouseY >= panelY + 16 && mouseY <= panelY + COLOR_PANEL_HEIGHT) {
+                mouseY >= listStartY && mouseY <= panelY + COLOR_PANEL_HEIGHT) {
 
-                int itemIndex = (int) ((mouseY - panelY - 16) / COLOR_ITEM_HEIGHT);
+                int itemIndex = (int) ((mouseY - listStartY) / COLOR_ITEM_HEIGHT);
                 int colorIndex = scrollOffset + itemIndex;
 
                 if (colorIndex >= 0 && colorIndex < MardPalette.COLORS.size()) {
@@ -240,13 +276,15 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
 
         // 颜色列表项的tooltip
         if (menu.hasPigment()) {
-            int panelX = this.leftPos + BASE_WIDTH + 4;
-            int panelY = this.topPos + 10;
+            int[] bounds = getColorPanelBounds();
+            int panelX = bounds[0];
+            int panelY = bounds[1];
+            int listStartY = panelY + 18;
 
             if (mouseX >= panelX && mouseX <= panelX + COLOR_PANEL_WIDTH &&
-                mouseY >= panelY + 16 && mouseY <= panelY + COLOR_PANEL_HEIGHT) {
+                mouseY >= listStartY && mouseY <= panelY + COLOR_PANEL_HEIGHT) {
 
-                int itemIndex = (int) ((mouseY - panelY - 16) / COLOR_ITEM_HEIGHT);
+                int itemIndex = (int) ((mouseY - listStartY) / COLOR_ITEM_HEIGHT);
                 int colorIndex = scrollOffset + itemIndex;
 
                 if (colorIndex >= 0 && colorIndex < MardPalette.COLORS.size()) {
