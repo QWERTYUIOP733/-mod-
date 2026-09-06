@@ -54,12 +54,12 @@ function main() {
     const langDir = path.join(ASSETS, 'lang');
     fs.mkdirSync(langDir, { recursive: true });
     const en = {}, zh = {};
-    en['itemGroup.mard_pixel'] = 'MARD Pixel Blocks';
-    zh['itemGroup.mard_pixel'] = 'MARD 像素色块';
+    en['itemGroup.mard_pixel'] = 'Color Blocks Extension';
+    zh['itemGroup.mard_pixel'] = '彩色方块扩展';
     for (const c of colors) {
         const key = 'block.mard_pixel.mard_' + c.code.toLowerCase();
-        en[key] = 'MARD ' + c.code;
-        zh[key] = 'MARD ' + c.code;
+        en[key] = 'Color Block ' + c.code;
+        zh[key] = '色块 ' + c.code;
     }
     // 七彩粉末物品
     en['item.mard_pixel.mard_pigment'] = 'Rainbow Powder';
@@ -68,13 +68,13 @@ function main() {
     en['block.mard_pixel.mard_crafting_table'] = 'Block Dyeing Table';
     zh['block.mard_pixel.mard_crafting_table'] = '方块染色台';
     // 快捷键
-    en['key.mard_pixel.open'] = 'Open MARD Color Palette';
-    zh['key.mard_pixel.open'] = '打开 MARD 色板';
-    en['key.categories.mard_pixel'] = 'MARD Pixel';
-    zh['key.categories.mard_pixel'] = 'MARD 像素画';
+    en['key.mard_pixel.open'] = 'Open Color Palette';
+    zh['key.mard_pixel.open'] = '打开色板';
+    en['key.categories.mard_pixel'] = 'Color Blocks Extension';
+    zh['key.categories.mard_pixel'] = '彩色方块扩展';
     // UI 标题
-    en['screen.mard_pixel.title'] = 'MARD Color Palette';
-    zh['screen.mard_pixel.title'] = 'MARD 色板';
+    en['screen.mard_pixel.title'] = 'Color Palette';
+    zh['screen.mard_pixel.title'] = '色板';
     // 合成台颜色选择面板
     en['screen.mard_pixel.crafting.select_color'] = 'Select Color';
     zh['screen.mard_pixel.crafting.select_color'] = '选择颜色';

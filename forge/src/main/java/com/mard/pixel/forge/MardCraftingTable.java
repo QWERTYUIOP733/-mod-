@@ -24,7 +24,7 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * MARD 合成台方块。
+ * 方块染色台方块。
  * 功能类似原版工作台，但只能合成模组内物品。
  * 支持朝向，右键打开合成界面。
  */

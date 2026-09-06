@@ -1,7 +1,7 @@
 package com.mard.pixel.common;
 
 /**
- * 单个 MARD 标准色号。
+ * 单个 标准色号。
  * @param code   色号，如 "A1" / "ZG8"
  * @param hex    #RRGGBB
  * @param series 所属系列，如 "A" / "ZG"

@@ -14,7 +14,7 @@ import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * MARD 合成台菜单。
+ * 方块染色台菜单。
  * 布局类似原版工作台：
  * - 左上：3x3 合成网格（9格）
  * - 右侧：结果槽（1格）

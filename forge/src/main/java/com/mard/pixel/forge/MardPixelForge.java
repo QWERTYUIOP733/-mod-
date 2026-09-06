@@ -32,10 +32,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * MARD Pixel Mod 主类。
+ * 彩色方块扩展 Mod 主类。
  *
  * 核心功能：
- * 1. MARD 221 色基础色块（程序染色，色标准确）
+ * 1. 221 色基础色块（程序染色，色标准确）
  * 2. 物品两行名称（色号编号 + RGB值）
  * 3. 按系列分类的创造模式标签页
  * 4. 快速物品检索（/mardp give / find）
@@ -62,12 +62,12 @@ public class MardPixelForge {
     public static final List<MardBlock> MARD_BLOCKS = new ArrayList<>();
 
     // ==================== 通用材料物品 ====================
-    /** MARD颜料：通用合成材料，任意染料可合成，用于合成各色块 */
+    /** 七彩粉末：通用合成材料，任意染料可合成，用于合成各色块 */
     public static final RegistryObject<Item> MARD_PIGMENT = ITEMS.register("mard_pigment",
             () -> new Item(new Item.Properties()));
 
-    // ==================== MARD 合成台 ====================
-    /** MARD合成台方块：功能类似原版工作台，但只能合成模组内物品 */
+    // ==================== 方块染色台 ====================
+    /** 方块染色台方块：功能类似原版工作台，但只能合成模组内物品 */
     public static final RegistryObject<Block> MARD_CRAFTING_TABLE = BLOCKS.register("mard_crafting_table",
             MardCraftingTable::new);
     public static final RegistryObject<Item> MARD_CRAFTING_TABLE_ITEM = ITEMS.register("mard_crafting_table",
@@ -91,7 +91,7 @@ public class MardPixelForge {
         BLOCK_ENTITIES.register(modBus);
         MENUS.register(modBus);
 
-        // 注册 MARD 基础色块
+        // 注册 基础色块
         registerMardBlocks();
 
         // 注册创造模式标签页（按系列分类）
@@ -144,7 +144,7 @@ public class MardPixelForge {
                     .title(Component.literal(s))
                     .icon(() -> findFirstBlockOfSeries(s))
                     .displayItems((params, output) -> {
-                        // 第一个标签页添加MARD颜料（通用合成材料）和合成台
+                        // 第一个标签页添加七彩粉末（通用合成材料）和合成台
                         if (isFirst) {
                             output.accept(new ItemStack(MARD_PIGMENT.get()));
                             output.accept(new ItemStack(MARD_CRAFTING_TABLE.get()));

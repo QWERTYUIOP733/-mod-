@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * MARD 拼豆标准色卡（MARD官方基础色卡 2026修订版）。
+ * 拼豆标准色卡（官方基础色卡 2026修订版）。
  * 221 标准色 A–H/M。
  */
 public final class MardPalette {

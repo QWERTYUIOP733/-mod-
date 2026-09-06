@@ -99,7 +99,7 @@ public final class MardPixelForgeClient {
      */
     @SubscribeEvent
     public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
-        // MARD 基础色块：使用方块的 rgb 值
+        // 基础色块：使用方块的 rgb 值
         for (var ro : MardPixelForge.MARD_BLOCK_REFS) {
             Block block = ro.get();
             if (block instanceof MardBlock mb) {
@@ -171,7 +171,7 @@ public final class MardPixelForgeClient {
         /**
          * 判断物品是否属于本模组。
          * @param stack 物品栈
-         * @return true 如果是 MARD 基础色块
+         * @return true 如果是 基础色块
          */
         private static boolean isMardModItem(ItemStack stack) {
             var item = stack.getItem();

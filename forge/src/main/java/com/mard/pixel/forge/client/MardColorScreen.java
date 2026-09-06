@@ -50,7 +50,7 @@ public class MardColorScreen extends Screen {
     private String statusMsg = "";
 
     public MardColorScreen() {
-        super(Component.literal("MARD 色板"));
+        super(Component.literal("色板"));
         rebuildSwatches();
     }
 
@@ -225,7 +225,7 @@ public class MardColorScreen extends Screen {
 
         String[] lines = {
             "",
-            "MARD 221 色像素画模组",
+            "221 色像素画模组",
             "",
             "按钮一：浏览全部色号",
             "  普通模式：点击色块获取一组方块",

@@ -5,12 +5,12 @@ license="MIT"
 [[mods]]
 modId="mard_pixel"
 version="1.2.0"
-displayName="MARD Pixel Mod"
+displayName="彩色方块扩展"
 description='''
-MARD 221色标准色卡像素画Mod：
-实心色块 + 色板(快捷键G) + 输入色号快速获取 + 按系列分类的创造模式标签页。
+彩色方块扩展 Mod：
+221色实心色块 + 色板(快捷键G) + 输入色号快速获取 + 按系列分类的创造模式标签页 + 方块染色台。
 '''
-authors="MARD Pixel Team"
+authors="Pixel Team"
 logoFile=""
 
 [[dependencies.mard_pixel]]

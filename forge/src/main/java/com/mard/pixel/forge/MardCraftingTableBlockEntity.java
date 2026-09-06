@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 /**
- * MARD 合成台方块实体。
+ * 方块染色台方块实体。
  * 存储3x3合成网格（9格）和结果槽（1格）。
  * 支持七彩粉末颜色选择模式：放入七彩粉末后，可从右侧列表选择颜色合成。
  */

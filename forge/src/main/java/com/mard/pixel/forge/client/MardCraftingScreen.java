@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * MARD 合成台屏幕。
+ * 方块染色台屏幕。
  * 布局类似原版工作台，右侧添加颜色选择列表（七彩粉末模式）。
  * - 左上：3x3 合成网格（9格）
  * - 右侧：结果槽（1格）
