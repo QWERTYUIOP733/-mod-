@@ -11,9 +11,13 @@ import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -24,15 +28,15 @@ import java.util.Optional;
  */
 public class MardCraftingTableBlockEntity extends BlockEntity {
 
-    public static final int GRID_SIZE = 9; // 3x3 合成网格
-    public static final int RESULT_SLOT = 9; // 结果槽索引
-    public static final int TOTAL_SLOTS = 10; // 总槽位数
+    public static final int GRID_SIZE = 9;
+    public static final int RESULT_SLOT = 9;
+    public static final int TOTAL_SLOTS = 10;
 
     private final ItemStackHandler inventory = new ItemStackHandler(TOTAL_SLOTS) {
         @Override
         protected void onContentsChanged(int slot) {
             super.onContentsChanged(slot);
-            if (slot < GRID_SIZE) {
+            if (slot < GRID_SIZE && level != null && !level.isClientSide) {
                 updateCraftingResult();
             }
             setChanged();
@@ -40,12 +44,11 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            if (slot == RESULT_SLOT) {
-                return false; // 结果槽不能手动放入
-            }
-            return true;
+            return slot != RESULT_SLOT;
         }
     };
+
+    private final LazyOptional<IItemHandler> inventoryHandler = LazyOptional.of(() -> inventory);
 
     public MardCraftingTableBlockEntity(BlockPos pos, BlockState state) {
         super(MardPixelForge.MARD_CRAFTING_TABLE_BE.get(), pos, state);
@@ -53,6 +56,20 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
 
     public IItemHandler getInventory() {
         return inventory;
+    }
+
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
+        if (cap == ForgeCapabilities.ITEM_HANDLER) {
+            return inventoryHandler.cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        inventoryHandler.invalidate();
     }
 
     /**
@@ -67,26 +84,22 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
     }
 
     /**
-     * 更新合成结果。
-     * 只允许合成模组内物品。
+     * 更新合成结果。只允许模组内物品。
      */
     private void updateCraftingResult() {
         if (level == null || level.isClientSide) return;
 
-        // 创建临时合成容器
         TransientCraftingContainer craftingContainer = new TransientCraftingContainer(null, 3, 3);
         NonNullList<ItemStack> gridItems = getGridItems();
         for (int i = 0; i < GRID_SIZE; i++) {
             craftingContainer.setItem(i, gridItems.get(i));
         }
 
-        // 查找匹配的配方
         Optional<CraftingRecipe> recipe = level.getRecipeManager()
                 .getRecipeFor(RecipeType.CRAFTING, craftingContainer, level);
 
         if (recipe.isPresent()) {
             ItemStack result = recipe.get().assemble(craftingContainer, level.registryAccess());
-            // 只允许模组内物品
             if (isMardPixelItem(result)) {
                 inventory.setStackInSlot(RESULT_SLOT, result);
             } else {
@@ -102,53 +115,43 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
      */
     private boolean isMardPixelItem(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        String itemId = stack.getItem().getDescriptionId();
-        return itemId.startsWith("item.mard_pixel.") || itemId.startsWith("block.mard_pixel.");
+        String registryName = stack.getItem().getDescriptionId();
+        return registryName.startsWith("item.mard_pixel.") || registryName.startsWith("block.mard_pixel.");
     }
 
     /**
      * 消耗合成材料（玩家取走结果时调用）。
      */
     public void consumeMaterials() {
-        // 消耗合成网格中的材料
         for (int i = 0; i < GRID_SIZE; i++) {
             ItemStack stack = inventory.getStackInSlot(i);
             if (!stack.isEmpty()) {
                 stack.shrink(1);
-                if (stack.isEmpty()) {
-                    inventory.setStackInSlot(i, ItemStack.EMPTY);
-                }
             }
         }
-
         inventory.setStackInSlot(RESULT_SLOT, ItemStack.EMPTY);
-        updateCraftingResult();
+        if (level != null && !level.isClientSide) {
+            updateCraftingResult();
+        }
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        ContainerHelper.saveAllItems(tag, getGridItems());
-        // 保存结果槽
-        if (!inventory.getStackInSlot(RESULT_SLOT).isEmpty()) {
-            CompoundTag resultTag = new CompoundTag();
-            inventory.getStackInSlot(RESULT_SLOT).save(resultTag);
-            tag.put("Result", resultTag);
+        NonNullList<ItemStack> allItems = NonNullList.withSize(TOTAL_SLOTS, ItemStack.EMPTY);
+        for (int i = 0; i < TOTAL_SLOTS; i++) {
+            allItems.set(i, inventory.getStackInSlot(i).copy());
         }
+        ContainerHelper.saveAllItems(tag, allItems);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        NonNullList<ItemStack> items = NonNullList.withSize(GRID_SIZE, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(tag, items);
-        for (int i = 0; i < GRID_SIZE; i++) {
-            inventory.setStackInSlot(i, items.get(i));
-        }
-        // 加载结果槽
-        if (tag.contains("Result")) {
-            ItemStack result = ItemStack.of(tag.getCompound("Result"));
-            inventory.setStackInSlot(RESULT_SLOT, result);
+        NonNullList<ItemStack> allItems = NonNullList.withSize(TOTAL_SLOTS, ItemStack.EMPTY);
+        ContainerHelper.loadAllItems(tag, allItems);
+        for (int i = 0; i < TOTAL_SLOTS; i++) {
+            inventory.setStackInSlot(i, allItems.get(i));
         }
     }
 

@@ -9,12 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * MARD 合成台屏幕。
- * 布局类似原版工作台：
- * - 标题
- * - 3x3 合成网格
- * - 结果槽（带箭头指示）
- * - 玩家背包
- * - 快捷栏
+ * 布局类似原版工作台，使用纯色绘制背景。
  */
 public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu> {
 
@@ -22,11 +17,11 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     private static final int TEXTURE_HEIGHT = 166;
 
     // 颜色定义
-    private static final int BG_COLOR = 0xFFC6C6C6;      // 背景灰色
-    private static final int SLOT_BG_COLOR = 0xFF8B8B8B;  // 槽位背景
-    private static final int BORDER_COLOR = 0xFF373737;    // 边框颜色
-    private static final int TITLE_COLOR = 0x404040;       // 标题颜色
-    private static final int ARROW_COLOR = 0xFF555555;     // 箭头颜色
+    private static final int BG_COLOR = 0xFFC6C6C6;
+    private static final int SLOT_BG_COLOR = 0xFF8B8B8B;
+    private static final int BORDER_COLOR = 0xFF373737;
+    private static final int TITLE_COLOR = 0x404040;
+    private static final int ARROW_COLOR = 0xFF555555;
 
     public MardCraftingScreen(MardCraftingMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -68,14 +63,11 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
         int resultY = y + MardCraftingMenu.RESULT_Y - 1;
         g.fill(resultX, resultY, resultX + 20, resultY + 20, SLOT_BG_COLOR);
 
-        // 绘制合成箭头（从网格指向结果）
+        // 绘制合成箭头
         int arrowX = x + 95;
         int arrowY = y + 35;
-        // 箭头主体
         g.fill(arrowX, arrowY + 3, arrowX + 18, arrowY + 7, ARROW_COLOR);
-        // 箭头头部
         g.fill(arrowX + 16, arrowY, arrowX + 22, arrowY + 10, ARROW_COLOR);
-        g.fill(arrowX + 18, arrowY - 2, arrowX + 20, arrowY + 12, ARROW_COLOR);
 
         // 绘制玩家背包区域背景
         int invX = x + MardCraftingMenu.PLAYER_INV_X - 1;
@@ -90,16 +82,10 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
 
         // 绘制标题
         g.drawString(this.font, this.title, x + 8, y + 6, TITLE_COLOR, false);
-
-        // 绘制"合成网格"标签
-        g.drawString(this.font, Component.literal("合成"), x + MardCraftingMenu.GRID_START_X, y + 6, TITLE_COLOR, false);
-
-        // 绘制"结果"标签
-        g.drawString(this.font, Component.literal("结果"), x + MardCraftingMenu.RESULT_X - 5, y + 6, TITLE_COLOR, false);
     }
 
     @Override
     protected void renderLabels(@NotNull GuiGraphics g, int mouseX, int mouseY) {
-        // 不渲染默认标签，已在renderBg中绘制
+        // 不渲染默认标签，已在renderBg中绘制标题
     }
 }

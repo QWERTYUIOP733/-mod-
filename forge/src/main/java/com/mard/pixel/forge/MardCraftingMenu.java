@@ -32,14 +32,16 @@ public class MardCraftingMenu extends AbstractContainerMenu {
     private final MardCraftingTableBlockEntity blockEntity;
     private final Player player;
 
+    /**
+     * 客户端构造函数（从FriendlyByteBuf读取BlockPos）。
+     */
     public MardCraftingMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         this(containerId, playerInventory, (MardCraftingTableBlockEntity) playerInventory.player.level()
                 .getBlockEntity(buf.readBlockPos()));
     }
 
     /**
-     * 客户端构造函数（MenuType需要）。
-     * 实际使用时通过FriendlyByteBuf构造函数传递BlockPos。
+     * MenuType需要的构造函数。
      */
     public MardCraftingMenu(int containerId, Inventory playerInventory) {
         super(MardPixelForge.MARD_CRAFTING_MENU.get(), containerId);
@@ -69,14 +71,15 @@ public class MardCraftingMenu extends AbstractContainerMenu {
                 RESULT_X, RESULT_Y) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return false; // 结果槽不能手动放入
+                return false;
             }
 
             @Override
             public void onTake(Player player, @NotNull ItemStack stack) {
                 super.onTake(player, stack);
-                // 取走结果时消耗材料
-                blockEntity.consumeMaterials();
+                if (blockEntity != null) {
+                    blockEntity.consumeMaterials();
+                }
             }
         });
 
@@ -99,7 +102,8 @@ public class MardCraftingMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        return this.blockEntity.getBlockPos().distSqr(player.blockPosition()) <= 64.0;
+        if (blockEntity == null) return true;
+        return blockEntity.getBlockPos().distSqr(player.blockPosition()) <= 64.0;
     }
 
     /**
@@ -115,7 +119,7 @@ public class MardCraftingMenu extends AbstractContainerMenu {
             itemstack = itemstack1.copy();
 
             if (index == MardCraftingTableBlockEntity.RESULT_SLOT) {
-                // 从结果槽取出
+                // 从结果槽取出到玩家背包
                 if (!this.moveItemStackTo(itemstack1, 10, 46, true)) {
                     return ItemStack.EMPTY;
                 }
