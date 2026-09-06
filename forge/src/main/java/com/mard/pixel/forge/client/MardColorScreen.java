@@ -17,10 +17,9 @@ import java.util.List;
  * MARD Pixel Mod 主 UI 界面。
  *
  * 布局根据游戏窗口大小动态调整。
- * 主菜单：左侧3个按钮 + 右侧说明 + 底部提示
+ * 主菜单：左侧2个按钮 + 右侧说明 + 底部提示
  * 按钮一：颜色选取 - 全部色号网格，点击给一组，支持连续选择
  * 按钮二：输入色号 - 输入框，输入后放快捷栏一组
- * 按钮三：导入外部图纸 - 附属模组，开发中
  */
 public class MardColorScreen extends Screen {
 
@@ -81,11 +80,10 @@ public class MardColorScreen extends Screen {
     }
 
     /**
-     * 主菜单页面：左侧3个按钮 + 右侧说明。
+     * 主菜单页面：左侧2个按钮 + 右侧说明。
      * 按钮区偏左且较窄，说明区保持不变。
      * 按钮一：MARD 颜色选取
      * 按钮二：输入想用的色号
-     * 按钮三：导入外部图纸（附属模组，开发中）
      */
     private void initMainPage() {
         // 按钮区域：左侧 30% 宽度，按钮偏左且较窄
@@ -101,48 +99,13 @@ public class MardColorScreen extends Screen {
             currentPage = Page.SWATCHES;
             scrollOffset = 0;
             init();
-        }).bounds(btnX, centerY - gapY - btnH / 2, btnW, btnH).build());
+        }).bounds(btnX, centerY - gapY / 2 - btnH / 2, btnW, btnH).build());
 
         // 按钮二：输入想用的色号
         addRenderableWidget(Button.builder(Component.literal("输入想用的色号"), btn -> {
             currentPage = Page.INPUT;
             init();
-        }).bounds(btnX, centerY - btnH / 2, btnW, btnH).build());
-
-        // 按钮三：导入外部图纸（检测附属模组是否安装）
-        addRenderableWidget(Button.builder(Component.literal("导入外部图纸"), btn -> {
-            if (isBlueprintModLoaded()) {
-                // 附属模组已安装，打开图纸导入界面
-                openBlueprintScreen();
-            } else {
-                statusMsg = "导入外部图纸功能在开发中，敬请期待";
-            }
-        }).bounds(btnX, centerY + gapY - btnH / 2, btnW, btnH).build());
-    }
-
-    /**
-     * 检测附属模组（MARD Pixel Blueprint）是否已安装。
-     */
-    private boolean isBlueprintModLoaded() {
-        try {
-            Class.forName("com.mard.blueprint.client.MardBlueprintClient");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
-
-    /**
-     * 打开附属模组的图纸导入界面。
-     */
-    private void openBlueprintScreen() {
-        try {
-            Class<?> clientClass = Class.forName("com.mard.blueprint.client.MardBlueprintClient");
-            java.lang.reflect.Method openMethod = clientClass.getMethod("openBlueprintScreen");
-            openMethod.invoke(null);
-        } catch (Exception e) {
-            statusMsg = "打开图纸导入界面失败: " + e.getMessage();
-        }
+        }).bounds(btnX, centerY + gapY / 2 - btnH / 2, btnW, btnH).build());
     }
 
     /**
@@ -219,8 +182,8 @@ public class MardColorScreen extends Screen {
         // 右侧：mod 使用说明（右侧 40% 宽度）
         int infoAreaX = (int) (width * 0.55);
         int infoAreaW = (int) (width * 0.35);
-        int infoY = Math.max(80, height / 2 - 120);
-        int infoH = Math.min(240, height - 160);
+        int infoY = Math.max(80, height / 2 - 100);
+        int infoH = Math.min(200, height - 160);
 
         // 说明框背景
         g.fill(infoAreaX - 6, infoY - 6, infoAreaX + infoAreaW + 6, infoY + infoH + 6, 0xFF1a1a1a);
@@ -228,7 +191,6 @@ public class MardColorScreen extends Screen {
 
         g.drawString(font, Component.literal("mod 使用说明"), infoAreaX, infoY, 0xFFFFAA);
 
-        String button3Desc = isBlueprintModLoaded() ? "  导入拼豆图纸生成像素画" : "  附属模组开发中";
         String[] lines = {
             "",
             "MARD 221 色像素画模组",
@@ -239,9 +201,6 @@ public class MardColorScreen extends Screen {
             "",
             "按钮二：输入色号快速获取",
             "  输入色号后放入快捷栏",
-            "",
-            "按钮三：导入外部图纸",
-            button3Desc,
             "",
             "按 G 键打开/关闭本界面"
         };
@@ -255,13 +214,8 @@ public class MardColorScreen extends Screen {
             y += lineH;
         }
 
-        // 底部最后一行：根据附属模组是否安装显示不同提示
-        String bottomText;
-        if (isBlueprintModLoaded()) {
-            bottomText = "图纸导入附属模组已加载，点击按钮三使用";
-        } else {
-            bottomText = "按钮三在开发中，敬请期待";
-        }
+        // 底部提示
+        String bottomText = "MARD 像素色块模组 v1.2.0";
         g.drawString(font, Component.literal(bottomText),
                 (width - font.width(bottomText)) / 2, height - 35, 0x888888);
 
