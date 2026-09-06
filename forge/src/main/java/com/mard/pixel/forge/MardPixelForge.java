@@ -56,6 +56,11 @@ public class MardPixelForge {
     /** 游戏运行时填充的方块列表（用于标签页显示） */
     public static final List<MardBlock> MARD_BLOCKS = new ArrayList<>();
 
+    // ==================== 通用材料物品 ====================
+    /** MARD颜料：通用合成材料，任意染料可合成，用于合成各色块 */
+    public static final RegistryObject<Item> MARD_PIGMENT = ITEMS.register("mard_pigment",
+            () -> new Item(new Item.Properties()));
+
     public MardPixelForge() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 
@@ -110,11 +115,17 @@ public class MardPixelForge {
         java.util.Collections.sort(seriesList);
 
         // 按系列分类的子标签页，名称仅为字母
-        for (String s : seriesList) {
+        for (int i = 0; i < seriesList.size(); i++) {
+            final String s = seriesList.get(i);
+            final boolean isFirst = (i == 0);
             CREATIVE_TABS.register("mard_pixel_" + s.toLowerCase(), () -> CreativeModeTab.builder()
                     .title(Component.literal(s))
                     .icon(() -> findFirstBlockOfSeries(s))
                     .displayItems((params, output) -> {
+                        // 第一个标签页添加MARD颜料（通用合成材料）
+                        if (isFirst) {
+                            output.accept(new ItemStack(MARD_PIGMENT.get()));
+                        }
                         for (MardColor mc : MardPalette.COLORS) {
                             if (mc.series().equals(s)) {
                                 for (MardBlock mb : MARD_BLOCKS) {

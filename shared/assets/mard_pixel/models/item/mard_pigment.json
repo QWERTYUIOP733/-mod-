@@ -1,0 +1,6 @@
+{
+    "textures":  {
+                     "layer0":  "mard_pixel:item/mard_pigment"
+                 },
+    "parent":  "minecraft:item/generated"
+}

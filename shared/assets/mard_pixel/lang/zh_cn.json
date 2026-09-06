@@ -221,6 +221,7 @@
  "block.mard_pixel.mard_m13": "MARD M13",
  "block.mard_pixel.mard_m14": "MARD M14",
  "block.mard_pixel.mard_m15": "MARD M15",
+ "item.mard_pixel.mard_pigment": "MARD颜料",
  "key.mard_pixel.open": "打开 MARD 色板",
  "key.categories.mard_pixel": "MARD 像素画",
  "screen.mard_pixel.title": "MARD 色板"
