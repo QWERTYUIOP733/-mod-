@@ -37,6 +37,16 @@ public class MardCraftingMenu extends AbstractContainerMenu {
                 .getBlockEntity(buf.readBlockPos()));
     }
 
+    /**
+     * 客户端构造函数（MenuType需要）。
+     * 实际使用时通过FriendlyByteBuf构造函数传递BlockPos。
+     */
+    public MardCraftingMenu(int containerId, Inventory playerInventory) {
+        super(MardPixelForge.MARD_CRAFTING_MENU.get(), containerId);
+        this.blockEntity = null;
+        this.player = playerInventory.player;
+    }
+
     private MardCraftingMenu(int containerId, Inventory playerInventory, MardCraftingTableBlockEntity blockEntity) {
         super(MardPixelForge.MARD_CRAFTING_MENU.get(), containerId);
         this.blockEntity = blockEntity;
