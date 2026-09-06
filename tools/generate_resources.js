@@ -64,9 +64,9 @@ function main() {
     // 七彩粉末物品
     en['item.mard_pixel.mard_pigment'] = 'Rainbow Powder';
     zh['item.mard_pixel.mard_pigment'] = '七彩粉末';
-    // MARD 合成台方块
-    en['block.mard_pixel.mard_crafting_table'] = 'MARD Crafting Table';
-    zh['block.mard_pixel.mard_crafting_table'] = 'MARD 合成台';
+    // 方块染色台
+    en['block.mard_pixel.mard_crafting_table'] = 'Block Dyeing Table';
+    zh['block.mard_pixel.mard_crafting_table'] = '方块染色台';
     // 快捷键
     en['key.mard_pixel.open'] = 'Open MARD Color Palette';
     zh['key.mard_pixel.open'] = '打开 MARD 色板';
