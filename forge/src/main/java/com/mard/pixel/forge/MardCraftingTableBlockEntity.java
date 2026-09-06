@@ -5,7 +5,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -74,7 +74,11 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
         if (level == null || level.isClientSide) return;
 
         // 创建临时合成容器
-        SimpleCraftingContainer craftingContainer = new SimpleCraftingContainer(3, 3, getGridItems());
+        TransientCraftingContainer craftingContainer = new TransientCraftingContainer(null, 3, 3);
+        NonNullList<ItemStack> gridItems = getGridItems();
+        for (int i = 0; i < GRID_SIZE; i++) {
+            craftingContainer.setItem(i, gridItems.get(i));
+        }
 
         // 查找匹配的配方
         Optional<CraftingRecipe> recipe = level.getRecipeManager()
