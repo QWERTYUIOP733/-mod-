@@ -2,11 +2,9 @@ package com.mard.pixel.forge.client;
 
 import com.mard.pixel.forge.MardBlock;
 import com.mard.pixel.forge.MardBlockItem;
-import com.mard.pixel.forge.MardCustomBlockEntity;
 import com.mard.pixel.forge.MardPixelForge;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -86,23 +84,10 @@ public final class MardPixelForgeClient {
 
         // MARD 色块：统一使用方块本身存储的 rgb 值染色
         event.getBlockColors().register((state, level, pos, tint) -> {
-            if (level != null && pos != null
-                    && level.getBlockEntity(pos) instanceof MardCustomBlockEntity mbe) {
-                return mbe.getColor();
-            }
             Block block = state.getBlock();
             // 所有 MARD 色块统一返回基础 rgb 值
             return block instanceof MardBlock mb ? mb.rgb() : 0xFFFFFF;
         }, mardBlocks);
-
-        // 自定义色块：从 BlockEntity 读取颜色
-        event.getBlockColors().register((state, level, pos, tint) -> {
-            if (level != null && pos != null
-                    && level.getBlockEntity(pos) instanceof MardCustomBlockEntity mbe) {
-                return mbe.getColor();
-            }
-            return 0xFFFFFF;
-        }, MardPixelForge.CUSTOM_BLOCK.get());
     }
 
     /**
@@ -118,14 +103,6 @@ public final class MardPixelForgeClient {
                 event.getItemColors().register((stack, tint) -> mb.rgb(), mb);
             }
         }
-
-        // 自定义色块：从 NBT 读取 mard_color
-        event.getItemColors().register((stack, tint) -> {
-            CompoundTag tag = stack.getTag();
-            return (tag != null && tag.contains("mard_color"))
-                    ? tag.getInt("mard_color") & 0xFFFFFF
-                    : 0xFFFFFF;
-        }, MardPixelForge.CUSTOM_ITEM.get());
     }
 
     // ==================== FORGE Bus 事件 ====================
@@ -158,7 +135,7 @@ public final class MardPixelForgeClient {
          * "色号 + RGB值" 两行显示格式。
          *
          * 清理策略：
-         * 1. 只处理本模组的物品（MARD基础色块 + 自定义色块）
+         * 1. 只处理本模组的物品（MARD基础色块）
          * 2. 保留第一行（物品名称，即色号编号）
          * 3. 保留包含 "RGB" 关键词的行（RGB值）
          * 4. 移除其他所有行（模组名称、标签页名称等）
@@ -191,12 +168,11 @@ public final class MardPixelForgeClient {
         /**
          * 判断物品是否属于本模组。
          * @param stack 物品栈
-         * @return true 如果是 MARD 基础色块或自定义色块
+         * @return true 如果是 MARD 基础色块
          */
         private static boolean isMardModItem(ItemStack stack) {
             var item = stack.getItem();
-            return item instanceof MardBlockItem
-                    || item == MardPixelForge.CUSTOM_ITEM.get();
+            return item instanceof MardBlockItem;
         }
     }
 

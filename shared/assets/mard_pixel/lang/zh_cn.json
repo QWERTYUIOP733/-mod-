@@ -221,14 +221,7 @@
  "block.mard_pixel.mard_m13": "MARD M13",
  "block.mard_pixel.mard_m14": "MARD M14",
  "block.mard_pixel.mard_m15": "MARD M15",
- "block.mard_pixel.mard_custom": "MARD 自定义色块",
  "key.mard_pixel.open": "打开 MARD 色板",
  "key.categories.mard_pixel": "MARD 像素画",
- "screen.mard_pixel.title": "MARD 色板",
- "screen.mard_pixel.switchbag": "整体换包到此色系",
- "screen.mard_pixel.pick": "吸取颜色",
- "screen.mard_pixel.add": "新增",
- "screen.mard_pixel.remove": "删除",
- "screen.mard_pixel.tri": "HSV 三角",
- "screen.mard_pixel.wheel": "RGB 色环"
+ "screen.mard_pixel.title": "MARD 色板"
 }

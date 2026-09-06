@@ -221,14 +221,7 @@
  "block.mard_pixel.mard_m13": "MARD M13",
  "block.mard_pixel.mard_m14": "MARD M14",
  "block.mard_pixel.mard_m15": "MARD M15",
- "block.mard_pixel.mard_custom": "MARD Custom Block",
  "key.mard_pixel.open": "Open MARD Color Palette",
  "key.categories.mard_pixel": "MARD Pixel",
- "screen.mard_pixel.title": "MARD Color Palette",
- "screen.mard_pixel.switchbag": "Switch Bag to This System",
- "screen.mard_pixel.pick": "Pick Color",
- "screen.mard_pixel.add": "Add",
- "screen.mard_pixel.remove": "Remove",
- "screen.mard_pixel.tri": "HSV Triangle",
- "screen.mard_pixel.wheel": "RGB Wheel"
+ "screen.mard_pixel.title": "MARD Color Palette"
 }

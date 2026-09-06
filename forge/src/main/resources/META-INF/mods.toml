@@ -6,7 +6,10 @@ license="MIT"
 modId="mard_pixel"
 version="1.2.0"
 displayName="MARD Pixel Mod"
-description="MARD 拼豆 295 色标准色卡像素画 Mod：实心色块 + 色板(快捷键G) + 品牌/外部色系切换 + 自定义色号 + 背包整体换包。"
+description='''
+MARD 221色标准色卡像素画Mod：
+实心色块 + 色板(快捷键G) + 输入色号快速获取 + 按系列分类的创造模式标签页。
+'''
 authors="MARD Pixel Team"
 logoFile=""
 
