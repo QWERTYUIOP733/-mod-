@@ -66,7 +66,7 @@ public class MardCraftingMenu extends AbstractContainerMenu {
             public void onTake(Player player, @NotNull ItemStack stack) {
                 super.onTake(player, stack);
                 // 取走结果时消耗材料
-                blockEntity.onResultTaken(player);
+                blockEntity.consumeMaterials();
             }
         });
 
@@ -109,7 +109,6 @@ public class MardCraftingMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(itemstack1, 10, 46, true)) {
                     return ItemStack.EMPTY;
                 }
-                slot.onQuickCraft(itemstack1, itemstack);
             } else if (index >= 10 && index < 46) {
                 // 从玩家背包移到合成网格
                 if (!this.moveItemStackTo(itemstack1, 0, 9, false)) {

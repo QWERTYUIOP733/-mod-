@@ -110,12 +110,9 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
     }
 
     /**
-     * 玩家取走结果时消耗材料。
+     * 消耗合成材料（玩家取走结果时调用）。
      */
-    public void onResultTaken(Player player) {
-        ItemStack result = inventory.getStackInSlot(RESULT_SLOT);
-        if (result.isEmpty()) return;
-
+    public void consumeMaterials() {
         // 消耗合成网格中的材料
         for (int i = 0; i < GRID_SIZE; i++) {
             ItemStack stack = inventory.getStackInSlot(i);
@@ -125,11 +122,6 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
                     inventory.setStackInSlot(i, ItemStack.EMPTY);
                 }
             }
-        }
-
-        // 给予玩家结果
-        if (!player.getInventory().add(result.copy())) {
-            player.drop(result.copy(), false);
         }
 
         inventory.setStackInSlot(RESULT_SLOT, ItemStack.EMPTY);
