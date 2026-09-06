@@ -157,6 +157,28 @@ public class MardCraftingMenu extends AbstractContainerMenu {
     }
 
     /**
+     * 客户端选择颜色（发送网络包到服务端）。
+     */
+    public void selectColor(String code) {
+        if (player.level().isClientSide) {
+            MardNetwork.CHANNEL.sendToServer(new MardNetwork.SelectCraftingColorPacket(code));
+        }
+    }
+
+    /**
+     * 检查合成网格中是否有七彩粉末（客户端判断是否显示颜色选择列表）。
+     */
+    public boolean hasPigment() {
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = getSlot(i).getItem();
+            if (!stack.isEmpty() && stack.getItem() == MardPixelForge.MARD_PIGMENT.get()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * 服务端创建菜单的静态工厂方法。
      */
     public static MardCraftingMenu create(int containerId, Inventory playerInventory, MardCraftingTableBlockEntity blockEntity) {

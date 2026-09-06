@@ -39,6 +39,11 @@ public final class MardNetwork {
                 .decoder(CraftItemPacket::decode)
                 .consumerMainThread(MardNetwork::handleCraftItem)
                 .add();
+        CHANNEL.messageBuilder(SelectCraftingColorPacket.class, id++)
+                .encoder(SelectCraftingColorPacket::encode)
+                .decoder(SelectCraftingColorPacket::decode)
+                .consumerMainThread(MardNetwork::handleSelectCraftingColor)
+                .add();
     }
 
     // ==================== 网络包定义 ====================
@@ -80,6 +85,18 @@ public final class MardNetwork {
         ctx.get().setPacketHandled(true);
     }
 
+    private static void handleSelectCraftingColor(SelectCraftingColorPacket p, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> {
+            ServerPlayer player = ctx.get().getSender();
+            if (player != null && player.containerMenu instanceof MardCraftingMenu menu) {
+                if (menu.getBlockEntity() != null) {
+                    menu.getBlockEntity().selectColor(p.code);
+                }
+            }
+        });
+        ctx.get().setPacketHandled(true);
+    }
+
     // ==================== 网络包类 ====================
 
     /**
@@ -100,6 +117,16 @@ public final class MardNetwork {
         public CraftItemPacket(String code) { this.code = code; }
         public static void encode(CraftItemPacket p, FriendlyByteBuf buf) { buf.writeUtf(p.code); }
         public static CraftItemPacket decode(FriendlyByteBuf buf) { return new CraftItemPacket(buf.readUtf()); }
+    }
+
+    /**
+     * 合成台选择颜色（七彩粉末模式下从右侧列表选择颜色）。
+     */
+    public static class SelectCraftingColorPacket {
+        public final String code;
+        public SelectCraftingColorPacket(String code) { this.code = code; }
+        public static void encode(SelectCraftingColorPacket p, FriendlyByteBuf buf) { buf.writeUtf(p.code); }
+        public static SelectCraftingColorPacket decode(FriendlyByteBuf buf) { return new SelectCraftingColorPacket(buf.readUtf()); }
     }
 
     private MardNetwork() {}

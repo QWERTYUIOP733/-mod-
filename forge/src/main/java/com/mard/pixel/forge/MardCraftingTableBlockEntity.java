@@ -1,5 +1,6 @@
 package com.mard.pixel.forge;
 
+import com.mard.pixel.common.MardPalette;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -24,13 +25,15 @@ import java.util.Optional;
 /**
  * MARD 合成台方块实体。
  * 存储3x3合成网格（9格）和结果槽（1格）。
- * 合成结果只允许模组内物品。
+ * 支持七彩粉末颜色选择模式：放入七彩粉末后，可从右侧列表选择颜色合成。
  */
 public class MardCraftingTableBlockEntity extends BlockEntity {
 
     public static final int GRID_SIZE = 9;
     public static final int RESULT_SLOT = 9;
     public static final int TOTAL_SLOTS = 10;
+
+    private String selectedColor = ""; // 当前选择的颜色色号，如"A1"
 
     private final ItemStackHandler inventory = new ItemStackHandler(TOTAL_SLOTS) {
         @Override
@@ -56,6 +59,34 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
 
     public IItemHandler getInventory() {
         return inventory;
+    }
+
+    public String getSelectedColor() {
+        return selectedColor;
+    }
+
+    /**
+     * 选择颜色（由客户端网络包调用）。
+     */
+    public void selectColor(String code) {
+        this.selectedColor = code != null ? code : "";
+        if (level != null && !level.isClientSide) {
+            updateCraftingResult();
+            setChanged();
+        }
+    }
+
+    /**
+     * 检查合成网格中是否有七彩粉末。
+     */
+    private boolean hasPigment() {
+        for (int i = 0; i < GRID_SIZE; i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (!stack.isEmpty() && stack.getItem() == MardPixelForge.MARD_PIGMENT.get()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -84,11 +115,24 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
     }
 
     /**
-     * 更新合成结果。只允许模组内物品。
+     * 更新合成结果。
+     * 如果有七彩粉末且选择了颜色，则结果为对应颜色的64个方块。
+     * 否则使用原版配方系统，只允许模组内物品。
      */
     private void updateCraftingResult() {
         if (level == null || level.isClientSide) return;
 
+        // 七彩粉末颜色选择模式
+        if (hasPigment() && !selectedColor.isEmpty()) {
+            ItemStack result = MardPixelForge.buildStack(selectedColor);
+            if (!result.isEmpty()) {
+                result.setCount(64);
+                inventory.setStackInSlot(RESULT_SLOT, result);
+                return;
+            }
+        }
+
+        // 原版配方系统（只允许模组内物品）
         TransientCraftingContainer craftingContainer = new TransientCraftingContainer(null, 3, 3);
         NonNullList<ItemStack> gridItems = getGridItems();
         for (int i = 0; i < GRID_SIZE; i++) {
@@ -143,6 +187,7 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
             allItems.set(i, inventory.getStackInSlot(i).copy());
         }
         ContainerHelper.saveAllItems(tag, allItems);
+        tag.putString("SelectedColor", selectedColor);
     }
 
     @Override
@@ -153,6 +198,7 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
         for (int i = 0; i < TOTAL_SLOTS; i++) {
             inventory.setStackInSlot(i, allItems.get(i));
         }
+        selectedColor = tag.getString("SelectedColor");
     }
 
     public Component getDisplayName() {
