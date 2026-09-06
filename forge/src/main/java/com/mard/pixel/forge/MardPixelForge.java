@@ -212,11 +212,11 @@ public class MardPixelForge {
                                             ChatFormatting cf = net.minecraft.commands.arguments.ColorArgument.getColor(ctx, "hex");
                                             int rgb = cf.getColor() != null ? cf.getColor() : 0xFFFFFF;
                                             MardColor nearest = MardPalette.nearest(rgb);
-                                            p.sendSystemMessage(Component.literal("最近 MARD 色："
+                                            p.sendSystemMessage(Component.literal("最近颜色："
                                                     + nearest.code() + " " + ColorMath.toHex(nearest.rgb())));
                                             return 1;
                                         })))
-                        // 快速给予物品（MARD:<色号>）
+                        // 快速给予物品（<色号>）
                         .then(Commands.literal("give")
                                 .then(Commands.argument("target", StringArgumentType.greedyString())
                                         .executes(ctx -> {
@@ -272,7 +272,7 @@ public class MardPixelForge {
      */
     public static void giveRequestedItem(ServerPlayer player, String target) {
         if (target == null || target.isBlank()) {
-            player.sendSystemMessage(Component.literal("用法：MARD:<色号> 或直接输入色号").withStyle(ChatFormatting.GRAY));
+            player.sendSystemMessage(Component.literal("用法：<色号> 或直接输入色号").withStyle(ChatFormatting.GRAY));
             return;
         }
         ItemStack stack = buildStack(target);

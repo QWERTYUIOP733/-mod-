@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * MARD Pixel Mod 主 UI 界面。
+ * 彩色方块扩展 主 UI 界面。
  *
  * 布局根据游戏窗口大小动态调整。
  * 主菜单：左侧2个按钮 + 右侧说明 + 底部提示
@@ -57,7 +57,7 @@ public class MardColorScreen extends Screen {
     private void rebuildSwatches() {
         swatches.clear();
         for (MardColor mc : MardPalette.COLORS) {
-            swatches.add(new Entry(mc.code(), mc.rgb(), "MARD:" + mc.code()));
+            swatches.add(new Entry(mc.code(), mc.rgb(), mc.code()));
         }
     }
 
@@ -83,7 +83,7 @@ public class MardColorScreen extends Screen {
     /**
      * 主菜单页面：左侧2个按钮 + 右侧说明。
      * 按钮区偏左且较窄，说明区保持不变。
-     * 按钮一：MARD 颜色选取
+     * 按钮一：颜色选取
      * 按钮二：输入想用的色号
      */
     private void initMainPage() {
@@ -95,8 +95,8 @@ public class MardColorScreen extends Screen {
         int centerY = height / 2;
         int gapY = 48;
 
-        // 按钮一：MARD 颜色选取
-        addRenderableWidget(Button.builder(Component.literal("MARD 颜色选取"), btn -> {
+        // 按钮一：颜色选取
+        addRenderableWidget(Button.builder(Component.literal("颜色选取"), btn -> {
             currentPage = Page.SWATCHES;
             scrollOffset = 0;
             init();
@@ -208,7 +208,7 @@ public class MardColorScreen extends Screen {
      */
     private void renderMainPage(GuiGraphics g) {
         // 标题（居中偏上）
-        String title = "MARD 像素色块 Mod";
+        String title = "彩色方块扩展";
         g.drawString(font, Component.literal(title), (width - font.width(title)) / 2, 40, 0xFFFFFF);
 
         // 右侧：mod 使用说明（右侧 40% 宽度）
@@ -251,7 +251,7 @@ public class MardColorScreen extends Screen {
         }
 
         // 底部提示
-        String bottomText = "MARD 像素色块模组 v1.2.0";
+        String bottomText = "彩色方块扩展 v1.2.0";
         g.drawString(font, Component.literal(bottomText),
                 (width - font.width(bottomText)) / 2, height - 35, 0x888888);
 
@@ -268,8 +268,8 @@ public class MardColorScreen extends Screen {
     private void renderSwatchesPage(GuiGraphics g) {
         // 标题（根据模式显示不同提示）
         String title = craftMode
-                ? "MARD 合成模式 - 点击色块消耗1个七彩粉末合成一组（64个）"
-                : "MARD 颜色选取 - 点击色块获取一组（64个）";
+                ? "合成模式 - 点击色块消耗1个七彩粉末合成一组（64个）"
+                : "颜色选取 - 点击色块获取一组（64个）";
         g.drawString(font, Component.literal(title), 80, 12, craftMode ? 0xFFFFAA : 0xFFFFFF);
 
         int contentY = 40;
@@ -332,7 +332,7 @@ public class MardColorScreen extends Screen {
         g.drawString(font, Component.literal(title),
                 (width - font.width(title)) / 2, height / 2 - 70, 0xFFFFFF);
 
-        String hint = "输入MARD色号（如 A1、B5、M3），支持批量输入多个色号";
+        String hint = "输入色号（如 A1、B5、M3），支持批量输入多个色号";
         g.drawString(font, Component.literal(hint),
                 (width - font.width(hint)) / 2, height / 2 + 45, 0xAAAAAA);
 
