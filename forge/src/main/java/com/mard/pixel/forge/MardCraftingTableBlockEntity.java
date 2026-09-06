@@ -6,7 +6,6 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.ContainerHelper;
-import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -133,7 +132,7 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
         }
 
         // 原版配方系统（只允许模组内物品）
-        TransientCraftingContainer craftingContainer = new TransientCraftingContainer(null, 3, 3);
+        SafeCraftingContainer craftingContainer = new SafeCraftingContainer(3, 3);
         NonNullList<ItemStack> gridItems = getGridItems();
         for (int i = 0; i < GRID_SIZE; i++) {
             craftingContainer.setItem(i, gridItems.get(i));
@@ -165,12 +164,24 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
 
     /**
      * 消耗合成材料（玩家取走结果时调用）。
+     * 七彩粉末模式下只消耗七彩粉末，普通模式下消耗所有材料。
      */
     public void consumeMaterials() {
-        for (int i = 0; i < GRID_SIZE; i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            if (!stack.isEmpty()) {
-                stack.shrink(1);
+        if (hasPigment() && !selectedColor.isEmpty()) {
+            // 七彩粉末模式：只消耗七彩粉末
+            for (int i = 0; i < GRID_SIZE; i++) {
+                ItemStack stack = inventory.getStackInSlot(i);
+                if (!stack.isEmpty() && stack.getItem() == MardPixelForge.MARD_PIGMENT.get()) {
+                    stack.shrink(1);
+                }
+            }
+        } else {
+            // 普通模式：消耗所有材料
+            for (int i = 0; i < GRID_SIZE; i++) {
+                ItemStack stack = inventory.getStackInSlot(i);
+                if (!stack.isEmpty()) {
+                    stack.shrink(1);
+                }
             }
         }
         inventory.setStackInSlot(RESULT_SLOT, ItemStack.EMPTY);

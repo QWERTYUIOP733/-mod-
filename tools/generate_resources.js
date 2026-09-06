@@ -75,6 +75,9 @@ function main() {
     // UI 标题
     en['screen.mard_pixel.title'] = 'MARD Color Palette';
     zh['screen.mard_pixel.title'] = 'MARD 色板';
+    // 合成台颜色选择面板
+    en['screen.mard_pixel.crafting.select_color'] = 'Select Color';
+    zh['screen.mard_pixel.crafting.select_color'] = '选择颜色';
 
     fs.writeFileSync(path.join(langDir, 'en_us.json'), JSON.stringify(en, null, 1));
     fs.writeFileSync(path.join(langDir, 'zh_cn.json'), JSON.stringify(zh, null, 1));

@@ -1,12 +1,15 @@
 package com.mard.pixel.forge;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,45 +32,75 @@ public class MardCraftingMenu extends AbstractContainerMenu {
     public static final int PLAYER_INV_Y = 84;
     public static final int HOTBAR_Y = 142;
 
-    private final MardCraftingTableBlockEntity blockEntity;
+    private MardCraftingTableBlockEntity blockEntity;
     private final Player player;
+    private IItemHandler inventoryHandler;
 
     /**
-     * 客户端构造函数（从FriendlyByteBuf读取BlockPos）。
+     * 客户端构造函数（通过IForgeMenuType调用，从FriendlyByteBuf读取BlockPos）。
+     * 必须注册所有槽位，否则会导致IndexOutOfBoundsException。
      */
     public MardCraftingMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
-        this(containerId, playerInventory, (MardCraftingTableBlockEntity) playerInventory.player.level()
-                .getBlockEntity(buf.readBlockPos()));
+        super(MardPixelForge.MARD_CRAFTING_MENU.get(), containerId);
+        this.player = playerInventory.player;
+        this.blockEntity = null;
+        this.inventoryHandler = new ItemStackHandler(MardCraftingTableBlockEntity.TOTAL_SLOTS);
+
+        // 尝试从buf读取BlockPos并获取真实方块实体
+        if (buf != null && buf.isReadable()) {
+            try {
+                BlockPos pos = buf.readBlockPos();
+                BlockEntity be = player.level().getBlockEntity(pos);
+                if (be instanceof MardCraftingTableBlockEntity craftingTable) {
+                    this.blockEntity = craftingTable;
+                    this.inventoryHandler = craftingTable.getInventory();
+                }
+            } catch (Exception e) {
+                // 读取失败，使用临时handler
+            }
+        }
+
+        registerSlots(playerInventory);
     }
 
     /**
-     * MenuType需要的构造函数。
+     * MenuType需要的构造函数（后备方案，也必须注册槽位）。
      */
     public MardCraftingMenu(int containerId, Inventory playerInventory) {
         super(MardPixelForge.MARD_CRAFTING_MENU.get(), containerId);
-        this.blockEntity = null;
         this.player = playerInventory.player;
+        this.blockEntity = null;
+        this.inventoryHandler = new ItemStackHandler(MardCraftingTableBlockEntity.TOTAL_SLOTS);
+        registerSlots(playerInventory);
     }
 
-    private MardCraftingMenu(int containerId, Inventory playerInventory, MardCraftingTableBlockEntity blockEntity) {
+    /**
+     * 服务端创建菜单的构造函数。
+     */
+    public MardCraftingMenu(int containerId, Inventory playerInventory, MardCraftingTableBlockEntity blockEntity) {
         super(MardPixelForge.MARD_CRAFTING_MENU.get(), containerId);
         this.blockEntity = blockEntity;
         this.player = playerInventory.player;
+        this.inventoryHandler = blockEntity.getInventory();
+        registerSlots(playerInventory);
+    }
 
-        IItemHandler handler = blockEntity.getInventory();
-
+    /**
+     * 注册所有槽位。必须在所有构造函数中调用。
+     */
+    private void registerSlots(Inventory playerInventory) {
         // 3x3 合成网格（槽位0-8）
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
                 int slotIndex = row * 3 + col;
-                this.addSlot(new SlotItemHandler(handler, slotIndex,
+                this.addSlot(new SlotItemHandler(inventoryHandler, slotIndex,
                         GRID_START_X + col * SLOT_SIZE,
                         GRID_START_Y + row * SLOT_SIZE));
             }
         }
 
         // 结果槽（槽位9）
-        this.addSlot(new SlotItemHandler(handler, MardCraftingTableBlockEntity.RESULT_SLOT,
+        this.addSlot(new SlotItemHandler(inventoryHandler, MardCraftingTableBlockEntity.RESULT_SLOT,
                 RESULT_X, RESULT_Y) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {

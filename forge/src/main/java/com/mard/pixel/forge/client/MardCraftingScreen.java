@@ -147,7 +147,7 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
         graphics.fill(panelX + COLOR_PANEL_WIDTH - 1, panelY, panelX + COLOR_PANEL_WIDTH, panelY + COLOR_PANEL_HEIGHT, 0xFF373737);
 
         // 绘制标题
-        graphics.drawString(this.font, "选择颜色", panelX + 4, panelY + 4, 0x404040, false);
+        graphics.drawString(this.font, net.minecraft.network.chat.Component.translatable("screen.mard_pixel.crafting.select_color"), panelX + 4, panelY + 4, 0x404040, false);
 
         // 计算可见的颜色范围
         int totalColors = MardPalette.COLORS.size();

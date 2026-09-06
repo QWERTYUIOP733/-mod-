@@ -78,8 +78,7 @@ public class MardPixelForge {
                             MARD_CRAFTING_TABLE.get()).build(null));
     public static final RegistryObject<MenuType<MardCraftingMenu>> MARD_CRAFTING_MENU =
             MENUS.register("mard_crafting_menu",
-                    () -> new MenuType<>(MardCraftingMenu::new,
-                            net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS));
+                    () -> net.minecraftforge.common.extensions.IForgeMenuType.create(MardCraftingMenu::new));
 
     public MardPixelForge() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
