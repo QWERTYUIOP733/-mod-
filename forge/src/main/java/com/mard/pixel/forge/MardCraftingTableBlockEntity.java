@@ -124,11 +124,11 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        ContainerHelper.saveAllItems(tag, getGridItems(), true, level.registryAccess());
+        ContainerHelper.saveAllItems(tag, getGridItems());
         // 保存结果槽
         if (!inventory.getStackInSlot(RESULT_SLOT).isEmpty()) {
             CompoundTag resultTag = new CompoundTag();
-            inventory.getStackInSlot(RESULT_SLOT).save(level.registryAccess(), resultTag);
+            inventory.getStackInSlot(RESULT_SLOT).save(resultTag);
             tag.put("Result", resultTag);
         }
     }
@@ -137,14 +137,13 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         NonNullList<ItemStack> items = NonNullList.withSize(GRID_SIZE, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(tag, items, level.registryAccess());
+        ContainerHelper.loadAllItems(tag, items);
         for (int i = 0; i < GRID_SIZE; i++) {
             inventory.setStackInSlot(i, items.get(i));
         }
         // 加载结果槽
         if (tag.contains("Result")) {
-            ItemStack result = ItemStack.parse(level.registryAccess(), tag.getCompound("Result"))
-                    .orElse(ItemStack.EMPTY);
+            ItemStack result = ItemStack.of(tag.getCompound("Result"));
             inventory.setStackInSlot(RESULT_SLOT, result);
         }
     }

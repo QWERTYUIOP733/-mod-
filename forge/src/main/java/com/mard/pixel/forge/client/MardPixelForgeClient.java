@@ -4,6 +4,7 @@ import com.mard.pixel.forge.MardBlock;
 import com.mard.pixel.forge.MardBlockItem;
 import com.mard.pixel.forge.MardCraftingMenu;
 import com.mard.pixel.forge.MardPixelForge;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -12,7 +13,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.event.RegisterMenuScreensEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -61,21 +61,13 @@ public final class MardPixelForgeClient {
     }
 
     /**
-     * 注册菜单屏幕。
-     * 将 MARD 合成台菜单与屏幕关联。
-     */
-    @SubscribeEvent
-    public static void registerMenuScreens(RegisterMenuScreensEvent event) {
-        event.register(MardPixelForge.MARD_CRAFTING_MENU.get(), MardCraftingScreen::new);
-    }
-
-    /**
      * 客户端设置。
-     * 所有色块统一使用不透明渲染。
+     * 注册合成台屏幕。
      */
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        // 所有色块统一使用不透明渲染，无需特殊设置
+        // 注册合成台屏幕
+        MenuScreens.register(MardPixelForge.MARD_CRAFTING_MENU.get(), MardCraftingScreen::new);
     }
 
     /**

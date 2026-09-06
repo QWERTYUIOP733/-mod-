@@ -6,6 +6,7 @@ import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.CraftingContainer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeInput;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -93,5 +94,12 @@ public class SimpleCraftingContainer implements CraftingContainer {
     @Override
     public boolean stillValid(@NotNull Player player) {
         return true;
+    }
+
+    @Override
+    public void fillStackedContents(net.minecraft.world.phys.shapes.StackedContents contents) {
+        for (ItemStack stack : items) {
+            contents.accountStack(stack);
+        }
     }
 }
