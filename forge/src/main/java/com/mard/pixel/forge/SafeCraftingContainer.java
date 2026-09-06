@@ -101,4 +101,11 @@ public class SafeCraftingContainer implements CraftingContainer {
     public int getHeight() {
         return height;
     }
+
+    @Override
+    public void fillStackedContents(@NotNull net.minecraft.world.entity.player.StackedContents helper) {
+        for (ItemStack stack : items) {
+            helper.accountSimpleStack(stack);
+        }
+    }
 }
