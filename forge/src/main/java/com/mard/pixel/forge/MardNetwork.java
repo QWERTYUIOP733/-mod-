@@ -34,6 +34,11 @@ public final class MardNetwork {
                 .decoder(HotbarPacket::decode)
                 .consumerMainThread(MardNetwork::handleHotbar)
                 .add();
+        CHANNEL.messageBuilder(CraftItemPacket.class, id++)
+                .encoder(CraftItemPacket::encode)
+                .decoder(CraftItemPacket::decode)
+                .consumerMainThread(MardNetwork::handleCraftItem)
+                .add();
     }
 
     // ==================== 网络包定义 ====================
@@ -67,6 +72,14 @@ public final class MardNetwork {
         ctx.get().setPacketHandled(true);
     }
 
+    private static void handleCraftItem(CraftItemPacket p, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> {
+            ServerPlayer player = ctx.get().getSender();
+            if (player != null) MardPixelForge.craftWithPigment(player, p.code);
+        });
+        ctx.get().setPacketHandled(true);
+    }
+
     // ==================== 网络包类 ====================
 
     /**
@@ -77,6 +90,16 @@ public final class MardNetwork {
         public HotbarPacket(String code) { this.code = code; }
         public static void encode(HotbarPacket p, FriendlyByteBuf buf) { buf.writeUtf(p.code); }
         public static HotbarPacket decode(FriendlyByteBuf buf) { return new HotbarPacket(buf.readUtf()); }
+    }
+
+    /**
+     * 使用七彩粉末合成色块（UI合成模式下点击色块）。
+     */
+    public static class CraftItemPacket {
+        public final String code;
+        public CraftItemPacket(String code) { this.code = code; }
+        public static void encode(CraftItemPacket p, FriendlyByteBuf buf) { buf.writeUtf(p.code); }
+        public static CraftItemPacket decode(FriendlyByteBuf buf) { return new CraftItemPacket(buf.readUtf()); }
     }
 
     private MardNetwork() {}

@@ -43,6 +43,7 @@ public class MardColorScreen extends Screen {
     private int lastScrollOffset = -1; // 用于检测滚动变化，避免每帧重算Rect
     private int lastWindowWidth = -1;
     private int lastWindowHeight = -1;
+    private boolean craftMode = false; // 合成模式：消耗七彩粉末合成色块
 
     // 输入色号页面
     private EditBox inputBox;
@@ -117,6 +118,14 @@ public class MardColorScreen extends Screen {
             statusMsg = "";
             init();
         }).bounds(10, 6, 60, 20).build());
+
+        // 模式切换按钮：普通模式 / 合成模式
+        String modeText = craftMode ? "合成模式 ✓" : "普通模式";
+        addRenderableWidget(Button.builder(Component.literal(modeText), btn -> {
+            craftMode = !craftMode;
+            statusMsg = craftMode ? "已切换到合成模式（消耗七彩粉末）" : "已切换到普通模式（直接给予）";
+            init();
+        }).bounds(width - 110, 6, 100, 20).build());
     }
 
     /**
@@ -219,12 +228,15 @@ public class MardColorScreen extends Screen {
             "MARD 221 色像素画模组",
             "",
             "按钮一：浏览全部色号",
-            "  点击色块获取一组方块",
+            "  普通模式：点击色块获取一组方块",
+            "  合成模式：消耗七彩粉末合成一组",
             "  支持连续选择",
             "",
             "按钮二：输入色号快速获取",
             "  输入色号后放入快捷栏",
             "  支持批量输入（空格/逗号分隔）",
+            "",
+            "合成表：任意染料→七彩粉末→色块",
             "",
             "按 G 键打开/关闭本界面"
         };
@@ -254,9 +266,11 @@ public class MardColorScreen extends Screen {
      * 优化：只在滚动或窗口大小变化时重算Rect，避免每帧卡顿。
      */
     private void renderSwatchesPage(GuiGraphics g) {
-        // 标题
-        String title = "MARD 颜色选取 - 点击色块获取一组（64个）";
-        g.drawString(font, Component.literal(title), 80, 12, 0xFFFFFF);
+        // 标题（根据模式显示不同提示）
+        String title = craftMode
+                ? "MARD 合成模式 - 点击色块消耗1个七彩粉末合成一组（64个）"
+                : "MARD 颜色选取 - 点击色块获取一组（64个）";
+        g.drawString(font, Component.literal(title), 80, 12, craftMode ? 0xFFFFAA : 0xFFFFFF);
 
         int contentY = 40;
         int contentH = height - contentY - 20;
@@ -352,8 +366,15 @@ public class MardColorScreen extends Screen {
                 Rect r = swatchRects.get(i);
                 if (r.hit(mx, my)) {
                     Entry e = swatches.get(startIdx + i);
-                    MardNetwork.CHANNEL.sendToServer(new MardNetwork.RequestItemPacket(e.target()));
-                    statusMsg = "已给予一组 " + e.code();
+                    if (craftMode) {
+                        // 合成模式：发送CraftItemPacket，服务端消耗七彩粉末
+                        MardNetwork.CHANNEL.sendToServer(new MardNetwork.CraftItemPacket(e.code()));
+                        statusMsg = "请求合成 " + e.code() + "（消耗1个七彩粉末）";
+                    } else {
+                        // 普通模式：直接给予一组
+                        MardNetwork.CHANNEL.sendToServer(new MardNetwork.RequestItemPacket(e.target()));
+                        statusMsg = "已给予一组 " + e.code();
+                    }
                     return true; // 不关闭页面，支持连续选择
                 }
             }

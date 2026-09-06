@@ -2,6 +2,7 @@ package com.mard.pixel.forge.client;
 
 import com.mard.pixel.forge.MardBlock;
 import com.mard.pixel.forge.MardBlockItem;
+import com.mard.pixel.forge.MardCraftingMenu;
 import com.mard.pixel.forge.MardPixelForge;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -11,6 +12,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.RegisterMenuScreensEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -56,6 +58,15 @@ public final class MardPixelForgeClient {
     @SubscribeEvent
     public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(OPEN_COLOR_PICKER_KEY);
+    }
+
+    /**
+     * 注册菜单屏幕。
+     * 将 MARD 合成台菜单与屏幕关联。
+     */
+    @SubscribeEvent
+    public static void registerMenuScreens(RegisterMenuScreensEvent event) {
+        event.register(MardPixelForge.MARD_CRAFTING_MENU.get(), MardCraftingScreen::new);
     }
 
     /**

@@ -10,10 +10,13 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BlockItem;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -47,6 +50,8 @@ public class MardPixelForge {
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final DeferredRegister<CreativeModeTab> CREATIVE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
+    public static final DeferredRegister<MenuType<?>> MENUS = DeferredRegister.create(ForgeRegistries.MENU_TYPES, MODID);
 
     // ==================== 色块引用 ====================
     /** 构造函数中填充的方块引用（用于颜色处理器注册） */
@@ -61,6 +66,20 @@ public class MardPixelForge {
     public static final RegistryObject<Item> MARD_PIGMENT = ITEMS.register("mard_pigment",
             () -> new Item(new Item.Properties()));
 
+    // ==================== MARD 合成台 ====================
+    /** MARD合成台方块：功能类似原版工作台，但只能合成模组内物品 */
+    public static final RegistryObject<Block> MARD_CRAFTING_TABLE = BLOCKS.register("mard_crafting_table",
+            MardCraftingTable::new);
+    public static final RegistryObject<Item> MARD_CRAFTING_TABLE_ITEM = ITEMS.register("mard_crafting_table",
+            () -> new BlockItem(MARD_CRAFTING_TABLE.get(), new Item.Properties()));
+    public static final RegistryObject<BlockEntityType<MardCraftingTableBlockEntity>> MARD_CRAFTING_TABLE_BE =
+            BLOCK_ENTITIES.register("mard_crafting_table",
+                    () -> BlockEntityType.Builder.of(MardCraftingTableBlockEntity::new,
+                            MARD_CRAFTING_TABLE.get()).build(null));
+    public static final RegistryObject<MenuType<MardCraftingMenu>> MARD_CRAFTING_MENU =
+            MENUS.register("mard_crafting_menu",
+                    () -> new MenuType<>(MardCraftingMenu::new));
+
     public MardPixelForge() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
 
@@ -68,6 +87,8 @@ public class MardPixelForge {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         CREATIVE_TABS.register(modBus);
+        BLOCK_ENTITIES.register(modBus);
+        MENUS.register(modBus);
 
         // 注册 MARD 基础色块
         registerMardBlocks();
@@ -122,9 +143,10 @@ public class MardPixelForge {
                     .title(Component.literal(s))
                     .icon(() -> findFirstBlockOfSeries(s))
                     .displayItems((params, output) -> {
-                        // 第一个标签页添加MARD颜料（通用合成材料）
+                        // 第一个标签页添加MARD颜料（通用合成材料）和合成台
                         if (isFirst) {
                             output.accept(new ItemStack(MARD_PIGMENT.get()));
+                            output.accept(new ItemStack(MARD_CRAFTING_TABLE.get()));
                         }
                         for (MardColor mc : MardPalette.COLORS) {
                             if (mc.series().equals(s)) {
@@ -310,6 +332,61 @@ public class MardPixelForge {
             player.drop(stack, false);
         }
         player.sendSystemMessage(Component.literal("已放入快捷栏一组 ").append(stack.getHoverName()));
+    }
+
+    /**
+     * 使用七彩粉末合成色块（UI合成模式）。
+     * 检查玩家背包中是否有七彩粉末，有则消耗1个，给予64个对应色块。
+     */
+    public static void craftWithPigment(ServerPlayer player, String code) {
+        if (code == null || code.isBlank()) {
+            player.sendSystemMessage(Component.literal("色号无效").withStyle(ChatFormatting.RED));
+            return;
+        }
+
+        Inventory inv = player.getInventory();
+        boolean hasPigment = false;
+        int pigmentSlot = -1;
+
+        // 检查背包中是否有七彩粉末
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack slotStack = inv.getItem(i);
+            if (!slotStack.isEmpty() && slotStack.getItem() == MARD_PIGMENT.get()) {
+                hasPigment = true;
+                pigmentSlot = i;
+                break;
+            }
+        }
+
+        if (!hasPigment) {
+            player.sendSystemMessage(Component.literal("背包中没有七彩粉末，无法合成").withStyle(ChatFormatting.RED));
+            return;
+        }
+
+        // 生成对应色块
+        String target = "MARD:" + code.toUpperCase().trim();
+        ItemStack stack = buildStack(target);
+        if (stack == null || stack.isEmpty()) {
+            player.sendSystemMessage(Component.literal("色号不存在: " + code).withStyle(ChatFormatting.RED));
+            return;
+        }
+        stack.setCount(64);
+
+        // 消耗1个七彩粉末
+        ItemStack pigmentStack = inv.getItem(pigmentSlot);
+        pigmentStack.shrink(1);
+        if (pigmentStack.isEmpty()) {
+            inv.setItem(pigmentSlot, ItemStack.EMPTY);
+        }
+
+        // 给予色块
+        boolean placed = inv.add(stack);
+        if (!placed) {
+            player.drop(stack, false);
+        }
+
+        player.sendSystemMessage(Component.literal("消耗1个七彩粉末，合成一组 ")
+                .append(stack.getHoverName()));
     }
 
     // ==================== 工具方法 ====================

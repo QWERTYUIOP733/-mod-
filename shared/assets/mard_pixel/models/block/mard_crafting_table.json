@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down": "mard_pixel:block/mard_crafting_table_bottom",
+    "up": "mard_pixel:block/mard_crafting_table_top",
+    "north": "mard_pixel:block/mard_crafting_table_front",
+    "south": "mard_pixel:block/mard_crafting_table_back",
+    "west": "mard_pixel:block/mard_crafting_table_side",
+    "east": "mard_pixel:block/mard_crafting_table_side",
+    "particle": "mard_pixel:block/mard_crafting_table_side"
+  }
+}

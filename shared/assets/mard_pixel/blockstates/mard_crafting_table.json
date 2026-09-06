@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mard_pixel:block/mard_crafting_table"
+    },
+    "facing=south": {
+      "model": "mard_pixel:block/mard_crafting_table",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "mard_pixel:block/mard_crafting_table",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "mard_pixel:block/mard_crafting_table",
+      "y": 90
+    }
+  }
+}
