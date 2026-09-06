@@ -280,8 +280,10 @@ public class MardPixelForge {
             player.sendSystemMessage(Component.literal("无法生成物品：" + target).withStyle(ChatFormatting.RED));
             return;
         }
+        Component itemName = stack.getHoverName();
+        int count = stack.getCount();
         player.getInventory().add(stack);
-        player.sendSystemMessage(Component.literal("已给予 ").append(stack.getHoverName()).append(" x" + stack.getCount()));
+        player.sendSystemMessage(Component.literal("已给予 ").append(itemName).append(" x" + count));
     }
 
     /**
@@ -293,8 +295,9 @@ public class MardPixelForge {
         ItemStack stack = buildStack(target);
         if (stack == null || stack.isEmpty()) return;
         stack.setCount(64); // 给予一组（64个）
+        Component itemName2 = stack.getHoverName();
         player.getInventory().add(stack);
-        player.sendSystemMessage(Component.literal("已给予一组 ").append(stack.getHoverName()));
+        player.sendSystemMessage(Component.literal("已给予一组 ").append(itemName2));
     }
 
     /**
@@ -306,7 +309,7 @@ public class MardPixelForge {
             player.sendSystemMessage(Component.literal("请输入色号").withStyle(ChatFormatting.RED));
             return;
         }
-        String target = "MARD:" + code.toUpperCase().trim();
+        String target = code.toUpperCase().trim();
         ItemStack stack = buildStack(target);
         if (stack == null || stack.isEmpty()) {
             player.sendSystemMessage(Component.literal("色号不存在: " + code).withStyle(ChatFormatting.RED));
@@ -329,10 +332,11 @@ public class MardPixelForge {
             placed = inv.add(stack);
         }
         // 背包也满则扔到地面
+        Component hotbarName = stack.getHoverName();
         if (!placed) {
             player.drop(stack, false);
         }
-        player.sendSystemMessage(Component.literal("已放入快捷栏一组 ").append(stack.getHoverName()));
+        player.sendSystemMessage(Component.literal("已放入快捷栏一组 ").append(hotbarName));
     }
 
     /**
@@ -365,7 +369,7 @@ public class MardPixelForge {
         }
 
         // 生成对应色块
-        String target = "MARD:" + code.toUpperCase().trim();
+        String target = code.toUpperCase().trim();
         ItemStack stack = buildStack(target);
         if (stack == null || stack.isEmpty()) {
             player.sendSystemMessage(Component.literal("色号不存在: " + code).withStyle(ChatFormatting.RED));
@@ -381,13 +385,14 @@ public class MardPixelForge {
         }
 
         // 给予色块
+        Component craftName = stack.getHoverName();
         boolean placed = inv.add(stack);
         if (!placed) {
             player.drop(stack, false);
         }
 
         player.sendSystemMessage(Component.literal("消耗1个七彩粉末，合成一组 ")
-                .append(stack.getHoverName()));
+                .append(craftName));
     }
 
     // ==================== 工具方法 ====================
