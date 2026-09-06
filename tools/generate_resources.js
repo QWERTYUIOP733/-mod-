@@ -2,8 +2,8 @@
  * MARD 像素画 Mod —— 资源生成脚本（Node.js）
  *
  * 读取 colors/mard_295.json，生成：
- *   1. shared/assets/mard_pixel/blockstates/mard_<code>.json  （291 个）
- *   2. shared/assets/mard_pixel/models/item/mard_<code>.json  （291 个）
+ *   1. shared/assets/mard_pixel/blockstates/mard_<code>.json  （221 个）
+ *   2. shared/assets/mard_pixel/models/item/mard_<code>.json  （221 个）
  *   3. shared/assets/mard_pixel/lang/{en_us,zh_cn}.json        （物品名 + UI 文本）
  *
  * 用法：node tools/generate_resources.js
@@ -37,15 +37,10 @@ function main() {
         const bs = { variants: { "": { model: "mard_pixel:block/mard_base" } } };
         fs.writeFileSync(path.join(bsDir, name + '.json'), JSON.stringify(bs));
     }
-    // mard_custom 方块的 blockstate
-    fs.writeFileSync(path.join(bsDir, 'mard_custom.json'), JSON.stringify({
-        variants: { "": { model: "mard_pixel:block/mard_base" } }
-    }));
 
     // 2. item models
-    // 所有颜色（包括透明色）的物品模型都使用 mard_base（不透明白色混凝土纹理），
-    // 这样物品栏中的颜色就会和世界中的方块颜色完全一致，不会因为玻璃纹理的
-    // 透明部分在物品栏中渲染不正确而导致颜色偏差。
+    // 所有颜色的物品模型都使用 mard_base（不透明白色混凝土纹理），
+    // 这样物品栏中的颜色就会和世界中的方块颜色完全一致。
     const imDir = path.join(ASSETS, 'models', 'item');
     fs.mkdirSync(imDir, { recursive: true });
     for (const c of colors) {
@@ -54,10 +49,6 @@ function main() {
         const im = { parent: "mard_pixel:block/mard_base" };
         fs.writeFileSync(path.join(imDir, name + '.json'), JSON.stringify(im));
     }
-    // mard_custom 物品的 item model（手持尺寸与标准色块一致）
-    fs.writeFileSync(path.join(imDir, 'mard_custom.json'), JSON.stringify({
-        parent: "mard_pixel:block/mard_base"
-    }));
 
     // 3. lang
     const langDir = path.join(ASSETS, 'lang');
@@ -70,26 +61,20 @@ function main() {
         en[key] = 'MARD ' + c.code;
         zh[key] = 'MARD ' + c.code;
     }
-    en['block.mard_pixel.mard_custom'] = 'MARD Custom Block';
-    zh['block.mard_pixel.mard_custom'] = 'MARD 自定义色块';
+    // 七彩粉末物品
+    en['item.mard_pixel.mard_pigment'] = 'Rainbow Powder';
+    zh['item.mard_pixel.mard_pigment'] = '七彩粉末';
+    // MARD 合成台方块
+    en['block.mard_pixel.mard_crafting_table'] = 'MARD Crafting Table';
+    zh['block.mard_pixel.mard_crafting_table'] = 'MARD 合成台';
+    // 快捷键
     en['key.mard_pixel.open'] = 'Open MARD Color Palette';
     zh['key.mard_pixel.open'] = '打开 MARD 色板';
     en['key.categories.mard_pixel'] = 'MARD Pixel';
     zh['key.categories.mard_pixel'] = 'MARD 像素画';
+    // UI 标题
     en['screen.mard_pixel.title'] = 'MARD Color Palette';
     zh['screen.mard_pixel.title'] = 'MARD 色板';
-    en['screen.mard_pixel.switchbag'] = 'Switch Bag to This System';
-    zh['screen.mard_pixel.switchbag'] = '整体换包到此色系';
-    en['screen.mard_pixel.pick'] = 'Pick Color';
-    zh['screen.mard_pixel.pick'] = '吸取颜色';
-    en['screen.mard_pixel.add'] = 'Add';
-    zh['screen.mard_pixel.add'] = '新增';
-    en['screen.mard_pixel.remove'] = 'Remove';
-    zh['screen.mard_pixel.remove'] = '删除';
-    en['screen.mard_pixel.tri'] = 'HSV Triangle';
-    zh['screen.mard_pixel.tri'] = 'HSV 三角';
-    en['screen.mard_pixel.wheel'] = 'RGB Wheel';
-    zh['screen.mard_pixel.wheel'] = 'RGB 色环';
 
     fs.writeFileSync(path.join(langDir, 'en_us.json'), JSON.stringify(en, null, 1));
     fs.writeFileSync(path.join(langDir, 'zh_cn.json'), JSON.stringify(zh, null, 1));
