@@ -4,7 +4,7 @@
 
 > **当前版本仅支持 Forge 加载器。**
 
-- 版本：v1.2.0
+- 版本：v1.2.1
 - 游戏版本：Minecraft 1.20.1
 - 加载器：Forge 47.2.0+
 - 许可证：MIT
@@ -31,7 +31,7 @@
 ### Forge 端
 
 1. 安装 Minecraft 1.20.1 + Forge 47.2.0+
-2. 把 `彩色方块扩展-1.2.0.jar` 放入 `mods/` 文件夹
+2. 把 `color_blocks_extension-1.2.1.jar` 放入 `mods/` 文件夹
 3. 启动游戏
 
 ---

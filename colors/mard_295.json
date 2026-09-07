@@ -1,6 +1,6 @@
-{
-  "palette": "MARD 221基础色（官方色卡）",
-  "source": "MARD官方色卡 拼豆图鉴 pd.anqstar.com",
+﻿{
+  "palette": "221基础色（标准拼豆色卡）",
+  "source": "标准拼豆色卡 公开色值参考",
   "total": 221,
   "series": {
     "A": 26,
