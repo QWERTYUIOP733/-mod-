@@ -92,8 +92,9 @@ public class MardColorScreen extends Screen {
         int btnW = Math.min(180, btnAreaW - 20);
         int btnH = 30;
         int btnX = Math.max(25, (btnAreaW - btnW) / 2 + 8);
-        int centerY = height / 2;
-        int gapY = 48;
+        // 按钮区域居中偏下，确保不与顶部警告条重叠
+        int centerY = Math.max(height / 2 + 20, 160);
+        int gapY = 50;
 
         // 按钮一：颜色选取
         addRenderableWidget(Button.builder(Component.literal("颜色选取"), btn -> {
@@ -223,19 +224,24 @@ public class MardColorScreen extends Screen {
 
         // 生存模式下显示红色警告条
         if (isSurvivalMode()) {
-            String warnText = "⚠ 生存模式：G键仅可查看颜色，合成请使用方块染色台";
-            int warnWidth = font.width(warnText) + 20;
+            String warnText = "⚠ 生存模式：仅可查看颜色，合成请使用方块染色台";
+            int warnWidth = Math.min(font.width(warnText) + 24, width - 40);
             int warnX = (width - warnWidth) / 2;
-            g.fill(warnX, 75, warnX + warnWidth, 95, 0x88FF3333);
-            g.fill(warnX + 1, 76, warnX + warnWidth - 1, 94, 0xFFFF5555);
-            g.drawString(font, Component.literal(warnText), warnX + 10, 81, 0xFFFFFF);
+            int warnY = 72;
+            int warnH = 22;
+            // 警告条背景（半透明外框 + 实心内框）
+            g.fill(warnX, warnY, warnX + warnWidth, warnY + warnH, 0x99CC0000);
+            g.fill(warnX + 1, warnY + 1, warnX + warnWidth - 1, warnY + warnH - 1, 0xFFFF4444);
+            // 文字居中显示
+            int textX = warnX + (warnWidth - font.width(warnText)) / 2;
+            g.drawString(font, Component.literal(warnText), textX, warnY + 7, 0xFFFFFF);
         }
 
         // 右侧：mod 使用说明（右侧 40% 宽度）
         int infoAreaX = (int) (width * 0.55);
         int infoAreaW = (int) (width * 0.35);
-        int infoY = Math.max(80, height / 2 - 100);
-        int infoH = Math.min(200, height - 160);
+        int infoY = Math.max(110, height / 2 - 90);
+        int infoH = Math.min(200, height - 180);
 
         // 说明框背景
         g.fill(infoAreaX - 6, infoY - 6, infoAreaX + infoAreaW + 6, infoY + infoH + 6, 0xFF1a1a1a);
