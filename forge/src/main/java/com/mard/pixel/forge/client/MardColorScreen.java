@@ -44,7 +44,6 @@ public class MardColorScreen extends Screen {
     private int lastScrollOffset = -1; // 用于检测滚动变化，避免每帧重算Rect
     private int lastWindowWidth = -1;
     private int lastWindowHeight = -1;
-    private boolean craftMode = false; // 合成模式：消耗七彩粉末合成色块
 
     // 输入色号页面
     private EditBox inputBox;
@@ -112,7 +111,8 @@ public class MardColorScreen extends Screen {
 
     /**
      * 颜色选取页面。
-     * 生存模式下默认使用合成模式，普通模式禁用。
+     * 创造模式：点击色块直接获取一组方块。
+     * 生存模式：仅查看颜色，合成请使用方块染色台。
      */
     private void initSwatchesPage() {
         addRenderableWidget(Button.builder(Component.literal("← 返回"), btn -> {
@@ -126,29 +126,10 @@ public class MardColorScreen extends Screen {
                 && !Minecraft.getInstance().player.isCreative()
                 && !Minecraft.getInstance().player.isSpectator();
 
-        // 生存模式下强制使用合成模式
+        // 生存模式下显示提示
         if (isSurvival) {
-            craftMode = true;
+            statusMsg = "生存模式下仅可查看颜色，合成请使用方块染色台（消耗七彩粉末）";
         }
-
-        // 模式切换按钮：普通模式 / 合成模式
-        // 生存模式下普通模式禁用，显示提示
-        String modeText;
-        if (isSurvival) {
-            modeText = "合成模式（生存模式）";
-        } else {
-            modeText = craftMode ? "合成模式 ✓" : "普通模式";
-        }
-        Button modeBtn = Button.builder(Component.literal(modeText), btn -> {
-            if (isSurvival) {
-                statusMsg = "生存模式下仅可使用合成模式（消耗七彩粉末）";
-                return;
-            }
-            craftMode = !craftMode;
-            statusMsg = craftMode ? "已切换到合成模式（消耗七彩粉末）" : "已切换到普通模式（直接给予）";
-            init();
-        }).bounds(width - 130, 6, 120, 20).build();
-        addRenderableWidget(modeBtn);
     }
 
     /**
@@ -269,15 +250,14 @@ public class MardColorScreen extends Screen {
                 "221 色像素画模组（生存模式）",
                 "",
                 "按钮一：浏览全部色号",
-                "  生存模式：仅合成模式可用",
-                "  消耗七彩粉末合成一组方块",
-                "  支持连续选择",
+                "  生存模式：仅查看颜色",
+                "  合成请使用方块染色台",
                 "",
                 "按钮二：输入色号（仅创造模式）",
                 "  生存模式下此功能禁用",
                 "",
                 "合成表：任意染料→七彩粉末→色块",
-                "使用方块染色台可合成任意色块",
+                "方块染色台：放入粉末后选择颜色",
                 "",
                 "按 G 键打开/关闭本界面"
             };
@@ -287,8 +267,7 @@ public class MardColorScreen extends Screen {
                 "221 色像素画模组（创造模式）",
                 "",
                 "按钮一：浏览全部色号",
-                "  普通模式：点击色块获取一组方块",
-                "  合成模式：消耗七彩粉末合成一组",
+                "  点击色块直接获取一组方块",
                 "  支持连续选择",
                 "",
                 "按钮二：输入色号快速获取",
@@ -296,6 +275,7 @@ public class MardColorScreen extends Screen {
                 "  支持批量输入（空格/逗号分隔）",
                 "",
                 "合成表：任意染料→七彩粉末→色块",
+                "方块染色台：放入粉末后选择颜色",
                 "",
                 "按 G 键打开/关闭本界面"
             };
@@ -326,11 +306,16 @@ public class MardColorScreen extends Screen {
      * 优化：只在滚动或窗口大小变化时重算Rect，避免每帧卡顿。
      */
     private void renderSwatchesPage(GuiGraphics g) {
+        // 检测当前游戏模式
+        boolean isSurvivalRender = Minecraft.getInstance().player != null
+                && !Minecraft.getInstance().player.isCreative()
+                && !Minecraft.getInstance().player.isSpectator();
+
         // 标题（根据模式显示不同提示）
-        String title = craftMode
-                ? "合成模式 - 点击色块消耗1个七彩粉末合成一组（64个）"
+        String title = isSurvivalRender
+                ? "颜色查看（生存模式）- 合成请使用方块染色台"
                 : "颜色选取 - 点击色块获取一组（64个）";
-        g.drawString(font, Component.literal(title), 80, 12, craftMode ? 0xFFFFAA : 0xFFFFFF);
+        g.drawString(font, Component.literal(title), 80, 12, isSurvivalRender ? 0xFFFFAA : 0xFFFFFF);
 
         int contentY = 40;
         int contentH = height - contentY - 20;
@@ -419,6 +404,11 @@ public class MardColorScreen extends Screen {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         if (button == 0 && currentPage == Page.SWATCHES) {
+            // 检测当前游戏模式
+            boolean isSurvivalClick = Minecraft.getInstance().player != null
+                    && !Minecraft.getInstance().player.isCreative()
+                    && !Minecraft.getInstance().player.isSpectator();
+
             // 使用已缓存的Rect进行点击检测
             int cols = Math.max(8, Math.min(24, (width - 31) / 31));
             int startIdx = scrollOffset * cols;
@@ -426,12 +416,11 @@ public class MardColorScreen extends Screen {
                 Rect r = swatchRects.get(i);
                 if (r.hit(mx, my)) {
                     Entry e = swatches.get(startIdx + i);
-                    if (craftMode) {
-                        // 合成模式：发送CraftItemPacket，服务端消耗七彩粉末
-                        MardNetwork.CHANNEL.sendToServer(new MardNetwork.CraftItemPacket(e.code()));
-                        statusMsg = "请求合成 " + e.code() + "（消耗1个七彩粉末）";
+                    if (isSurvivalClick) {
+                        // 生存模式：仅查看，提示使用方块染色台
+                        statusMsg = e.code() + " - 生存模式下请使用方块染色台合成（消耗七彩粉末）";
                     } else {
-                        // 普通模式：直接给予一组
+                        // 创造模式：直接给予一组
                         MardNetwork.CHANNEL.sendToServer(new MardNetwork.RequestItemPacket(e.target()));
                         statusMsg = "已给予一组 " + e.code();
                     }
