@@ -1,0 +1,40 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_dye": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "tag": "minecraft:dyes"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_dye"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "mard_pixel:mard_pigment_from_black_dye",
+      "mard_pixel:mard_pigment_from_red_dye",
+      "mard_pixel:mard_pigment_from_green_dye",
+      "mard_pixel:mard_pigment_from_brown_dye",
+      "mard_pixel:mard_pigment_from_blue_dye",
+      "mard_pixel:mard_pigment_from_purple_dye",
+      "mard_pixel:mard_pigment_from_cyan_dye",
+      "mard_pixel:mard_pigment_from_light_gray_dye",
+      "mard_pixel:mard_pigment_from_gray_dye",
+      "mard_pixel:mard_pigment_from_pink_dye",
+      "mard_pixel:mard_pigment_from_lime_dye",
+      "mard_pixel:mard_pigment_from_yellow_dye",
+      "mard_pixel:mard_pigment_from_light_blue_dye",
+      "mard_pixel:mard_pigment_from_magenta_dye",
+      "mard_pixel:mard_pigment_from_orange_dye",
+      "mard_pixel:mard_pigment_from_white_dye"
+    ]
+  }
+}
