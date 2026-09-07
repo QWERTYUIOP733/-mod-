@@ -63,8 +63,15 @@ public final class MardNetwork {
     private static void handleRequestItem(RequestItemPacket p, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            // UI 点击色块时给予一组（64个）方块
-            if (player != null) MardPixelForge.giveRequestedStack(player, p.target);
+            if (player == null) return;
+            // 生存模式下禁用直接获取方块，必须通过合成台或七彩粉末合成
+            if (!player.isCreative() && !player.isSpectator()) {
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                    "生存模式下无法直接获取方块，请使用方块染色台或七彩粉末合成").withStyle(net.minecraft.ChatFormatting.RED));
+                return;
+            }
+            // 创造/旁观模式：UI 点击色块时给予一组（64个）方块
+            MardPixelForge.giveRequestedStack(player, p.target);
         });
         ctx.get().setPacketHandled(true);
     }
@@ -72,7 +79,15 @@ public final class MardNetwork {
     private static void handleHotbar(HotbarPacket p, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
             ServerPlayer player = ctx.get().getSender();
-            if (player != null) MardPixelForge.giveToHotbar(player, p.code);
+            if (player == null) return;
+            // 生存模式下禁用直接放入快捷栏，必须通过合成台或七彩粉末合成
+            if (!player.isCreative() && !player.isSpectator()) {
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                    "生存模式下无法直接获取方块，请使用方块染色台或七彩粉末合成").withStyle(net.minecraft.ChatFormatting.RED));
+                return;
+            }
+            // 创造/旁观模式：输入色号后放入快捷栏
+            MardPixelForge.giveToHotbar(player, p.code);
         });
         ctx.get().setPacketHandled(true);
     }

@@ -3,6 +3,7 @@ package com.mard.pixel.forge.client;
 import com.mard.pixel.common.MardColor;
 import com.mard.pixel.common.MardPalette;
 import com.mard.pixel.forge.MardNetwork;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -111,6 +112,7 @@ public class MardColorScreen extends Screen {
 
     /**
      * 颜色选取页面。
+     * 生存模式下默认使用合成模式，普通模式禁用。
      */
     private void initSwatchesPage() {
         addRenderableWidget(Button.builder(Component.literal("← 返回"), btn -> {
@@ -119,13 +121,34 @@ public class MardColorScreen extends Screen {
             init();
         }).bounds(10, 6, 60, 20).build());
 
+        // 检测当前游戏模式
+        boolean isSurvival = Minecraft.getInstance().player != null
+                && !Minecraft.getInstance().player.isCreative()
+                && !Minecraft.getInstance().player.isSpectator();
+
+        // 生存模式下强制使用合成模式
+        if (isSurvival) {
+            craftMode = true;
+        }
+
         // 模式切换按钮：普通模式 / 合成模式
-        String modeText = craftMode ? "合成模式 ✓" : "普通模式";
-        addRenderableWidget(Button.builder(Component.literal(modeText), btn -> {
+        // 生存模式下普通模式禁用，显示提示
+        String modeText;
+        if (isSurvival) {
+            modeText = "合成模式（生存模式）";
+        } else {
+            modeText = craftMode ? "合成模式 ✓" : "普通模式";
+        }
+        Button modeBtn = Button.builder(Component.literal(modeText), btn -> {
+            if (isSurvival) {
+                statusMsg = "生存模式下仅可使用合成模式（消耗七彩粉末）";
+                return;
+            }
             craftMode = !craftMode;
             statusMsg = craftMode ? "已切换到合成模式（消耗七彩粉末）" : "已切换到普通模式（直接给予）";
             init();
-        }).bounds(width - 110, 6, 100, 20).build());
+        }).bounds(width - 130, 6, 120, 20).build();
+        addRenderableWidget(modeBtn);
     }
 
     /**
@@ -138,19 +161,30 @@ public class MardColorScreen extends Screen {
             init();
         }).bounds(10, 6, 60, 20).build());
 
+        // 检测当前游戏模式
+        boolean isSurvivalInput = Minecraft.getInstance().player != null
+                && !Minecraft.getInstance().player.isCreative()
+                && !Minecraft.getInstance().player.isSpectator();
+
         int boxW = Math.min(240, width / 3);
         int boxH = 22;
         int boxX = (width - boxW) / 2;
         int boxY = height / 2 - 30;
 
-        inputBox = new EditBox(font, boxX, boxY, boxW, boxH, Component.literal(""));
-        inputBox.setMaxLength(16);
-        inputBox.setFocused(true);
-        addRenderableWidget(inputBox);
+        if (isSurvivalInput) {
+            // 生存模式：显示禁用提示，不显示输入框
+            statusMsg = "生存模式下输入色号功能已禁用，请使用方块染色台或七彩粉末合成";
+        } else {
+            // 创造模式：正常显示输入框
+            inputBox = new EditBox(font, boxX, boxY, boxW, boxH, Component.literal(""));
+            inputBox.setMaxLength(16);
+            inputBox.setFocused(true);
+            addRenderableWidget(inputBox);
 
-        addRenderableWidget(Button.builder(Component.literal("确认放入快捷栏"), btn -> {
-            submitCode();
-        }).bounds(boxX, boxY + 32, boxW, 22).build());
+            addRenderableWidget(Button.builder(Component.literal("确认放入快捷栏"), btn -> {
+                submitCode();
+            }).bounds(boxX, boxY + 32, boxW, 22).build());
+        }
     }
 
     private void submitCode() {
@@ -223,23 +257,49 @@ public class MardColorScreen extends Screen {
 
         g.drawString(font, Component.literal("mod 使用说明"), infoAreaX, infoY, 0xFFFFAA);
 
-        String[] lines = {
-            "",
-            "221 色像素画模组",
-            "",
-            "按钮一：浏览全部色号",
-            "  普通模式：点击色块获取一组方块",
-            "  合成模式：消耗七彩粉末合成一组",
-            "  支持连续选择",
-            "",
-            "按钮二：输入色号快速获取",
-            "  输入色号后放入快捷栏",
-            "  支持批量输入（空格/逗号分隔）",
-            "",
-            "合成表：任意染料→七彩粉末→色块",
-            "",
-            "按 G 键打开/关闭本界面"
-        };
+        // 检测当前游戏模式
+        boolean isSurvivalMain = Minecraft.getInstance().player != null
+                && !Minecraft.getInstance().player.isCreative()
+                && !Minecraft.getInstance().player.isSpectator();
+
+        String[] lines;
+        if (isSurvivalMain) {
+            lines = new String[]{
+                "",
+                "221 色像素画模组（生存模式）",
+                "",
+                "按钮一：浏览全部色号",
+                "  生存模式：仅合成模式可用",
+                "  消耗七彩粉末合成一组方块",
+                "  支持连续选择",
+                "",
+                "按钮二：输入色号（仅创造模式）",
+                "  生存模式下此功能禁用",
+                "",
+                "合成表：任意染料→七彩粉末→色块",
+                "使用方块染色台可合成任意色块",
+                "",
+                "按 G 键打开/关闭本界面"
+            };
+        } else {
+            lines = new String[]{
+                "",
+                "221 色像素画模组（创造模式）",
+                "",
+                "按钮一：浏览全部色号",
+                "  普通模式：点击色块获取一组方块",
+                "  合成模式：消耗七彩粉末合成一组",
+                "  支持连续选择",
+                "",
+                "按钮二：输入色号快速获取",
+                "  输入色号后放入快捷栏",
+                "  支持批量输入（空格/逗号分隔）",
+                "",
+                "合成表：任意染料→七彩粉末→色块",
+                "",
+                "按 G 键打开/关闭本界面"
+            };
+        }
 
         int y = infoY + 15;
         int lineH = Math.max(10, (infoH - 20) / lines.length);
