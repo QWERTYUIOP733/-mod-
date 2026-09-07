@@ -1,5 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
+  "category": "decorations",
   "pattern": [
     "P F",
     "   ",
@@ -16,5 +17,6 @@
   "result": {
     "item": "mard_pixel:mard_crafting_table",
     "count": 1
-  }
+  },
+  "show_notification": true
 }

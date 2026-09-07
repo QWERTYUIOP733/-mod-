@@ -1,5 +1,6 @@
 {
   "type": "minecraft:crafting_shapeless",
+  "category": "building",
   "ingredients": [
     {
       "item": "mard_pixel:mard_pigment"
@@ -8,5 +9,6 @@
   "result": {
     "item": "mard_pixel:mard_g11",
     "count": 64
-  }
+  },
+  "show_notification": true
 }

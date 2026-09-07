@@ -1,5 +1,6 @@
 {
   "type": "minecraft:crafting_shapeless",
+  "category": "misc",
   "ingredients": [
     {
       "item": "minecraft:black_dye"
@@ -8,5 +9,6 @@
   "result": {
     "item": "mard_pixel:mard_pigment",
     "count": 1
-  }
+  },
+  "show_notification": true
 }
