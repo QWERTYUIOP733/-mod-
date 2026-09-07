@@ -1,19 +1,20 @@
 {
-  "type": "minecraft:crafting_shaped",
+  "type": "minecraft:crafting_shapeless",
   "category": "decorations",
-  "pattern": [
-    "P F",
-    "   ",
-    "F P"
-  ],
-  "key": {
-    "P": {
+  "ingredients": [
+    {
       "tag": "minecraft:planks"
     },
-    "F": {
+    {
+      "tag": "minecraft:planks"
+    },
+    {
+      "item": "minecraft:feather"
+    },
+    {
       "item": "minecraft:feather"
     }
-  },
+  ],
   "result": {
     "item": "mard_pixel:mard_crafting_table",
     "count": 1
