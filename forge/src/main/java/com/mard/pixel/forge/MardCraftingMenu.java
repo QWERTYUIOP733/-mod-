@@ -230,17 +230,6 @@ public class MardCraftingMenu extends AbstractContainerMenu {
     }
 
     /**
-     * 槽位变化回调。
-     * 当任何槽位物品变化时调用，确保客户端UI及时刷新。
-     */
-    @Override
-    public void slotChanged(int slotId, ItemStack stack) {
-        super.slotChanged(slotId, stack);
-        // 合成网格（0-8）或结果槽（9）变化时，标记需要刷新
-        // 客户端的render方法会每帧检查hasPigment()，这里不需要额外处理
-    }
-
-    /**
      * 服务端创建菜单的静态工厂方法。
      */
     public static MardCraftingMenu create(int containerId, Inventory playerInventory, MardCraftingTableBlockEntity blockEntity) {
