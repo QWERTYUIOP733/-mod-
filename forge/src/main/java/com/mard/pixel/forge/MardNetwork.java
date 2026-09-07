@@ -10,7 +10,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import java.util.function.Supplier;
 
 /**
- * MARD Pixel Mod 网络包管理。
+ * Color Blocks Mod 网络包管理。
  *
  * 网络包列表：
  * 1. RequestItemPacket - 客户端请求物品（UI 中点击获取物品）

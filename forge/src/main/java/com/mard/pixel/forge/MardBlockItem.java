@@ -12,7 +12,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 /**
- * MARD 色块物品类，两行显示：
+ * 色块物品类，两行显示：
  * 第一行（物品名称 hoverName）：色号编号（如"A1"），白色
  * 第二行（lore）：RGB值（如"RGB #FF0000"），灰色
  * 使用 Minecraft 标准的 hoverName + lore 方式，避免换行符导致乱码

@@ -45,7 +45,7 @@ public class MardCraftingMenu extends AbstractContainerMenu {
      * 物品只存在于服务端，通过AbstractContainerMenu同步机制更新客户端副本）。
      */
     public MardCraftingMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
-        super(MardPixelForge.MARD_CRAFTING_MENU.get(), containerId);
+        super(MardPixelForge._CRAFTING_MENU.get(), containerId);
         this.player = playerInventory.player;
         this.blockEntity = null;
         // 客户端使用独立的inventory副本，通过槽位同步机制更新
@@ -71,7 +71,7 @@ public class MardCraftingMenu extends AbstractContainerMenu {
      * MenuType需要的构造函数（后备方案，也必须注册槽位）。
      */
     public MardCraftingMenu(int containerId, Inventory playerInventory) {
-        super(MardPixelForge.MARD_CRAFTING_MENU.get(), containerId);
+        super(MardPixelForge._CRAFTING_MENU.get(), containerId);
         this.player = playerInventory.player;
         this.blockEntity = null;
         this.inventoryHandler = new ItemStackHandler(MardCraftingTableBlockEntity.TOTAL_SLOTS);
@@ -82,7 +82,7 @@ public class MardCraftingMenu extends AbstractContainerMenu {
      * 服务端创建菜单的构造函数。
      */
     public MardCraftingMenu(int containerId, Inventory playerInventory, MardCraftingTableBlockEntity blockEntity) {
-        super(MardPixelForge.MARD_CRAFTING_MENU.get(), containerId);
+        super(MardPixelForge._CRAFTING_MENU.get(), containerId);
         this.blockEntity = blockEntity;
         this.player = playerInventory.player;
         this.inventoryHandler = blockEntity.getInventory();
@@ -223,7 +223,7 @@ public class MardCraftingMenu extends AbstractContainerMenu {
     private boolean isPigmentItem(ItemStack stack) {
         if (stack.isEmpty()) return false;
         // 优先使用实例比较（最快）
-        if (stack.getItem() == MardPixelForge.MARD_PIGMENT.get()) return true;
+        if (stack.getItem() == MardPixelForge._PIGMENT.get()) return true;
         // 回退：使用物品注册名判断（最可靠）
         String registryName = stack.getItem().getDescriptionId();
         return "item.mard_pixel.mard_pigment".equals(registryName);

@@ -1,4 +1,4 @@
-# 彩色方块扩展 Mod（Minecraft 1.20.1 · Forge）
+﻿# 彩色方块扩展 Mod（Minecraft 1.20.1 · Forge）
 
 一套将 **221 基础色**标准色卡做成 Minecraft 实心色块的像素画 Mod，支持七彩粉末通用合成和方块染色台。
 

@@ -55,28 +55,28 @@ public class MardPixelForge {
 
     // ==================== 色块引用 ====================
     /** 构造函数中填充的方块引用（用于颜色处理器注册） */
-    public static final List<RegistryObject<Block>> MARD_BLOCK_REFS = new ArrayList<>();
+    public static final List<RegistryObject<Block>> _BLOCK_REFS = new ArrayList<>();
     /** 色号 -> 方块 的快速查找缓存 */
-    public static final java.util.Map<String, MardBlock> MARD_BLOCK_MAP = new java.util.HashMap<>();
+    public static final java.util.Map<String, MardBlock> _BLOCK_MAP = new java.util.HashMap<>();
     /** 游戏运行时填充的方块列表（用于标签页显示） */
-    public static final List<MardBlock> MARD_BLOCKS = new ArrayList<>();
+    public static final List<MardBlock> _BLOCKS = new ArrayList<>();
 
     // ==================== 通用材料物品 ====================
     /** 七彩粉末：通用合成材料，任意染料可合成，用于合成各色块 */
-    public static final RegistryObject<Item> MARD_PIGMENT = ITEMS.register("mard_pigment",
+    public static final RegistryObject<Item> _PIGMENT = ITEMS.register("mard_pigment",
             () -> new Item(new Item.Properties()));
 
     // ==================== 方块染色台 ====================
     /** 方块染色台方块：功能类似原版工作台，但只能合成模组内物品 */
-    public static final RegistryObject<Block> MARD_CRAFTING_TABLE = BLOCKS.register("mard_crafting_table",
+    public static final RegistryObject<Block> _CRAFTING_TABLE = BLOCKS.register("mard_crafting_table",
             MardCraftingTable::new);
-    public static final RegistryObject<Item> MARD_CRAFTING_TABLE_ITEM = ITEMS.register("mard_crafting_table",
-            () -> new BlockItem(MARD_CRAFTING_TABLE.get(), new Item.Properties()));
-    public static final RegistryObject<BlockEntityType<MardCraftingTableBlockEntity>> MARD_CRAFTING_TABLE_BE =
+    public static final RegistryObject<Item> _CRAFTING_TABLE_ITEM = ITEMS.register("mard_crafting_table",
+            () -> new BlockItem(_CRAFTING_TABLE.get(), new Item.Properties()));
+    public static final RegistryObject<BlockEntityType<MardCraftingTableBlockEntity>> _CRAFTING_TABLE_BE =
             BLOCK_ENTITIES.register("mard_crafting_table",
                     () -> BlockEntityType.Builder.of(MardCraftingTableBlockEntity::new,
-                            MARD_CRAFTING_TABLE.get()).build(null));
-    public static final RegistryObject<MenuType<MardCraftingMenu>> MARD_CRAFTING_MENU =
+                            _CRAFTING_TABLE.get()).build(null));
+    public static final RegistryObject<MenuType<MardCraftingMenu>> _CRAFTING_MENU =
             MENUS.register("mard_crafting_menu",
                     () -> new MenuType<>(MardCraftingMenu::new,
                             net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS));
@@ -108,7 +108,7 @@ public class MardPixelForge {
     // ==================== 注册逻辑 ====================
 
     /**
-     * 注册 MARD 色块（方块 + 物品）。
+     * 注册 色块（方块 + 物品）。
      * 所有颜色统一使用 MardBlock。
      * 每个色块使用程序染色（tintindex），色值来自 MardPalette。
      */
@@ -119,7 +119,7 @@ public class MardPixelForge {
                     () -> new MardBlock(mc.code(), mc.rgb()));
             ITEMS.register(blockName,
                     () -> new MardBlockItem(blockRef.get(), mc.code(), mc.rgb(), new Item.Properties()));
-            MARD_BLOCK_REFS.add(blockRef);
+            _BLOCK_REFS.add(blockRef);
         }
     }
 
@@ -146,12 +146,12 @@ public class MardPixelForge {
                     .displayItems((params, output) -> {
                         // 第一个标签页添加七彩粉末（通用合成材料）和合成台
                         if (isFirst) {
-                            output.accept(new ItemStack(MARD_PIGMENT.get()));
-                            output.accept(new ItemStack(MARD_CRAFTING_TABLE.get()));
+                            output.accept(new ItemStack(_PIGMENT.get()));
+                            output.accept(new ItemStack(_CRAFTING_TABLE.get()));
                         }
                         for (MardColor mc : MardPalette.COLORS) {
                             if (mc.series().equals(s)) {
-                                for (MardBlock mb : MARD_BLOCKS) {
+                                for (MardBlock mb : _BLOCKS) {
                                     if (mb.code().equalsIgnoreCase(mc.code())) {
                                         output.accept(new ItemStack(mb));
                                         break;
@@ -170,16 +170,16 @@ public class MardPixelForge {
     private ItemStack findFirstBlockOfSeries(String series) {
         for (MardColor mc : MardPalette.COLORS) {
             if (mc.series().equals(series)) {
-                for (MardBlock mb : MARD_BLOCKS) {
+                for (MardBlock mb : _BLOCKS) {
                     if (mb.code().equalsIgnoreCase(mc.code())) {
                         return new ItemStack(mb);
                     }
                 }
             }
         }
-        // 回退：返回第一个MARD色块
-        if (!MARD_BLOCKS.isEmpty()) {
-            return new ItemStack(MARD_BLOCKS.get(0));
+        // 回退：返回第一个色块
+        if (!_BLOCKS.isEmpty()) {
+            return new ItemStack(_BLOCKS.get(0));
         }
         return ItemStack.EMPTY;
     }
@@ -187,13 +187,13 @@ public class MardPixelForge {
     // ==================== 生命周期事件 ====================
 
     private void onCommonSetup(net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent event) {
-        MARD_BLOCKS.clear();
-        MARD_BLOCK_MAP.clear();
-        for (RegistryObject<Block> ro : MARD_BLOCK_REFS) {
+        _BLOCKS.clear();
+        _BLOCK_MAP.clear();
+        for (RegistryObject<Block> ro : _BLOCK_REFS) {
             Block b = ro.get();
             if (b instanceof MardBlock mb) {
-                MARD_BLOCKS.add(mb);
-                MARD_BLOCK_MAP.put(mb.code().toUpperCase(), mb);
+                _BLOCKS.add(mb);
+                _BLOCK_MAP.put(mb.code().toUpperCase(), mb);
             }
         }
     }
@@ -204,7 +204,7 @@ public class MardPixelForge {
     public void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
                 Commands.literal("mardp")
-                        // 查找最近的 MARD 色
+                        // 查找最近的 色
                         .then(Commands.literal("find")
                                 .then(Commands.argument("hex", net.minecraft.commands.arguments.ColorArgument.color())
                                         .executes(ctx -> {
@@ -231,19 +231,19 @@ public class MardPixelForge {
     /**
      * 根据目标字符串生成物品栈。
      * 支持格式：
-     * - MARD:<色号> - MARD基础色块
-     * - <色号> - 直接按MARD色号查找
+     * - 色块:<色号> - 基础色块
+     * - <色号> - 直接按色号查找
      */
     public static ItemStack buildStack(String target) {
         if (target == null) return ItemStack.EMPTY;
         String t = target.trim();
         if (t.isEmpty()) return ItemStack.EMPTY;
 
-        if (t.startsWith("MARD:")) {
+        if (t.startsWith("色块:")) {
             return buildMardStack(t.substring(5).trim());
         }
 
-        // 直接按MARD色号查找
+        // 直接按色号查找
         return buildMardStack(t);
     }
 
@@ -251,14 +251,14 @@ public class MardPixelForge {
         if (code == null || code.isBlank()) return ItemStack.EMPTY;
         String key = code.trim().toUpperCase();
         // 优先使用 Map 缓存（O(1) 查找）
-        MardBlock mb = MARD_BLOCK_MAP.get(key);
+        MardBlock mb = _BLOCK_MAP.get(key);
         if (mb != null) return new ItemStack(mb);
         // 缓存未命中时回退到遍历列表（兼容时序问题）
         MardColor mc = MardPalette.byCode(code);
         if (mc == null) return ItemStack.EMPTY;
-        for (MardBlock block : MARD_BLOCKS) {
+        for (MardBlock block : _BLOCKS) {
             if (block.code().equalsIgnoreCase(mc.code())) {
-                MARD_BLOCK_MAP.put(block.code().toUpperCase(), block); // 回填缓存
+                _BLOCK_MAP.put(block.code().toUpperCase(), block); // 回填缓存
                 return new ItemStack(block);
             }
         }
@@ -356,7 +356,7 @@ public class MardPixelForge {
         // 检查背包中是否有七彩粉末
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack slotStack = inv.getItem(i);
-            if (!slotStack.isEmpty() && slotStack.getItem() == MARD_PIGMENT.get()) {
+            if (!slotStack.isEmpty() && slotStack.getItem() == _PIGMENT.get()) {
                 hasPigment = true;
                 pigmentSlot = i;
                 break;
@@ -398,7 +398,7 @@ public class MardPixelForge {
     // ==================== 工具方法 ====================
 
     /**
-     * 获取物品的颜色值（MARD基础色块）。
+     * 获取物品的颜色值（基础色块）。
      * @return 颜色RGB值，或-1（非本模组物品）
      */
     public static int colorOf(ItemStack stack) {

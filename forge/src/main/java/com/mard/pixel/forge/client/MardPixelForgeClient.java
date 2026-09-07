@@ -24,7 +24,7 @@ import org.lwjgl.glfw.GLFW;
 import java.util.List;
 
 /**
- * MARD Pixel Mod 客户端主类。
+ * Color Blocks Mod 客户端主类。
  *
  * 职责分离：
  * 1. 按键注册与处理 - 打开取色器UI
@@ -67,28 +67,28 @@ public final class MardPixelForgeClient {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         // 注册合成台屏幕
-        MenuScreens.register(MardPixelForge.MARD_CRAFTING_MENU.get(), MardCraftingScreen::new);
+        MenuScreens.register(MardPixelForge._CRAFTING_MENU.get(), MardCraftingScreen::new);
     }
 
     /**
      * 注册方块颜色处理器。
-     * 为 MARD 色块设置程序染色（tintindex:0）。
+     * 为 色块设置程序染色（tintindex:0）。
      * 所有颜色统一使用基础 rgb 值染色，
      * 确保世界中方块颜色与手中物品颜色完全一致。
      *
-     * 关键：使用 MARD_BLOCK_REFS（构造函数中已填充）而非 MARD_BLOCKS
+     * 关键：使用 _BLOCK_REFS（构造函数中已填充）而非 _BLOCKS
      * （onCommonSetup 才填充），否则注册时列表为空导致染色失效。
      */
     @SubscribeEvent
     public static void registerBlockColors(RegisterColorHandlersEvent.Block event) {
-        Block[] mardBlocks = MardPixelForge.MARD_BLOCK_REFS.stream()
+        Block[] mardBlocks = MardPixelForge._BLOCK_REFS.stream()
                 .map(ro -> ro.get())
                 .toArray(Block[]::new);
 
-        // MARD 色块：统一使用方块本身存储的 rgb 值染色
+        // 色块：统一使用方块本身存储的 rgb 值染色
         event.getBlockColors().register((state, level, pos, tint) -> {
             Block block = state.getBlock();
-            // 所有 MARD 色块统一返回基础 rgb 值
+            // 所有 色块统一返回基础 rgb 值
             return block instanceof MardBlock mb ? mb.rgb() : 0xFFFFFF;
         }, mardBlocks);
     }
@@ -100,7 +100,7 @@ public final class MardPixelForgeClient {
     @SubscribeEvent
     public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
         // 基础色块：使用方块的 rgb 值
-        for (var ro : MardPixelForge.MARD_BLOCK_REFS) {
+        for (var ro : MardPixelForge._BLOCK_REFS) {
             Block block = ro.get();
             if (block instanceof MardBlock mb) {
                 event.getItemColors().register((stack, tint) -> mb.rgb(), mb);
@@ -134,11 +134,11 @@ public final class MardPixelForgeClient {
          *
          * 问题背景：
          * JEI、WTHIT 等信息类模组会在物品 tooltip 中添加模组名称、
-         * 创造模式标签页名称等蓝色/紫色文字，干扰 MARD 色块的
+         * 创造模式标签页名称等蓝色/紫色文字，干扰 色块的
          * "色号 + RGB值" 两行显示格式。
          *
          * 清理策略：
-         * 1. 只处理本模组的物品（MARD基础色块）
+         * 1. 只处理本模组的物品（基础色块）
          * 2. 保留第一行（物品名称，即色号编号）
          * 3. 保留包含 "RGB" 关键词的行（RGB值）
          * 4. 移除其他所有行（模组名称、标签页名称等）

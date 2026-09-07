@@ -53,7 +53,7 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
     private final LazyOptional<IItemHandler> inventoryHandler = LazyOptional.of(() -> inventory);
 
     public MardCraftingTableBlockEntity(BlockPos pos, BlockState state) {
-        super(MardPixelForge.MARD_CRAFTING_TABLE_BE.get(), pos, state);
+        super(MardPixelForge._CRAFTING_TABLE_BE.get(), pos, state);
     }
 
     public IItemHandler getInventory() {
@@ -95,7 +95,7 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
      */
     private boolean isPigmentItem(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        if (stack.getItem() == MardPixelForge.MARD_PIGMENT.get()) return true;
+        if (stack.getItem() == MardPixelForge._PIGMENT.get()) return true;
         String registryName = stack.getItem().getDescriptionId();
         return "item.mard_pixel.mard_pigment".equals(registryName);
     }
