@@ -77,15 +77,27 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
 
     /**
      * 检查合成网格中是否有七彩粉末。
+     * 使用物品注册名判断，更可靠。
      */
     private boolean hasPigment() {
         for (int i = 0; i < GRID_SIZE; i++) {
             ItemStack stack = inventory.getStackInSlot(i);
-            if (!stack.isEmpty() && stack.getItem() == MardPixelForge.MARD_PIGMENT.get()) {
+            if (!stack.isEmpty() && isPigmentItem(stack)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * 判断物品是否为七彩粉末。
+     * 使用物品注册名判断，兼容各种情况。
+     */
+    private boolean isPigmentItem(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        if (stack.getItem() == MardPixelForge.MARD_PIGMENT.get()) return true;
+        String registryName = stack.getItem().getDescriptionId();
+        return "item.mard_pixel.mard_pigment".equals(registryName);
     }
 
     @Override
@@ -171,7 +183,7 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
             // 七彩粉末模式：只消耗七彩粉末
             for (int i = 0; i < GRID_SIZE; i++) {
                 ItemStack stack = inventory.getStackInSlot(i);
-                if (!stack.isEmpty() && stack.getItem() == MardPixelForge.MARD_PIGMENT.get()) {
+                if (!stack.isEmpty() && isPigmentItem(stack)) {
                     stack.shrink(1);
                 }
             }

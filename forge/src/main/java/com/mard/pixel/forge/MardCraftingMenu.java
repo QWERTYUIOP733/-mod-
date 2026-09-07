@@ -39,24 +39,28 @@ public class MardCraftingMenu extends AbstractContainerMenu {
     /**
      * 客户端构造函数（通过IForgeMenuType调用，从FriendlyByteBuf读取BlockPos）。
      * 必须注册所有槽位，否则会导致IndexOutOfBoundsException。
+     *
+     * 重要：客户端始终使用独立的ItemStackHandler作为槽位副本，
+     * 不直接使用方块实体的inventory（客户端方块实体inventory为空，
+     * 物品只存在于服务端，通过AbstractContainerMenu同步机制更新客户端副本）。
      */
     public MardCraftingMenu(int containerId, Inventory playerInventory, FriendlyByteBuf buf) {
         super(MardPixelForge.MARD_CRAFTING_MENU.get(), containerId);
         this.player = playerInventory.player;
         this.blockEntity = null;
+        // 客户端使用独立的inventory副本，通过槽位同步机制更新
         this.inventoryHandler = new ItemStackHandler(MardCraftingTableBlockEntity.TOTAL_SLOTS);
 
-        // 尝试从buf读取BlockPos并获取真实方块实体
+        // 尝试从buf读取BlockPos并获取方块实体引用（仅用于stillValid等检查，不使用其inventory）
         if (buf != null && buf.isReadable()) {
             try {
                 BlockPos pos = buf.readBlockPos();
                 BlockEntity be = player.level().getBlockEntity(pos);
                 if (be instanceof MardCraftingTableBlockEntity craftingTable) {
                     this.blockEntity = craftingTable;
-                    this.inventoryHandler = craftingTable.getInventory();
                 }
             } catch (Exception e) {
-                // 读取失败，使用临时handler
+                // 读取失败，blockEntity保持null，stillValid返回true
             }
         }
 
@@ -200,15 +204,40 @@ public class MardCraftingMenu extends AbstractContainerMenu {
 
     /**
      * 检查合成网格中是否有七彩粉末（客户端判断是否显示颜色选择列表）。
+     * 使用物品注册名判断，避免实例比较在客户端/服务端不同步的问题。
      */
     public boolean hasPigment() {
         for (int i = 0; i < 9; i++) {
             ItemStack stack = getSlot(i).getItem();
-            if (!stack.isEmpty() && stack.getItem() == MardPixelForge.MARD_PIGMENT.get()) {
+            if (!stack.isEmpty() && isPigmentItem(stack)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * 判断物品是否为七彩粉末。
+     * 使用物品注册名判断，兼容客户端和服务端。
+     */
+    private boolean isPigmentItem(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        // 优先使用实例比较（最快）
+        if (stack.getItem() == MardPixelForge.MARD_PIGMENT.get()) return true;
+        // 回退：使用物品注册名判断（最可靠）
+        String registryName = stack.getItem().getDescriptionId();
+        return "item.mard_pixel.mard_pigment".equals(registryName);
+    }
+
+    /**
+     * 槽位变化回调。
+     * 当任何槽位物品变化时调用，确保客户端UI及时刷新。
+     */
+    @Override
+    public void slotChanged(int slotId, ItemStack stack) {
+        super.slotChanged(slotId, stack);
+        // 合成网格（0-8）或结果槽（9）变化时，标记需要刷新
+        // 客户端的render方法会每帧检查hasPigment()，这里不需要额外处理
     }
 
     /**
