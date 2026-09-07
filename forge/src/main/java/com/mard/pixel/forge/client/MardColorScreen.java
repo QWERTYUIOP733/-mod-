@@ -121,13 +121,8 @@ public class MardColorScreen extends Screen {
             init();
         }).bounds(10, 6, 60, 20).build());
 
-        // 检测当前游戏模式
-        boolean isSurvival = Minecraft.getInstance().player != null
-                && !Minecraft.getInstance().player.isCreative()
-                && !Minecraft.getInstance().player.isSpectator();
-
         // 生存模式下显示提示
-        if (isSurvival) {
+        if (isSurvivalMode()) {
             statusMsg = "生存模式下仅可查看颜色，合成请使用方块染色台（消耗七彩粉末）";
         }
     }
@@ -142,17 +137,12 @@ public class MardColorScreen extends Screen {
             init();
         }).bounds(10, 6, 60, 20).build());
 
-        // 检测当前游戏模式
-        boolean isSurvivalInput = Minecraft.getInstance().player != null
-                && !Minecraft.getInstance().player.isCreative()
-                && !Minecraft.getInstance().player.isSpectator();
-
         int boxW = Math.min(240, width / 3);
         int boxH = 22;
         int boxX = (width - boxW) / 2;
         int boxY = height / 2 - 30;
 
-        if (isSurvivalInput) {
+        if (isSurvivalMode()) {
             // 生存模式：显示禁用提示，不显示输入框
             statusMsg = "生存模式下输入色号功能已禁用，请使用方块染色台或七彩粉末合成";
         } else {
@@ -226,6 +216,21 @@ public class MardColorScreen extends Screen {
         String title = "彩色方块扩展";
         g.drawString(font, Component.literal(title), (width - font.width(title)) / 2, 40, 0xFFFFFF);
 
+        // 在标题下方显示当前游戏模式（生存模式用红色警告）
+        String modeText = "当前模式：" + getGameModeName();
+        int modeColor = isSurvivalMode() ? 0xFF5555 : 0x55FF55;
+        g.drawString(font, Component.literal(modeText), (width - font.width(modeText)) / 2, 58, modeColor);
+
+        // 生存模式下显示红色警告条
+        if (isSurvivalMode()) {
+            String warnText = "⚠ 生存模式：G键仅可查看颜色，合成请使用方块染色台";
+            int warnWidth = font.width(warnText) + 20;
+            int warnX = (width - warnWidth) / 2;
+            g.fill(warnX, 75, warnX + warnWidth, 95, 0x88FF3333);
+            g.fill(warnX + 1, 76, warnX + warnWidth - 1, 94, 0xFFFF5555);
+            g.drawString(font, Component.literal(warnText), warnX + 10, 81, 0xFFFFFF);
+        }
+
         // 右侧：mod 使用说明（右侧 40% 宽度）
         int infoAreaX = (int) (width * 0.55);
         int infoAreaW = (int) (width * 0.35);
@@ -238,13 +243,8 @@ public class MardColorScreen extends Screen {
 
         g.drawString(font, Component.literal("mod 使用说明"), infoAreaX, infoY, 0xFFFFAA);
 
-        // 检测当前游戏模式
-        boolean isSurvivalMain = Minecraft.getInstance().player != null
-                && !Minecraft.getInstance().player.isCreative()
-                && !Minecraft.getInstance().player.isSpectator();
-
         String[] lines;
-        if (isSurvivalMain) {
+        if (isSurvivalMode()) {
             lines = new String[]{
                 "",
                 "221 色像素画模组（生存模式）",
@@ -307,15 +307,20 @@ public class MardColorScreen extends Screen {
      */
     private void renderSwatchesPage(GuiGraphics g) {
         // 检测当前游戏模式
-        boolean isSurvivalRender = Minecraft.getInstance().player != null
-                && !Minecraft.getInstance().player.isCreative()
-                && !Minecraft.getInstance().player.isSpectator();
+        boolean isSurvivalRender = isSurvivalMode();
 
-        // 标题（根据模式显示不同提示）
-        String title = isSurvivalRender
-                ? "颜色查看（生存模式）- 合成请使用方块染色台"
-                : "颜色选取 - 点击色块获取一组（64个）";
-        g.drawString(font, Component.literal(title), 80, 12, isSurvivalRender ? 0xFFFFAA : 0xFFFFFF);
+        // 生存模式下显示红色警告条（更醒目）
+        if (isSurvivalRender) {
+            String warnText = "⚠ 生存模式：仅可查看颜色，点击不会获取方块，请使用方块染色台合成";
+            int warnWidth = font.width(warnText) + 20;
+            g.fill(5, 5, Math.min(width - 10, warnWidth), 28, 0x88FF3333);
+            g.fill(6, 6, Math.min(width - 11, warnWidth - 1), 27, 0xFFFF5555);
+            g.drawString(font, Component.literal(warnText), 15, 12, 0xFFFFFF);
+        } else {
+            // 创造模式：正常标题
+            String title = "颜色选取 - 点击色块获取一组（64个）";
+            g.drawString(font, Component.literal(title), 80, 12, 0xFFFFFF);
+        }
 
         int contentY = 40;
         int contentH = height - contentY - 20;
@@ -373,21 +378,45 @@ public class MardColorScreen extends Screen {
      * 输入色号页面渲染。
      */
     private void renderInputPage(GuiGraphics g) {
-        String title = "输入想用的色号（支持批量输入）";
-        g.drawString(font, Component.literal(title),
-                (width - font.width(title)) / 2, height / 2 - 70, 0xFFFFFF);
+        if (isSurvivalMode()) {
+            // 生存模式：显示大的禁用提示
+            String title = "输入色号功能已禁用";
+            g.drawString(font, Component.literal(title),
+                    (width - font.width(title)) / 2, height / 2 - 50, 0xFF5555);
 
-        String hint = "输入色号（如 A1、B5、M3），支持批量输入多个色号";
-        g.drawString(font, Component.literal(hint),
-                (width - font.width(hint)) / 2, height / 2 + 45, 0xAAAAAA);
+            // 红色警告框
+            String warn1 = "生存模式下无法通过输入色号直接获取方块";
+            String warn2 = "请使用方块染色台，通过七彩粉末合成对应颜色";
+            int boxWidth = Math.max(font.width(warn1), font.width(warn2)) + 40;
+            int boxX = (width - boxWidth) / 2;
+            int boxY = height / 2 - 20;
+            g.fill(boxX, boxY, boxX + boxWidth, boxY + 70, 0x88FF3333);
+            g.fill(boxX + 2, boxY + 2, boxX + boxWidth - 2, boxY + 68, 0xFFFF5555);
+            g.drawString(font, Component.literal(warn1), (width - font.width(warn1)) / 2, boxY + 15, 0xFFFFFF);
+            g.drawString(font, Component.literal(warn2), (width - font.width(warn2)) / 2, boxY + 35, 0xFFFFEE);
 
-        String hint2 = "用空格/逗号/分号分隔，例如：A1 B2 C3 或 A1,B2,C3";
-        g.drawString(font, Component.literal(hint2),
-                (width - font.width(hint2)) / 2, height / 2 + 60, 0x888888);
+            if (!statusMsg.isEmpty()) {
+                g.drawString(font, Component.literal(statusMsg),
+                        (width - font.width(statusMsg)) / 2, height / 2 + 70, 0xFFFFAA);
+            }
+        } else {
+            // 创造模式：正常显示
+            String title = "输入想用的色号（支持批量输入）";
+            g.drawString(font, Component.literal(title),
+                    (width - font.width(title)) / 2, height / 2 - 70, 0xFFFFFF);
 
-        if (!statusMsg.isEmpty()) {
-            g.drawString(font, Component.literal(statusMsg),
-                    (width - font.width(statusMsg)) / 2, height / 2 + 85, 0xFFFFAA);
+            String hint = "输入色号（如 A1、B5、M3），支持批量输入多个色号";
+            g.drawString(font, Component.literal(hint),
+                    (width - font.width(hint)) / 2, height / 2 + 45, 0xAAAAAA);
+
+            String hint2 = "用空格/逗号/分号分隔，例如：A1 B2 C3 或 A1,B2,C3";
+            g.drawString(font, Component.literal(hint2),
+                    (width - font.width(hint2)) / 2, height / 2 + 60, 0x888888);
+
+            if (!statusMsg.isEmpty()) {
+                g.drawString(font, Component.literal(statusMsg),
+                        (width - font.width(statusMsg)) / 2, height / 2 + 85, 0xFFFFAA);
+            }
         }
     }
 
@@ -405,9 +434,7 @@ public class MardColorScreen extends Screen {
     public boolean mouseClicked(double mx, double my, int button) {
         if (button == 0 && currentPage == Page.SWATCHES) {
             // 检测当前游戏模式
-            boolean isSurvivalClick = Minecraft.getInstance().player != null
-                    && !Minecraft.getInstance().player.isCreative()
-                    && !Minecraft.getInstance().player.isSpectator();
+            boolean isSurvivalClick = isSurvivalMode();
 
             // 使用已缓存的Rect进行点击检测
             int cols = Math.max(8, Math.min(24, (width - 31) / 31));
@@ -462,6 +489,31 @@ public class MardColorScreen extends Screen {
         }
 
         return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    /**
+     * 检测当前是否为生存模式（非创造、非旁观）。
+     * 使用多种方式检测，确保准确性。
+     */
+    private boolean isSurvivalMode() {
+        if (Minecraft.getInstance().player == null) return false;
+        var player = Minecraft.getInstance().player;
+        // 非创造且非旁观即为生存/冒险模式
+        return !player.isCreative() && !player.isSpectator();
+    }
+
+    /**
+     * 获取当前游戏模式的显示名称。
+     */
+    private String getGameModeName() {
+        if (isSurvivalMode()) {
+            return "生存模式";
+        } else if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.isCreative()) {
+            return "创造模式";
+        } else if (Minecraft.getInstance().player != null && Minecraft.getInstance().player.isSpectator()) {
+            return "旁观模式";
+        }
+        return "未知模式";
     }
 
     @Override
