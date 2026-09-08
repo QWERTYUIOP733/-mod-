@@ -1,4 +1,4 @@
-﻿package com.mard.pixel.forge.client;
+package com.mard.pixel.forge.client;
 
 import com.mard.pixel.common.MardColor;
 import com.mard.pixel.common.MardPalette;
@@ -12,12 +12,10 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * 方块染色台屏幕。
- * 布局类似原版工作台，右侧添加颜色选择列表（七彩粉末模式）。
- * - 左上：3x3 合成网格（9格）
- * - 右侧：结果槽（1格）
- * - 下方：玩家背包（27格）
- * - 最下方：玩家快捷栏（9格）
- * - 最左侧：颜色选择列表（仅当合成网格中有七彩粉末时显示，避免与右侧JEI冲突）
+ * 布局类似原版工作台，左侧添加颜色选择列表（七彩粉末模式）。
+ * - 中央：3x3 合成网格（9格）+ 结果槽（1格）
+ * - 下方：玩家背包（27格）+ 快捷栏（9格）
+ * - 左侧：颜色选择列表（仅当合成网格中有七彩粉末时显示，固定放在左侧避免与右侧JEI冲突）
  */
 public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu> {
 
@@ -25,15 +23,15 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     private static final int BASE_WIDTH = 176;
     private static final int BASE_HEIGHT = 166;
 
-    // 颜色选择列表面板尺寸（自适应）
-    private static final int COLOR_PANEL_DEFAULT_WIDTH = 150;
-    private static final int COLOR_PANEL_MIN_WIDTH = 110;
+    // 颜色选择列表面板尺寸
+    private static final int COLOR_PANEL_DEFAULT_WIDTH = 130;
+    private static final int COLOR_PANEL_MIN_WIDTH = 80;
     private static final int COLOR_PANEL_HEIGHT = 166;
-    private static final int COLOR_PANEL_GAP = 6;
-    private static final int COLOR_PANEL_RIGHT_MARGIN = 4;
+    private static final int COLOR_PANEL_GAP = 4;
+    private static final int COLOR_PANEL_SCREEN_LEFT_MARGIN = 2;
     private static final int COLOR_ITEM_HEIGHT = 22;
     private static final int COLOR_SWATCH_SIZE = 16;
-    private static final int COLOR_TEXT_PADDING = 6;
+    private static final int COLOR_TEXT_PADDING = 4;
 
     // 运行时计算的面板宽度（根据窗口大小自适应）
     private int panelWidth = COLOR_PANEL_DEFAULT_WIDTH;
@@ -65,17 +63,17 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
 
     /**
      * 根据窗口大小计算颜色面板宽度。
-     * 面板放在主界面左侧（避免与右侧JEI物品管理器冲突），宽度根据可用空间动态调整。
+     * 面板固定放在主界面左侧（避免与右侧JEI物品管理器冲突），宽度根据左侧可用空间动态调整。
      */
     private void updatePanelWidth() {
-        int mainLeft = this.leftPos;
-        int availableWidth = mainLeft - COLOR_PANEL_GAP - COLOR_PANEL_RIGHT_MARGIN;
+        // 左侧可用空间 = 主界面左边界 - 屏幕左边距 - 间隙
+        int availableWidth = this.leftPos - COLOR_PANEL_SCREEN_LEFT_MARGIN - COLOR_PANEL_GAP;
 
         // 面板宽度：在最小值和默认值之间取合适值
         panelWidth = Math.max(COLOR_PANEL_MIN_WIDTH, Math.min(COLOR_PANEL_DEFAULT_WIDTH, availableWidth));
 
         // 重新计算可见颜色数
-        maxVisibleColors = (COLOR_PANEL_HEIGHT - 20) / COLOR_ITEM_HEIGHT;
+        maxVisibleColors = Math.max(3, (COLOR_PANEL_HEIGHT - 20) / COLOR_ITEM_HEIGHT);
 
         // 确保滚动偏移在有效范围内
         int totalColors = MardPalette.COLORS.size();
@@ -89,7 +87,7 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
         super.render(graphics, mouseX, mouseY, partialTick);
         this.renderTooltip(graphics, mouseX, mouseY);
 
-        // 如果有七彩粉末，渲染颜色选择列表
+        // 如果有七彩粉末，渲染颜色选择列表（放在左侧）
         if (menu.hasPigment()) {
             renderColorPanel(graphics, mouseX, mouseY);
         }
@@ -162,13 +160,17 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     }
 
     /**
-     * 渲染颜色选择列表面板。
+     * 渲染颜色选择列表面板（固定放在主界面左侧）。
      */
     private void renderColorPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-        // 计算面板位置（包含屏幕边界检测）
-        int[] bounds = getColorPanelBounds();
-        int panelX = bounds[0];
-        int panelY = bounds[1];
+        // 每次渲染时重新计算宽度，确保窗口大小变化时及时响应
+        updatePanelWidth();
+
+        // 计算面板位置（固定放在主界面左侧，带屏幕边界检测）
+        int panelX = this.leftPos - panelWidth - COLOR_PANEL_GAP;
+        // 确保面板不会超出屏幕左侧
+        panelX = Math.max(COLOR_PANEL_SCREEN_LEFT_MARGIN, panelX);
+        int panelY = this.topPos;
 
         // 绘制面板背景
         graphics.fill(panelX, panelY, panelX + panelWidth, panelY + COLOR_PANEL_HEIGHT, 0xFFC6C6C6);
@@ -209,7 +211,7 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
 
             // 文字区域起始X位置
             int textX = swatchX + COLOR_SWATCH_SIZE + COLOR_TEXT_PADDING;
-            int textWidth = panelWidth - (textX - panelX) - 8; // 留出滚动条空间
+            int availableTextWidth = panelWidth - (textX - panelX) - 8; // 留出滚动条空间
 
             // 绘制颜色介绍（色号 + RGB）
             String codeText = color.code();
@@ -217,8 +219,10 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
 
             // 色号
             graphics.drawString(this.font, codeText, textX, itemY + 3, 0x404040, false);
-            // RGB值
-            graphics.drawString(this.font, rgbText, textX, itemY + 13, 0x606060, false);
+            // RGB值（如果宽度不够，截断显示）
+            if (availableTextWidth > 40) {
+                graphics.drawString(this.font, rgbText, textX, itemY + 13, 0x606060, false);
+            }
         }
 
         // 绘制滚动条
@@ -238,15 +242,13 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     }
 
     /**
-     * 计算颜色选择面板的位置（放在主界面左侧，避免与右侧JEI物品管理器冲突，宽度已自适应）。
+     * 获取颜色面板的边界（用于鼠标事件检测）。
      */
     private int[] getColorPanelBounds() {
-        // 每次调用时重新计算宽度，确保窗口大小变化时及时响应
         updatePanelWidth();
-
         int panelX = this.leftPos - panelWidth - COLOR_PANEL_GAP;
+        panelX = Math.max(COLOR_PANEL_SCREEN_LEFT_MARGIN, panelX);
         int panelY = this.topPos;
-
         return new int[]{panelX, panelY};
     }
 
