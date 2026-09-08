@@ -1,4 +1,4 @@
-package com.mard.pixel.forge.client;
+﻿package com.mard.pixel.forge.client;
 
 import com.mard.pixel.common.MardColor;
 import com.mard.pixel.common.MardPalette;
@@ -17,7 +17,7 @@ import net.minecraft.world.item.ItemStack;
  * - 右侧：结果槽（1格）
  * - 下方：玩家背包（27格）
  * - 最下方：玩家快捷栏（9格）
- * - 最右侧：颜色选择列表（仅当合成网格中有七彩粉末时显示）
+ * - 最左侧：颜色选择列表（仅当合成网格中有七彩粉末时显示，避免与右侧JEI冲突）
  */
 public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu> {
 
@@ -65,12 +65,12 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
 
     /**
      * 根据窗口大小计算颜色面板宽度。
-     * 面板始终放在主界面右侧，宽度根据可用空间动态调整。
+     * 面板放在主界面左侧（避免与右侧JEI物品管理器冲突），宽度根据可用空间动态调整。
      */
     private void updatePanelWidth() {
         int screenWidth = this.minecraft.getWindow().getGuiScaledWidth();
-        int mainRight = this.leftPos + BASE_WIDTH;
-        int availableWidth = screenWidth - mainRight - COLOR_PANEL_GAP - COLOR_PANEL_RIGHT_MARGIN;
+        int mainLeft = this.leftPos;
+        int availableWidth = mainLeft - COLOR_PANEL_GAP - COLOR_PANEL_RIGHT_MARGIN;
 
         // 面板宽度：在最小值和默认值之间取合适值
         panelWidth = Math.max(COLOR_PANEL_MIN_WIDTH, Math.min(COLOR_PANEL_DEFAULT_WIDTH, availableWidth));
@@ -245,7 +245,7 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
         // 每次调用时重新计算宽度，确保窗口大小变化时及时响应
         updatePanelWidth();
 
-        int panelX = this.leftPos + BASE_WIDTH + COLOR_PANEL_GAP;
+        int panelX = this.leftPos - panelWidth - COLOR_PANEL_GAP;
         int panelY = this.topPos;
 
         return new int[]{panelX, panelY};
