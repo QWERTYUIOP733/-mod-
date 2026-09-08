@@ -68,7 +68,6 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
      * 面板放在主界面左侧（避免与右侧JEI物品管理器冲突），宽度根据可用空间动态调整。
      */
     private void updatePanelWidth() {
-        int screenWidth = this.minecraft.getWindow().getGuiScaledWidth();
         int mainLeft = this.leftPos;
         int availableWidth = mainLeft - COLOR_PANEL_GAP - COLOR_PANEL_RIGHT_MARGIN;
 
@@ -239,7 +238,7 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     }
 
     /**
-     * 计算颜色选择面板的位置（始终在主界面右侧，宽度已自适应）。
+     * 计算颜色选择面板的位置（放在主界面左侧，避免与右侧JEI物品管理器冲突，宽度已自适应）。
      */
     private int[] getColorPanelBounds() {
         // 每次调用时重新计算宽度，确保窗口大小变化时及时响应
