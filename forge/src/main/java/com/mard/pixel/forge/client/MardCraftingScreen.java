@@ -15,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
  * 布局类似原版工作台，左侧添加颜色选择列表（七彩粉末模式）。
  * - 中央：3x3 合成网格（9格）+ 结果槽（1格）
  * - 下方：玩家背包（27格）+ 快捷栏（9格）
- * - 左侧：颜色选择列表（仅当合成网格中有七彩粉末时显示，固定放在左侧避免与右侧JEI冲突）
+ * - 左侧：颜色选择列表（仅当合成网格中有七彩粉末时显示，固定放在左侧避免与右侧JEI物品管理器冲突）
  */
 public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu> {
 
