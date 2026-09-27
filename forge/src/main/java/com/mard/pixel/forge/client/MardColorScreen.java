@@ -118,10 +118,10 @@ public class MardColorScreen extends Screen {
 
         // 三栏布局：左侧提示面板(15%) + 中间按钮区(40%) + 右侧简介面板(45%)
         int tipPanelW = (int) (panelW * 0.15);
-        int centerW = (int) (panelW * 0.40);
-        int btnW = Math.min(200, centerW - 40);
+        int btnAreaW = (int) (panelW * 0.45);
+        int btnW = Math.min(220, btnAreaW - 40);
         int btnH = 30;
-        int btnX = panelX + tipPanelW + (centerW - btnW) / 2;
+        int btnX = panelX + (panelW - btnW) / 2 - (int)(panelW * 0.15);
 
         // 按钮垂直居中，间距60
         int btnCenterY = panelY + panelH / 2;
@@ -260,60 +260,17 @@ public class MardColorScreen extends Screen {
         int modeColor = isSurvivalMode() ? 0xFF5555 : 0x55FF55;
         g.drawString(font, Component.literal(modeText), (width - font.width(modeText)) / 2, panelY - 14, modeColor);
 
-        // 大面板背景已移除（透明背景）
-
-        // 左侧提示面板（红底黄字）
-        int tipPanelW = (int) (panelW * 0.18);
-        int tipPanelX = panelX + 10;
-        int tipPanelY = panelY + 10;
-        int tipPanelH = panelH - 20;
-
-        // 提示面板红色背景
-        g.fill(tipPanelX, tipPanelY, tipPanelX + tipPanelW, tipPanelY + tipPanelH, 0xDDCC0000);
-        g.fill(tipPanelX, tipPanelY, tipPanelX + tipPanelW, tipPanelY + 2, 0xFFFF4444);
-        g.fill(tipPanelX, tipPanelY + tipPanelH - 2, tipPanelX + tipPanelW, tipPanelY + tipPanelH, 0xFF990000);
-        g.fill(tipPanelX, tipPanelY, tipPanelX + 2, tipPanelY + tipPanelH, 0xFFFF4444);
-        g.fill(tipPanelX + tipPanelW - 2, tipPanelY, tipPanelX + tipPanelW, tipPanelY + tipPanelH, 0xFF990000);
-
-        // 提示标题（横排，黄字）
-        String tipTitle = "提示";
-        g.drawString(font, Component.literal(tipTitle), tipPanelX + (tipPanelW - font.width(tipTitle)) / 2, tipPanelY + 10, 0xFFFF00);
-
-        // 分隔线
-        g.fill(tipPanelX + 8, tipPanelY + 24, tipPanelX + tipPanelW - 8, tipPanelY + 25, 0xFFFFCC00);
-
-        // 提示内容（黄字，精简版，根据模式改变）
-        String[] tipLines;
+        // 提示内容（模式文本下方，精简版，根据模式改变）
+        String tipText;
         if (isSurvivalMode()) {
-            tipLines = new String[]{
-                "生存模式",
-                "仅可查看颜色",
-                "合成请使用",
-                "方块染色台",
-                "七彩粉末",
-                "可合成任意色块",
-                "按钮二已禁用"
-            };
+            tipText = "生存模式：仅可查看颜色 | 合成请使用方块染色台 | 七彩粉末可合成任意色块";
         } else {
-            tipLines = new String[]{
-                "创造模式",
-                "可直接获取方块",
-                "按钮一：",
-                "浏览色号点击获取",
-                "按钮二：",
-                "输入色号快速获取",
-                "支持批量输入"
-            };
+            tipText = "创造模式：可直接获取方块 | 按钮一：浏览色号点击获取 | 按钮二：输入色号快速获取";
         }
+        int tipColor = isSurvivalMode() ? 0xFFAA44 : 0x44FF44;
+        g.drawString(font, Component.literal(tipText), (width - font.width(tipText)) / 2, panelY - 2, tipColor);
 
-        int tipY = tipPanelY + 35;
-        int tipLineH = 14;
-        for (String tipLine : tipLines) {
-            if (tipY + 8 < tipPanelY + tipPanelH - 5) {
-                g.drawString(font, Component.literal(tipLine), tipPanelX + (tipPanelW - font.width(tipLine)) / 2, tipY, 0xFFFF00);
-            }
-            tipY += tipLineH;
-        }
+        // 大面板背景已移除（透明背景）
 
         // 右侧说明面板
         int infoPanelX = panelX + (int) (panelW * 0.55);
