@@ -1,4 +1,4 @@
-﻿package com.mard.pixel.forge.client;
+package com.mard.pixel.forge.client;
 
 import com.mard.pixel.common.MardColor;
 import com.mard.pixel.common.MardPalette;
