@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'com.mard.pixel'
-version = '1.2.0'
+version = '1.2.1'
 
 base {
     archivesName = 'mard_pixel_forge'
@@ -66,10 +66,13 @@ jar {
     manifest {
         attributes([
             'Specification-Title'     : 'mard_pixel',
-            'Specification-Version'   : '1.2.0',
-            'Implementation-Title'    : 'MARD Pixel Mod',
-            'Implementation-Version'  : '1.2.0'
+            'Specification-Version'   : '1.2.1',
+            'Implementation-Title'    : 'Color Blocks Extension',
+            'Implementation-Version'  : '1.2.1'
         ])
+    }
+    from("LICENSE") {
+        rename { "${it}_${project.archivesName}" }
     }
     finalizedBy 'reobfJar'
 }
