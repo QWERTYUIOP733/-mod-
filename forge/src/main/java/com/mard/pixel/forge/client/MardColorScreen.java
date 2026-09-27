@@ -116,15 +116,16 @@ public class MardColorScreen extends Screen {
         int panelW = width - 80;
         int panelH = height - 130;
 
-        // 左侧按钮区：占面板左侧45%
-        int leftW = (int) (panelW * 0.45);
-        int btnW = Math.min(220, leftW - 50);
+        // 三栏布局：左侧提示面板(15%) + 中间按钮区(40%) + 右侧简介面板(45%)
+        int tipPanelW = (int) (panelW * 0.15);
+        int centerW = (int) (panelW * 0.40);
+        int btnW = Math.min(200, centerW - 40);
         int btnH = 30;
-        int btnX = panelX + (leftW - btnW) / 2;
+        int btnX = panelX + tipPanelW + (centerW - btnW) / 2;
 
-        // 按钮垂直居中，间距60，确保在警告条下方
+        // 按钮垂直居中，间距60
         int btnCenterY = panelY + panelH / 2;
-        int btn1Y = Math.max(btnCenterY - 45, panelY + 45);
+        int btn1Y = btnCenterY - 45;
         int btn2Y = btn1Y + 60;
 
         // 按钮一：颜色选取
