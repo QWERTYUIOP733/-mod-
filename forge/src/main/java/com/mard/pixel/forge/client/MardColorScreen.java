@@ -268,20 +268,43 @@ public class MardColorScreen extends Screen {
         g.fill(panelX, panelY, panelX + 2, panelY + panelH, 0xFF555555);
         g.fill(panelX + panelW - 2, panelY, panelX + panelW, panelY + panelH, 0xFF333333);
 
-        // 生存模式警告条（面板内顶部）
+        // 左侧提示面板
+        int tipPanelW = (int) (panelW * 0.15);
+        int tipPanelX = panelX + 10;
+        int tipPanelY = panelY + 10;
+        int tipPanelH = panelH - 20;
+
+        // 提示面板背景
+        g.fill(tipPanelX, tipPanelY, tipPanelX + tipPanelW, tipPanelY + tipPanelH, 0xEE2a2a2a);
+        g.fill(tipPanelX, tipPanelY, tipPanelX + tipPanelW, tipPanelY + 1, 0xFF666666);
+        g.fill(tipPanelX, tipPanelY + tipPanelH - 1, tipPanelX + tipPanelW, tipPanelY + tipPanelH, 0xFF444444);
+        g.fill(tipPanelX, tipPanelY, tipPanelX + 1, tipPanelY + tipPanelH, 0xFF666666);
+        g.fill(tipPanelX + tipPanelW - 1, tipPanelY, tipPanelX + tipPanelW, tipPanelY + tipPanelH, 0xFF444444);
+
+        // 提示标题
+        g.drawString(font, Component.literal("提"), tipPanelX + (tipPanelW - font.width("提")) / 2, tipPanelY + 15, 0xFFFFAA);
+        g.drawString(font, Component.literal("示"), tipPanelX + (tipPanelW - font.width("示")) / 2, tipPanelY + 28, 0xFFFFAA);
+
+        // 提示内容
+        String[] tipLines;
         if (isSurvivalMode()) {
-            String warnText = "生存模式：仅可查看颜色，合成请使用方块染色台";
-            int warnWidth = Math.min(font.width(warnText) + 24, panelW - 40);
-            int warnX = panelX + (panelW - warnWidth) / 2;
-            int warnY = panelY + 10;
-            g.fill(warnX, warnY, warnX + warnWidth, warnY + 20, 0x99CC0000);
-            g.fill(warnX + 1, warnY + 1, warnX + warnWidth - 1, warnY + 19, 0xFFFF4444);
-            g.drawString(font, Component.literal(warnText), warnX + (warnWidth - font.width(warnText)) / 2, warnY + 6, 0xFFFFFF);
+            tipLines = new String[]{"生存模式", "", "仅可查看", "颜色", "", "合成请", "使用方块", "染色台", "", "七彩粉末", "可合成", "任意色块"};
+        } else {
+            tipLines = new String[]{"创造模式", "", "可直接", "获取方块", "", "按钮一：", "浏览色号", "", "按钮二：", "输入色号", "快速获取"};
+        }
+
+        int tipY = tipPanelY + 50;
+        for (String tipLine : tipLines) {
+            if (tipY + 8 < tipPanelY + tipPanelH - 5) {
+                int lineColor = isSurvivalMode() ? 0xFF8888 : 0x88FF88;
+                g.drawString(font, Component.literal(tipLine), tipPanelX + (tipPanelW - font.width(tipLine)) / 2, tipY, lineColor);
+            }
+            tipY += 12;
         }
 
         // 右侧说明面板
-        int infoPanelX = panelX + (int) (panelW * 0.50);
-        int infoPanelW = (int) (panelW * 0.45);
+        int infoPanelX = panelX + (int) (panelW * 0.55);
+        int infoPanelW = (int) (panelW * 0.42);
         int infoPanelY = panelY + 10;
         int infoPanelH = panelH - 20;
 
