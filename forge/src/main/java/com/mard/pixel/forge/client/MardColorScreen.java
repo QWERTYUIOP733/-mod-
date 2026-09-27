@@ -1,4 +1,4 @@
-package com.mard.pixel.forge.client;
+﻿package com.mard.pixel.forge.client;
 
 import com.mard.pixel.common.MardColor;
 import com.mard.pixel.common.MardPalette;
@@ -258,8 +258,8 @@ public class MardColorScreen extends Screen {
         // 右侧说明面板
         int infoPanelX = panelX + (int) (panelW * 0.50);
         int infoPanelW = (int) (panelW * 0.45);
-        int infoPanelY = panelY + 15;
-        int infoPanelH = panelH - 30;
+        int infoPanelY = panelY + 10;
+        int infoPanelH = panelH - 20;
 
         // 说明面板背景
         g.fill(infoPanelX, infoPanelY, infoPanelX + infoPanelW, infoPanelY + infoPanelH, 0xEE2a2a2a);
@@ -269,7 +269,7 @@ public class MardColorScreen extends Screen {
         g.fill(infoPanelX, infoPanelY, infoPanelX + 1, infoPanelY + infoPanelH, 0xFF666666);
         g.fill(infoPanelX + infoPanelW - 1, infoPanelY, infoPanelX + infoPanelW, infoPanelY + infoPanelH, 0xFF444444);
 
-        g.drawString(font, Component.literal("mod 使用说明"), infoPanelX + 10, infoPanelY + 8, 0xFFFFAA);
+        g.drawString(font, Component.literal("mod 使用说明"), infoPanelX + 8, infoPanelY + 6, 0xFFFFAA);
 
         String[] lines;
         if (isSurvivalMode()) {
@@ -309,11 +309,11 @@ public class MardColorScreen extends Screen {
             };
         }
 
-        int y = infoPanelY + 24;
-        int lineH = 11;
+        int y = infoPanelY + 20;
+        int lineH = 9;
         for (String line : lines) {
-            if (y + 10 < infoPanelY + infoPanelH - 3) {
-                g.drawString(font, Component.literal(line), infoPanelX + 10, y, 0xCCCCCC);
+            if (y + 9 < infoPanelY + infoPanelH - 2) {
+                g.drawString(font, Component.literal(line), infoPanelX + 8, y, 0xCCCCCC);
             }
             y += lineH;
         }
