@@ -269,7 +269,7 @@ public class MardColorScreen extends Screen {
         g.fill(infoPanelX, infoPanelY, infoPanelX + 1, infoPanelY + infoPanelH, 0xFF666666);
         g.fill(infoPanelX + infoPanelW - 1, infoPanelY, infoPanelX + infoPanelW, infoPanelY + infoPanelH, 0xFF444444);
 
-        g.drawString(font, Component.literal("mod 使用说明"), infoPanelX + 8, infoPanelY + 6, 0xFFFFAA);
+        g.drawString(font, Component.literal("mod 使用说明"), infoPanelX + 8, infoPanelY + 5, 0xFFFFAA);
 
         String[] lines;
         if (isSurvivalMode()) {
@@ -309,10 +309,10 @@ public class MardColorScreen extends Screen {
             };
         }
 
-        int y = infoPanelY + 20;
-        int lineH = 9;
+        int y = infoPanelY + 18;
+        int lineH = 8;
         for (String line : lines) {
-            if (y + 9 < infoPanelY + infoPanelH - 2) {
+            if (y + 8 < infoPanelY + infoPanelH - 2) {
                 g.drawString(font, Component.literal(line), infoPanelX + 8, y, 0xCCCCCC);
             }
             y += lineH;
