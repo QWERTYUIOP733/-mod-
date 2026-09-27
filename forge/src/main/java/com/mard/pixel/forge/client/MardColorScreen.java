@@ -122,10 +122,10 @@ public class MardColorScreen extends Screen {
         int btnH = 30;
         int btnX = panelX + (leftW - btnW) / 2;
 
-        // 按钮垂直居中，间距60
+        // 按钮垂直居中，间距60，确保在警告条下方
         int btnCenterY = panelY + panelH / 2;
-        int btn1Y = btnCenterY - 45;
-        int btn2Y = btnCenterY + 15;
+        int btn1Y = Math.max(btnCenterY - 45, panelY + 45);
+        int btn2Y = btn1Y + 60;
 
         // 按钮一：颜色选取
         addRenderableWidget(Button.builder(Component.literal("颜色选取"), btn -> {
@@ -339,7 +339,7 @@ public class MardColorScreen extends Screen {
         }
 
         // 版本号（面板下方居中）
-        String bottomText = "彩色方块扩展 v1.2.0";
+        String bottomText = "彩色方块扩展 v1.2.1";
         g.drawString(font, Component.literal(bottomText),
                 (width - font.width(bottomText)) / 2, panelY + panelH + 10, 0x888888);
 
