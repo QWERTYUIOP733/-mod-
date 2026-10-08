@@ -1,0 +1,13 @@
+﻿{
+    "ingredients":  [
+                        {
+                            "item":  "minecraft:red_dye"
+                        }
+                    ],
+    "result":  {
+                   "count":  1,
+                   "id": "mard_pixel:mard_pigment"
+               },
+    "type":  "minecraft:crafting_shapeless"
+}
+

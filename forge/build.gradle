@@ -2,20 +2,20 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '6.0.54'
+    id 'net.minecraftforge.gradle' version '6.0.+'
 }
 
 group = 'com.mard.pixel'
-version = '1.2.1'
+version = '2.0.0'
 
 base {
     archivesName = 'mard_pixel_forge'
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 minecraft {
-    mappings channel: 'official', version: '1.20.1'
+    mappings channel: 'official', version: '1.21.1'
 
     runs {
         client {
@@ -54,30 +54,31 @@ sourceSets {
 }
 
 repositories {
+    maven { url = 'https://maven.aliyun.com/repository/public' }
+    maven { url = 'http://127.0.0.1:8899/maven/'; allowInsecureProtocol = true }
     maven { url = 'https://maven.minecraftforge.net/' }
     mavenCentral()
 }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.20.1-47.4.23'
+    minecraft 'net.minecraftforge:forge:1.21.1-52.1.16'
 }
 
 jar {
     manifest {
         attributes([
             'Specification-Title'     : 'mard_pixel',
-            'Specification-Version'   : '1.2.1',
+            'Specification-Version'   : '2.0.0',
             'Implementation-Title'    : 'Color Blocks Extension',
-            'Implementation-Version'  : '1.2.1'
+            'Implementation-Version'  : '2.0.0'
         ])
     }
     from("LICENSE") {
         rename { "${it}_mard_pixel_forge" }
     }
-    finalizedBy 'reobfJar'
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 17
+    options.release = 21
 }

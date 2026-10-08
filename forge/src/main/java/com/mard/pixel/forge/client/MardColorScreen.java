@@ -72,6 +72,58 @@ public class MardColorScreen extends Screen {
     private EditBox inputBox;
     private String statusMsg = "";
 
+    /** 全局布局系数：恒为 1，页面元素按标准像素清晰绘制（不做浮点缩放，避免位图字体发虚） */
+    private float ui = 1f;
+    /** 当前 Minecraft GUI scale（帧缓冲/逻辑分辨率反推） */
+    private double gs = 1.0;
+    /** 是否全屏或最大化 */
+    private boolean fullscreen = true;
+    /** 模组介绍框文字系数：全屏=1（标准），窗口化=降一个整数 GUI 档（整数比，清晰变小） */
+    private float infoSc = 1f;
+
+    /**
+     * 回退到清晰基准：全局不缩放（ui=1）。
+     * 仅判定“全屏/窗口化”，并为模组介绍框文字计算一个整数 GUI 档之比 infoSc，
+     * 位图字体按整数档缩放可保持像素对齐、清晰不糊。
+     */
+    private void computeUi() {
+        ui = 1f;
+        gs = 1.0;
+        fullscreen = true;
+        infoSc = 1f;
+        try {
+            long win = org.lwjgl.glfw.GLFW.glfwGetCurrentContext();
+            if (win != 0L) {
+                int fbW, fbH, sw, sh, mw = 0, mh = 0;
+                try (org.lwjgl.system.MemoryStack st = org.lwjgl.system.MemoryStack.stackPush()) {
+                    java.nio.IntBuffer wb = st.mallocInt(1), hb = st.mallocInt(1);
+                    org.lwjgl.glfw.GLFW.glfwGetFramebufferSize(win, wb, hb);
+                    fbW = wb.get(0);
+                    fbH = hb.get(0);
+                    java.nio.IntBuffer swb = st.mallocInt(1), shb = st.mallocInt(1);
+                    org.lwjgl.glfw.GLFW.glfwGetWindowSize(win, swb, shb);
+                    sw = swb.get(0);
+                    sh = shb.get(0);
+                    long mon = org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor();
+                    if (mon != 0L) {
+                        java.nio.IntBuffer xb = st.mallocInt(1), yb = st.mallocInt(1), wwb = st.mallocInt(1), hhb = st.mallocInt(1);
+                        org.lwjgl.glfw.GLFW.glfwGetMonitorWorkarea(mon, xb, yb, wwb, hhb);
+                        mw = wwb.get(0);
+                        mh = hhb.get(0);
+                    }
+                }
+                int logW = Math.max(1, this.width);
+                double cur = Math.max(1.0, (double) fbW / logW);
+                gs = cur;
+                boolean fs = org.lwjgl.glfw.GLFW.glfwGetWindowMonitor(win) != 0L;
+                if (!fs && mw > 0 && mh > 0) fs = sw >= mw * 0.95 && sh >= mh * 0.95;
+                fullscreen = fs;
+                // 介绍框字号 infoSc 在 renderMainPage 内按框体实际尺寸逐帧计算（自动取清晰整数档并垂直居中）
+                infoSc = 1f;
+            }
+        } catch (Throwable ignored) {}
+    }
+
     public MardColorScreen() {
         super(Component.literal("色板"));
         rebuildSwatches();
@@ -88,6 +140,7 @@ public class MardColorScreen extends Screen {
 
     @Override
     protected void init() {
+        computeUi();
         this.clearWidgets();
         // 切换页面时重置输入框
         if (currentPage != Page.INPUT) inputBox = null;
@@ -109,34 +162,45 @@ public class MardColorScreen extends Screen {
      * 按钮一：颜色选取
      * 按钮二：输入想用的色号
      */
-    private void initMainPage() {
-        // 大面板布局参数
-        int panelX = 40;
-        int panelY = 70;
-        int panelW = width - 80;
-        int panelH = height - 130;
-
-        // 三栏布局：左侧提示面板(15%) + 中间按钮区(40%) + 右侧简介面板(45%)
-        int tipPanelW = (int) (panelW * 0.15);
-        int btnAreaW = (int) (panelW * 0.45);
-        int btnW = Math.min(220, btnAreaW - 40);
-        int btnH = 30;
-        int btnX = panelX + (panelW - btnW) / 2 - (int)(panelW * 0.15);
-
-        // 按钮垂直居中，间距60
+    /** 主页两按钮的几何（真实像素，随 ui 等比缩放）：[btnX, btn1Y, btnW, btnH, btn2Y, centerX] */
+    private int[] mainButtonGeometry() {
+        int panelX = (int) (40 * ui);
+        int panelY = (int) (70 * ui);
+        int panelW = (int) (width - 80 * ui);
+        int panelH = (int) (height - 130 * ui);
+        int btnWBase = (int) Math.min(220f, panelW * 0.45f / ui - 40f);
+        int btnW = Math.max(40, (int) (btnWBase * ui));
+        int btnH = Math.max(16, (int) (30 * ui));
+        int centerX = panelX + (int) (panelW * 0.35f);
+        int btnX = centerX - btnW / 2;
         int btnCenterY = panelY + panelH / 2;
-        int btn1Y = btnCenterY - 45;
-        int btn2Y = btn1Y + 60;
+        int btn1Y = btnCenterY - (int) (45 * ui);
+        int btn2Y = btn1Y + (int) (60 * ui);
+        return new int[]{btnX, btn1Y, btnW, btnH, btn2Y, centerX};
+    }
 
-        // 按钮一：颜色选取
-        addRenderableWidget(Button.builder(Component.literal("颜色选取"), btn -> {
+    /** 在按钮 widget 之上绘制两个主页按钮的文字（与按钮共用 ui 缩放系数） */
+    private void renderMainButtonLabels(GuiGraphics g) {
+        int textH = Math.max(1, (int) (9 * ui));
+        int[] geo = mainButtonGeometry();
+        int cx = geo[5], b1 = geo[1], b2 = geo[4], bw = geo[2], bh = geo[3];
+        drawCenteredAdaptive(g, "颜色选取", cx, b1 + (bh - textH) / 2, 0xFFFFFFFF, bw - (int) (6 * ui));
+        drawCenteredAdaptive(g, "输入想用的色号", cx, b2 + (bh - textH) / 2, 0xFFFFFFFF, bw - (int) (6 * ui));
+    }
+
+    private void initMainPage() {
+        int[] geo = mainButtonGeometry();
+        int btnX = geo[0], btn1Y = geo[1], btnW = geo[2], btnH = geo[3], btn2Y = geo[4];
+
+        // 按钮一：颜色选取（文字自绘以随 ui 缩放）
+        addRenderableWidget(Button.builder(Component.literal(""), btn -> {
             currentPage = Page.SWATCHES;
             scrollOffset = 0;
             init();
         }).bounds(btnX, btn1Y, btnW, btnH).build());
 
         // 按钮二：输入想用的色号
-        addRenderableWidget(Button.builder(Component.literal("输入想用的色号"), btn -> {
+        addRenderableWidget(Button.builder(Component.literal(""), btn -> {
             currentPage = Page.INPUT;
             init();
         }).bounds(btnX, btn2Y, btnW, btnH).build());
@@ -207,7 +271,8 @@ public class MardColorScreen extends Screen {
         for (String code : codes) {
             String trimmed = code.trim().toUpperCase();
             if (!trimmed.isEmpty()) {
-                MardNetwork.CHANNEL.sendToServer(new MardNetwork.HotbarPacket(trimmed));
+                MardNetwork.CHANNEL.send(new MardNetwork.HotbarPacket(trimmed),
+                        net.minecraftforge.network.PacketDistributor.SERVER.noArg());
                 if (validCount > 0) successMsg.append(", ");
                 successMsg.append(trimmed);
                 validCount++;
@@ -229,36 +294,48 @@ public class MardColorScreen extends Screen {
     // ==================== 渲染 ====================
 
     @Override
-    public void render(GuiGraphics g, int mx, int my, float partialTick) {
-        renderBackground(g);
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        // 手动绘制和 1.20.1 一致的深色半透明背景，避免 1.21 默认模糊背景导致文字重影
+        g.fill(0, 0, this.width, this.height, 0xC0101010);
+    }
 
+    @Override
+    public void render(GuiGraphics g, int mx, int my, float partialTick) {
+        computeUi();
+        // super.render 会调用上面的 renderBackground 绘制纯色半透明背景，再绘制按钮
+        super.render(g, mx, my, partialTick);
+
+        // 文字内容绘制在最上层，保证清晰
         switch (currentPage) {
             case MAIN -> renderMainPage(g);
             case SWATCHES -> renderSwatchesPage(g);
             case INPUT -> renderInputPage(g);
         }
 
-        super.render(g, mx, my, partialTick);
+        // 主页按钮文字在最上层绘制，保证随 ui 缩放且不被按钮背景遮挡
+        if (currentPage == Page.MAIN) renderMainButtonLabels(g);
     }
 
     /**
      * 主菜单页面渲染。
      */
     private void renderMainPage(GuiGraphics g) {
-        // 大面板布局参数（与initMainPage一致）
-        int panelX = 40;
-        int panelY = 70;
-        int panelW = width - 80;
-        int panelH = height - 130;
+        // 大面板布局参数（随 ui 等比缩放）
+        int panelX = (int) (40 * ui);
+        int panelY = (int) (70 * ui);
+        int panelW = (int) (width - 80 * ui);
+        int panelH = (int) (height - 130 * ui);
+        int screenPad = (int) (20 * ui);
+        int textH = Math.max(1, (int) (9 * ui));
 
         // 标题（面板上方居中）
         String title = "彩色方块扩展";
-        g.drawString(font, Component.literal(title), (width - font.width(title)) / 2, panelY - 28, 0xFFFFFF);
+        drawCenteredAdaptive(g, title, width / 2, panelY - (int) (28 * ui), 0xFFFFFF, width - screenPad);
 
         // 当前模式（标题下方）
         String modeText = "当前模式：" + getGameModeName();
         int modeColor = isSurvivalMode() ? 0xFF5555 : 0x55FF55;
-        g.drawString(font, Component.literal(modeText), (width - font.width(modeText)) / 2, panelY - 14, modeColor);
+        drawCenteredAdaptive(g, modeText, width / 2, panelY - (int) (14 * ui), modeColor, width - screenPad);
 
         // 提示内容（模式文本下方，精简版，根据模式改变）
         String tipText;
@@ -268,15 +345,16 @@ public class MardColorScreen extends Screen {
             tipText = "创造模式：可直接获取方块 | 按钮一：浏览色号点击获取 | 按钮二：输入色号快速获取";
         }
         int tipColor = isSurvivalMode() ? 0xFFAA44 : 0x44FF44;
-        g.drawString(font, Component.literal(tipText), (width - font.width(tipText)) / 2, panelY - 2, tipColor);
+        drawCenteredAdaptive(g, tipText, width / 2, panelY - (int) (2 * ui), tipColor, width - screenPad);
 
         // 大面板背景已移除（透明背景）
 
         // 右侧说明面板
+        int pad = (int) (8 * ui);
         int infoPanelX = panelX + (int) (panelW * 0.55);
         int infoPanelW = (int) (panelW * 0.42);
-        int infoPanelY = panelY + 10;
-        int infoPanelH = panelH - 20;
+        int infoPanelY = panelY + (int) (10 * ui);
+        int infoPanelH = panelH - (int) (10 * ui);
 
         // 说明面板背景
         g.fill(infoPanelX, infoPanelY, infoPanelX + infoPanelW, infoPanelY + infoPanelH, 0xEE2a2a2a);
@@ -286,60 +364,63 @@ public class MardColorScreen extends Screen {
         g.fill(infoPanelX, infoPanelY, infoPanelX + 1, infoPanelY + infoPanelH, 0xFF666666);
         g.fill(infoPanelX + infoPanelW - 1, infoPanelY, infoPanelX + infoPanelW, infoPanelY + infoPanelH, 0xFF444444);
 
-        g.drawString(font, Component.literal("mod 使用说明"), infoPanelX + 8, infoPanelY + 5, 0xFFFFAA);
+        String infoTitle = "mod 使用说明";
+        String[] lines = isSurvivalMode() ? new String[]{
+            "221色像素画（生存模式）",
+            "",
+            "按钮一：浏览全部色号",
+            "  生存模式仅查看颜色",
+            "",
+            "按钮二：输入色号",
+            "  生存模式下此功能禁用"
+        } : new String[]{
+            "221色像素画（创造模式）",
+            "",
+            "按钮一：浏览全部色号",
+            "  点击色块获取一组方块",
+            "",
+            "按钮二：输入色号快速获取",
+            "  输入色号后放入快捷栏"
+        };
 
-        String[] lines;
-        if (isSurvivalMode()) {
-            lines = new String[]{
-                "",
-                "221 色像素画模组（生存模式）",
-                "",
-                "按钮一：浏览全部色号",
-                "  生存模式仅查看颜色",
-                "",
-                "按钮二：输入色号（仅创造模式）",
-                "  生存模式下此功能禁用",
-                "",
-                "合成表：任意染料→七彩粉末→色块",
-                "方块染色台：放入粉末后选择颜色",
-                "",
-                "按 G 键打开/关闭本界面"
-            };
-        } else {
-            lines = new String[]{
-                "",
-                "221 色像素画模组（创造模式）",
-                "",
-                "按钮一：浏览全部色号",
-                "  点击色块获取一组方块",
-                "",
-                "按钮二：输入色号快速获取",
-                "  输入色号后放入快捷栏",
-                "",
-                "合成表：任意染料→七彩粉末→色块",
-                "方块染色台：放入粉末后选择颜色",
-                "",
-                "按 G 键打开/关闭本界面"
-            };
-        }
+        // —— 介绍文字：按框体当前物理尺寸自动取“最大清晰整数档”，并在框内垂直居中 ——
+        double gsv = gs > 0 ? gs : 1.0;
+        float maxW = font.width(infoTitle);
+        for (String ln : lines) maxW = Math.max(maxW, font.width(ln));
+        float titleH0 = 9f, titleGap0 = 4f, lineH0 = 10f;
+        float blockH0 = titleH0 + titleGap0 + lines.length * lineH0; // GUI1 档下文字块逻辑高
+        float availW = Math.max(1f, infoPanelW - pad * 2);
+        double effByH = 0.78 * infoPanelH * gsv / blockH0;           // 高度期望档（块约占框 78%）
+        double effByW = availW * gsv / Math.max(1f, maxW);           // 宽度允许档（不超出框）
+        int eff = Math.max(1, (int) Math.round(effByH));
+        int effW = Math.max(1, (int) Math.floor(effByW));
+        if (eff > effW) eff = effW;
+        eff = Math.min(eff, 8);
+        float sc = (float) (eff / gsv);                              // 相对当前 GUI 档的缩放（整数档→清晰）
+        infoSc = sc;
 
-        int y = infoPanelY + 18;
-        int lineH = 11;
-        for (String line : lines) {
-            if (y + 8 < infoPanelY + infoPanelH - 2) {
-                g.drawString(font, Component.literal(line), infoPanelX + 8, y, 0xCCCCCC);
-            }
-            y += lineH;
+        var pose = g.pose();
+        pose.pushPose();
+        pose.translate(Math.round(infoPanelX * gsv) / (float) gsv,
+                       Math.round(infoPanelY * gsv) / (float) gsv, 0);
+        pose.scale(sc, sc, 1f);
+        float ty = (infoPanelH / sc - blockH0) / 2f;                 // 文字块在框内垂直居中
+        if (ty < 2f) ty = 2f;
+        g.drawString(font, Component.literal(infoTitle), pad, (int) ty, 0xFFFFAA);
+        float cy = ty + titleH0 + titleGap0;
+        for (String ln : lines) {
+            g.drawString(font, Component.literal(ln), pad, (int) cy, 0xCCCCCC);
+            cy += lineH0;
         }
+        pose.popPose();
 
         // 版本号（面板下方居中）
-        String bottomText = "彩色方块扩展 v1.2.1";
-        g.drawString(font, Component.literal(bottomText),
-                (width - font.width(bottomText)) / 2, panelY + panelH + 10, 0x888888);
+        String bottomText = "彩色方块扩展 v2.0.0";
+        drawCenteredAdaptive(g, bottomText, width / 2, panelY + panelH + (int) (10 * ui), 0x888888, width - screenPad);
 
         // 状态信息
         if (!statusMsg.isEmpty()) {
-            g.drawString(font, Component.literal(statusMsg), 10, height - 14, 0xFFFFAA);
+            drawLeftAdaptive(g, statusMsg, (int) (10 * ui), height - (int) (14 * ui), 0xFFFFAA, width - screenPad);
         }
     }
 
@@ -351,17 +432,19 @@ public class MardColorScreen extends Screen {
         // 检测当前游戏模式
         boolean isSurvivalRender = isSurvivalMode();
 
-        // 生存模式下显示红色警告条（更醒目）
+        // 生存模式下显示红色警告条（右对齐到右上角，避开左上"返回"按钮）
         if (isSurvivalRender) {
-            String warnText = "⚠ 生存模式：仅可查看颜色，点击不会获取方块，请使用方块染色台合成";
-            int warnWidth = font.width(warnText) + 20;
-            g.fill(5, 5, Math.min(width - 10, warnWidth), 28, 0x88FF3333);
-            g.fill(6, 6, Math.min(width - 11, warnWidth - 1), 27, 0xFFFF5555);
-            g.drawString(font, Component.literal(warnText), 15, 12, 0xFFFFFF);
+            String warnText = "生存模式：仅可查看颜色，点击不会获取方块，请使用方块染色台合成";
+            int warnY = 6, warnH = 20, pad = 12;
+            int warnWidth = Math.min(font.width(warnText) + pad * 2, width - 78 - 6);
+            int warnX = Math.max(78, width - 6 - warnWidth);
+            g.fill(warnX, warnY, warnX + warnWidth, warnY + warnH, 0xFF8B0000);
+            g.fill(warnX + 1, warnY + 1, warnX + warnWidth - 1, warnY + warnH - 1, 0xFFB22222);
+            drawLeftAdaptive(g, warnText, warnX + pad, warnY + (warnH - 8f) / 2f + 1f, 0xFFFFE4B5, warnWidth - pad * 2);
         } else {
-            // 创造模式：正常标题
+            // 创造模式：标题右对齐到右上角，避免压住"返回"按钮；窄屏等比缩小
             String title = "颜色选取 - 点击色块获取一组（64个）";
-            g.drawString(font, Component.literal(title), 80, 12, 0xFFFFFF);
+            drawRightAdaptive(g, title, width - 10, 12, 0xFFFFFF, width - 78 - 6);
         }
 
         int contentY = 40;
@@ -412,7 +495,7 @@ public class MardColorScreen extends Screen {
 
         // 状态信息
         if (!statusMsg.isEmpty()) {
-            g.drawString(font, Component.literal(statusMsg), 10, height - 14, 0xFFFFAA);
+            drawLeftAdaptive(g, statusMsg, 10, height - 14, 0xFFFFAA, width - 20);
         }
     }
 
@@ -423,46 +506,85 @@ public class MardColorScreen extends Screen {
         if (isSurvivalMode()) {
             // 生存模式：显示大的禁用提示
             String title = "输入色号功能已禁用";
-            g.drawString(font, Component.literal(title),
-                    (width - font.width(title)) / 2, height / 2 - 50, 0xFF5555);
+            drawCenteredAdaptive(g, title, width / 2, height / 2f - 50, 0xFF5555, width - 20);
 
             // 红色警告框
             String warn1 = "生存模式下无法通过输入色号直接获取方块";
             String warn2 = "请使用方块染色台，通过七彩粉末合成对应颜色";
-            int boxWidth = Math.max(font.width(warn1), font.width(warn2)) + 40;
+            int boxWidth = Math.min(Math.max(font.width(warn1), font.width(warn2)) + 40, width - 20);
             int boxX = (width - boxWidth) / 2;
             int boxY = height / 2 - 20;
             g.fill(boxX, boxY, boxX + boxWidth, boxY + 70, 0x88FF3333);
             g.fill(boxX + 2, boxY + 2, boxX + boxWidth - 2, boxY + 68, 0xFFFF5555);
-            g.drawString(font, Component.literal(warn1), (width - font.width(warn1)) / 2, boxY + 15, 0xFFFFFF);
-            g.drawString(font, Component.literal(warn2), (width - font.width(warn2)) / 2, boxY + 35, 0xFFFFEE);
+            drawCenteredAdaptive(g, warn1, width / 2, boxY + 15, 0xFFFFFF, boxWidth - 12);
+            drawCenteredAdaptive(g, warn2, width / 2, boxY + 35, 0xFFFFEE, boxWidth - 12);
 
             if (!statusMsg.isEmpty()) {
-                g.drawString(font, Component.literal(statusMsg),
-                        (width - font.width(statusMsg)) / 2, height / 2 + 70, 0xFFFFAA);
+                drawCenteredAdaptive(g, statusMsg, width / 2, height / 2f + 70, 0xFFFFAA, width - 20);
             }
         } else {
             // 创造模式：正常显示
             String title = "输入想用的色号（支持批量输入）";
-            g.drawString(font, Component.literal(title),
-                    (width - font.width(title)) / 2, height / 2 - 70, 0xFFFFFF);
+            drawCenteredAdaptive(g, title, width / 2, height / 2f - 70, 0xFFFFFF, width - 20);
 
             String hint = "输入色号（如 A1、B5、M3），支持批量输入多个色号";
-            g.drawString(font, Component.literal(hint),
-                    (width - font.width(hint)) / 2, height / 2 + 45, 0xAAAAAA);
+            drawCenteredAdaptive(g, hint, width / 2, height / 2f + 45, 0xAAAAAA, width - 20);
 
             String hint2 = "用空格/逗号/分号分隔，例如：A1 B2 C3 或 A1,B2,C3";
-            g.drawString(font, Component.literal(hint2),
-                    (width - font.width(hint2)) / 2, height / 2 + 60, 0x888888);
+            drawCenteredAdaptive(g, hint2, width / 2, height / 2f + 60, 0x888888, width - 20);
 
             if (!statusMsg.isEmpty()) {
-                g.drawString(font, Component.literal(statusMsg),
-                        (width - font.width(statusMsg)) / 2, height / 2 + 85, 0xFFFFAA);
+                drawCenteredAdaptive(g, statusMsg, width / 2, height / 2f + 85, 0xFFFFAA, width - 20);
             }
         }
     }
 
     // ==================== 绘制辅助 ====================
+
+    // ==================== 文字自适应（随窗口宽度等比缩放，不溢出/不重叠） ====================
+
+    /** 居中绘制：整体随 ui 等比缩放；若缩放后仍超过 maxWidth 再额外缩到刚好放下 */
+    private void drawCenteredAdaptive(GuiGraphics g, String text, int centerX, float y, int color, int maxWidth) {
+        int w = font.width(text);
+        int yi = (int) y;
+        float fit = (maxWidth > 0 && w * ui > maxWidth) ? (float) maxWidth / (w * ui) : 1f;
+        float sc = ui * fit;
+        var pose = g.pose();
+        pose.pushPose();
+        pose.translate(centerX, yi, 0);
+        pose.scale(sc, sc, 1f);
+        g.drawString(font, Component.literal(text), -w / 2, 0, color);
+        pose.popPose();
+    }
+
+    /** 左对齐绘制：整体随 ui 等比缩放；若缩放后仍超过 maxWidth 再额外缩到刚好放下 */
+    private void drawLeftAdaptive(GuiGraphics g, String text, float x, float y, int color, int maxWidth) {
+        if (text == null || text.isEmpty()) return;
+        int w = font.width(text);
+        int xi = (int) x, yi = (int) y;
+        float fit = (maxWidth > 0 && w * ui > maxWidth) ? (float) maxWidth / (w * ui) : 1f;
+        float sc = ui * fit;
+        var pose = g.pose();
+        pose.pushPose();
+        pose.translate(xi, yi, 0);
+        pose.scale(sc, sc, 1f);
+        g.drawString(font, Component.literal(text), 0, 0, color);
+        pose.popPose();
+    }
+
+    /** 右对齐绘制：整体随 ui 等比缩放；若缩放后仍超过 maxWidth 再额外缩到刚好放下 */
+    private void drawRightAdaptive(GuiGraphics g, String text, int rightX, float y, int color, int maxWidth) {
+        int w = font.width(text);
+        int yi = (int) y;
+        float fit = (maxWidth > 0 && w * ui > maxWidth) ? (float) maxWidth / (w * ui) : 1f;
+        float sc = ui * fit;
+        var pose = g.pose();
+        pose.pushPose();
+        pose.translate(rightX, yi, 0);
+        pose.scale(sc, sc, 1f);
+        g.drawString(font, Component.literal(text), -w, 0, color);
+        pose.popPose();
+    }
 
     private void drawSwatchWithLabel(GuiGraphics g, int x, int y, int rgb, String label) {
         g.fill(x - 1, y - 1, x + SW + 1, y + SW + 1, 0xFF333333);
@@ -490,7 +612,8 @@ public class MardColorScreen extends Screen {
                         statusMsg = e.code() + " - 生存模式下请使用方块染色台合成（消耗七彩粉末）";
                     } else {
                         // 创造模式：直接给予一组
-                        MardNetwork.CHANNEL.sendToServer(new MardNetwork.RequestItemPacket(e.target()));
+                        MardNetwork.CHANNEL.send(new MardNetwork.RequestItemPacket(e.target()),
+                                net.minecraftforge.network.PacketDistributor.SERVER.noArg());
                         statusMsg = "已给予一组 " + e.code();
                     }
                     return true; // 不关闭页面，支持连续选择
@@ -501,13 +624,13 @@ public class MardColorScreen extends Screen {
     }
 
     @Override
-    public boolean mouseScrolled(double mx, double my, double delta) {
+    public boolean mouseScrolled(double mx, double my, double horizontalDelta, double verticalDelta) {
         if (currentPage == Page.SWATCHES) {
-            scrollOffset -= (int) Math.signum(delta);
+            scrollOffset -= (int) Math.signum(verticalDelta);
             if (scrollOffset < 0) scrollOffset = 0;
             return true;
         }
-        return super.mouseScrolled(mx, my, delta);
+        return super.mouseScrolled(mx, my, horizontalDelta, verticalDelta);
     }
 
     // ==================== 键盘交互 ====================

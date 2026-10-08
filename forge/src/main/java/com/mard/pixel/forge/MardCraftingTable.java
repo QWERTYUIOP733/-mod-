@@ -23,6 +23,7 @@
 
 package com.mard.pixel.forge;
 
+import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -43,7 +44,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -54,6 +54,13 @@ import org.jetbrains.annotations.Nullable;
 public class MardCraftingTable extends BaseEntityBlock {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+
+    public static final MapCodec<MardCraftingTable> CODEC = simpleCodec(p -> new MardCraftingTable());
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
 
     public MardCraftingTable() {
         super(Properties.of()
@@ -87,8 +94,8 @@ public class MardCraftingTable extends BaseEntityBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos,
-                                  Player player, InteractionHand hand, BlockHitResult hit) {
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                  Player player, BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MardCraftingTableBlockEntity craftingTable) {
@@ -104,7 +111,7 @@ public class MardCraftingTable extends BaseEntityBlock {
                         return MardCraftingMenu.create(containerId, inventory, craftingTable);
                     }
                 };
-                NetworkHooks.openScreen((ServerPlayer) player, menuProvider, pos);
+                ((ServerPlayer) player).openMenu(menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

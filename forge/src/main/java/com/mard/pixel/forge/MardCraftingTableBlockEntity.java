@@ -167,17 +167,18 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
         }
 
         // 原版配方系统（只允许模组内物品）
-        SafeCraftingContainer craftingContainer = new SafeCraftingContainer(3, 3);
-        NonNullList<ItemStack> gridItems = getGridItems();
+        java.util.List<ItemStack> gridItems = new java.util.ArrayList<>();
         for (int i = 0; i < GRID_SIZE; i++) {
-            craftingContainer.setItem(i, gridItems.get(i));
+            gridItems.add(inventory.getStackInSlot(i).copy());
         }
+        net.minecraft.world.item.crafting.CraftingInput craftingInput =
+                net.minecraft.world.item.crafting.CraftingInput.of(3, 3, gridItems);
 
-        Optional<CraftingRecipe> recipe = level.getRecipeManager()
-                .getRecipeFor(RecipeType.CRAFTING, craftingContainer, level);
+        Optional<net.minecraft.world.item.crafting.RecipeHolder<CraftingRecipe>> recipe = level.getRecipeManager()
+                .getRecipeFor(RecipeType.CRAFTING, craftingInput, level);
 
         if (recipe.isPresent()) {
-            ItemStack result = recipe.get().assemble(craftingContainer, level.registryAccess());
+            ItemStack result = recipe.get().value().assemble(craftingInput, level.registryAccess());
             if (isMardPixelItem(result)) {
                 inventory.setStackInSlot(RESULT_SLOT, result);
             } else {
@@ -226,21 +227,21 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
+        super.saveAdditional(tag, provider);
         NonNullList<ItemStack> allItems = NonNullList.withSize(TOTAL_SLOTS, ItemStack.EMPTY);
         for (int i = 0; i < TOTAL_SLOTS; i++) {
             allItems.set(i, inventory.getStackInSlot(i).copy());
         }
-        ContainerHelper.saveAllItems(tag, allItems);
+        ContainerHelper.saveAllItems(tag, allItems, provider);
         tag.putString("SelectedColor", selectedColor);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
+        super.loadAdditional(tag, provider);
         NonNullList<ItemStack> allItems = NonNullList.withSize(TOTAL_SLOTS, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(tag, allItems);
+        ContainerHelper.loadAllItems(tag, allItems, provider);
         for (int i = 0; i < TOTAL_SLOTS; i++) {
             inventory.setStackInSlot(i, allItems.get(i));
         }

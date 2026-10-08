@@ -1,28 +1,28 @@
 modLoader="javafml"
-loaderVersion="[47,)"
+loaderVersion="[52,)"
 license="MIT"
 
 [[mods]]
 modId="mard_pixel"
-version="1.2.1"
+version="2.0.0"
 displayName="彩色方块扩展"
 description='''
 彩色方块扩展 Mod：
 221色实心色块 + 色板(快捷键G) + 输入色号快速获取 + 按系列分类的创造模式标签页 + 方块染色台。
 '''
 authors="Pixel Team"
-logoFile=""
+logoFile="icon.png"
 
 [[dependencies.mard_pixel]]
 modId="forge"
 mandatory=true
-versionRange="[47,)"
+versionRange="[52,)"
 ordering="NONE"
 side="BOTH"
 
 [[dependencies.mard_pixel]]
 modId="minecraft"
 mandatory=true
-versionRange="[1.20.1,1.21)"
+versionRange="[1.21.1,1.22)"
 ordering="NONE"
 side="BOTH"

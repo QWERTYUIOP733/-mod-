@@ -106,7 +106,7 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics);
+        this.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         this.renderTooltip(graphics, mouseX, mouseY);
 
@@ -276,7 +276,7 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalDelta, double verticalDelta) {
         // 颜色选择列表滚动
         if (menu.hasPigment()) {
             int[] bounds = getColorPanelBounds();
@@ -288,11 +288,11 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
                 mouseY >= listStartY && mouseY <= panelY + COLOR_PANEL_HEIGHT) {
                 int totalColors = MardPalette.COLORS.size();
                 int maxOffset = Math.max(0, totalColors - maxVisibleColors);
-                scrollOffset = Math.max(0, Math.min(scrollOffset - (int) delta, maxOffset));
+                scrollOffset = Math.max(0, Math.min(scrollOffset - (int) verticalDelta, maxOffset));
                 return true;
             }
         }
-        return super.mouseScrolled(mouseX, mouseY, delta);
+        return super.mouseScrolled(mouseX, mouseY, horizontalDelta, verticalDelta);
     }
 
     @Override

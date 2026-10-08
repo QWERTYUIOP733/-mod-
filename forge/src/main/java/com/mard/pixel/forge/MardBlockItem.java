@@ -60,7 +60,7 @@ public class MardBlockItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         // 不调用 super，避免添加额外信息
         // 第二行：RGB值（灰色），格式 "RGB #FF0000"
         String hex = String.format("#%06X", rgb & 0xFFFFFF);

@@ -30,5 +30,8 @@ Thumbs.db
 *.py
 *.ps1
 
+# Backup files
+*.bak
+
 # Temporary archives
 *.zip

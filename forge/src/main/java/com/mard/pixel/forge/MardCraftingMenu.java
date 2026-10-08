@@ -221,7 +221,8 @@ public class MardCraftingMenu extends AbstractContainerMenu {
      */
     public void selectColor(String code) {
         if (player.level().isClientSide) {
-            MardNetwork.CHANNEL.sendToServer(new MardNetwork.SelectCraftingColorPacket(code));
+            MardNetwork.CHANNEL.send(new MardNetwork.SelectCraftingColorPacket(code),
+                    net.minecraftforge.network.PacketDistributor.SERVER.noArg());
         }
     }
 

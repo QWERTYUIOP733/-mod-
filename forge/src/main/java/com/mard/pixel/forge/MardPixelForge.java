@@ -124,7 +124,7 @@ public class MardPixelForge {
         MinecraftForge.EVENT_BUS.register(this);
         modBus.addListener(this::onCommonSetup);
 
-        // 初始化网络
+        // 注册网络包（SimpleChannel）
         MardNetwork.init();
     }
 

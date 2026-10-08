@@ -1,12 +1,12 @@
-﻿# 彩色方块扩展 Mod（Minecraft 1.20.1 · Forge）
+﻿# 彩色方块扩展 Mod（Color Blocks Extension）
 
 一套将 **221 基础色**标准色卡做成 Minecraft 实心色块的像素画 Mod，支持七彩粉末通用合成和方块染色台。
 
-> **当前版本仅支持 Forge 加载器。**
+> **支持 Forge 和 Fabric 双加载器。**
 
-- 版本：v1.2.1
+- Forge 版本：v1.2.1
+- Fabric 版本：v1.3.1
 - 游戏版本：Minecraft 1.20.1
-- 加载器：Forge 47.2.0+
 - 许可证：MIT
 - 作者：Pixel Team
 
@@ -31,8 +31,15 @@
 ### Forge 端
 
 1. 安装 Minecraft 1.20.1 + Forge 47.2.0+
-2. 把 `color_blocks_extension-1.2.1.jar` 放入 `mods/` 文件夹
+2. 把 `mard_pixel_forge-1.2.1.jar` 放入 `mods/` 文件夹
 3. 启动游戏
+
+### Fabric 端
+
+1. 安装 Minecraft 1.20.1 + Fabric Loader 0.15.11+
+2. 安装 [Fabric API](https://modrinth.com/mod/fabric-api)
+3. 把 `color_blocks_extension-1.3.1.jar` 放入 `mods/` 文件夹
+4. 启动游戏
 
 ---
 
@@ -152,6 +159,22 @@
 ### v1.0.0
 
 - 初始版本发布
+
+---
+
+## 第三方参考 / Third-party References
+
+本项目在开发过程中学习参考了以下开源项目的设计思路，所有代码均为独立重写：
+
+1. **JEI (Just Enough Items)** — https://github.com/mezz/JustEnoughItems
+   - 许可证：MIT
+   - 参考内容：物品浏览器UI布局、创造模式标签页设计思路
+   - 说明：仅学习UI交互设计思路，代码全部独立实现
+
+2. **Architectury / 投影模组系列** — 仅学习其数据加载和渲染思路
+   - 许可证：MIT
+   - 参考内容：像素画投影加载逻辑的设计思路
+   - 说明：仅学习架构设计思路，未使用任何源码
 
 ---
 
