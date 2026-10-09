@@ -415,7 +415,7 @@ public class MardColorScreen extends Screen {
         pose.popPose();
 
         // 版本号（面板下方居中）
-        String bottomText = "彩色方块扩展 v2.0.0";
+        String bottomText = "彩色方块扩展 v2.1.0";
         drawCenteredAdaptive(g, bottomText, width / 2, panelY + panelH + (int) (10 * ui), 0x888888, width - screenPad);
 
         // 状态信息

@@ -1,13 +1,12 @@
-﻿{
-    "ingredients":  [
-                        {
-                            "item":  "minecraft:green_dye"
-                        }
-                    ],
-    "result":  {
-                   "count":  1,
-                   "id": "mard_pixel:mard_pigment"
-               },
-    "type":  "minecraft:crafting_shapeless"
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "group": "mard_pigment",
+  "ingredients": [
+    "minecraft:green_dye"
+  ],
+  "result": {
+    "count": 1,
+    "id": "mard_pixel:mard_pigment"
+  }
 }
-

@@ -31,6 +31,8 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
@@ -87,18 +89,19 @@ public class MardPixelForge {
     // ==================== 通用材料物品 ====================
     /** 七彩粉末：通用合成材料，任意染料可合成，用于合成各色块 */
     public static final RegistryObject<Item> _PIGMENT = ITEMS.register("mard_pigment",
-            () -> new Item(new Item.Properties()));
+            () -> new Item(new Item.Properties().setId(itemKey("mard_pigment"))));
 
     // ==================== 方块染色台 ====================
     /** 方块染色台方块：功能类似原版工作台，但只能合成模组内物品 */
     public static final RegistryObject<Block> _CRAFTING_TABLE = BLOCKS.register("mard_crafting_table",
             MardCraftingTable::new);
     public static final RegistryObject<Item> _CRAFTING_TABLE_ITEM = ITEMS.register("mard_crafting_table",
-            () -> new BlockItem(_CRAFTING_TABLE.get(), new Item.Properties()));
+            () -> new BlockItem(_CRAFTING_TABLE.get(),
+                    new Item.Properties().setId(itemKey("mard_crafting_table")).useBlockDescriptionPrefix()));
     public static final RegistryObject<BlockEntityType<MardCraftingTableBlockEntity>> _CRAFTING_TABLE_BE =
             BLOCK_ENTITIES.register("mard_crafting_table",
-                    () -> BlockEntityType.Builder.of(MardCraftingTableBlockEntity::new,
-                            _CRAFTING_TABLE.get()).build(null));
+                    () -> new BlockEntityType<>(MardCraftingTableBlockEntity::new,
+                            Set.of(_CRAFTING_TABLE.get())));
     public static final RegistryObject<MenuType<MardCraftingMenu>> _CRAFTING_MENU =
             MENUS.register("mard_crafting_menu",
                     () -> new MenuType<>(MardCraftingMenu::new,
@@ -139,11 +142,24 @@ public class MardPixelForge {
         for (MardColor mc : MardPalette.COLORS) {
             String blockName = mc.blockName();
             RegistryObject<Block> blockRef = BLOCKS.register(blockName,
-                    () -> new MardBlock(mc.code(), mc.rgb()));
+                    () -> new MardBlock(blockKey(blockName), mc.code(), mc.rgb()));
             ITEMS.register(blockName,
-                    () -> new MardBlockItem(blockRef.get(), mc.code(), mc.rgb(), new Item.Properties()));
+                    () -> new MardBlockItem(blockRef.get(), mc.code(), mc.rgb(),
+                            new Item.Properties().setId(itemKey(blockName))));
             _BLOCK_REFS.add(blockRef);
         }
+    }
+
+    /** 构造方块 ResourceKey。 */
+    private static ResourceKey<Block> blockKey(String name) {
+        return ResourceKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(MODID, name));
+    }
+
+    /** 构造物品 ResourceKey（1.21.4 起 Properties 必须 setId）。 */
+    private static ResourceKey<Item> itemKey(String name) {
+        return ResourceKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(MODID, name));
     }
 
     /**

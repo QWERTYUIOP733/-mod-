@@ -1,8 +1,11 @@
 pluginManagement {
     repositories {
+        // Forge maven 同时提供 FG7 的 plugin marker 与真实 forgegradle 模块，必须最前
+        maven { url = 'https://maven.minecraftforge.net/' }
+        maven { url = 'https://maven.aliyun.com/repository/gradle-plugin' }
         maven { url = 'https://maven.aliyun.com/repository/public' }
         maven { url = 'http://127.0.0.1:8899/maven/'; allowInsecureProtocol = true }
-        maven { url = 'https://maven.minecraftforge.net/' }
+        maven { url = 'https://libraries.minecraft.net/' }
         gradlePluginPortal()
         mavenCentral()
     }

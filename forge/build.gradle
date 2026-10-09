@@ -1,12 +1,13 @@
 plugins {
+    id 'java'
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '6.0.+'
+    id 'net.minecraftforge.gradle' version '7.0.40'
 }
 
 group = 'com.mard.pixel'
-version = '2.0.0'
+version = '2.1.0'
 
 base {
     archivesName = 'mard_pixel_forge'
@@ -15,28 +16,16 @@ base {
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 minecraft {
-    mappings channel: 'official', version: '1.21.1'
+    mappings channel: 'official', version: '1.21.4'
 
     runs {
-        client {
-            workingDirectory project.file('run')
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            mods {
-                mard_pixel {
-                    source sourceSets.main
-                }
-            }
+        configureEach {
+            workingDir = layout.projectDirectory.dir('run')
+            systemProperty 'forge.enabledGameTestNamespaces', 'mard_pixel'
         }
-        server {
-            workingDirectory project.file('run')
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            mods {
-                mard_pixel {
-                    source sourceSets.main
-                }
-            }
+        register('client')
+        register('server') {
+            args '--nogui'
         }
     }
 }
@@ -54,23 +43,27 @@ sourceSets {
 }
 
 repositories {
+    // ForgeGradle 7 / 1.21.4 必需的 Mojang/Forge 仓库
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    // 国内镜像（加速常规依赖）
     maven { url = 'https://maven.aliyun.com/repository/public' }
     maven { url = 'http://127.0.0.1:8899/maven/'; allowInsecureProtocol = true }
-    maven { url = 'https://maven.minecraftforge.net/' }
     mavenCentral()
 }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.21.1-52.1.16'
+    implementation minecraft.dependency('net.minecraftforge:forge:1.21.4-54.1.17')
 }
 
 jar {
     manifest {
         attributes([
             'Specification-Title'     : 'mard_pixel',
-            'Specification-Version'   : '2.0.0',
+            'Specification-Version'   : '2.1.0',
             'Implementation-Title'    : 'Color Blocks Extension',
-            'Implementation-Version'  : '2.0.0'
+            'Implementation-Version'  : '2.1.0'
         ])
     }
     from("LICENSE") {

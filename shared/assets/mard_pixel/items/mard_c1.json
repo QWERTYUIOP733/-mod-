@@ -1,0 +1,12 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "mard_pixel:item/mard_c1",
+    "tints": [
+      {
+        "type": "minecraft:constant",
+        "value": -1507353
+      }
+    ]
+  }
+}

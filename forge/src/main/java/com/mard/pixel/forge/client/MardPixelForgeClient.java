@@ -116,21 +116,6 @@ public final class MardPixelForgeClient {
         }, mardBlocks);
     }
 
-    /**
-     * 注册物品颜色处理器。
-     * 物品图标使用与方块相同的染色逻辑，确保手持和物品栏中颜色一致。
-     */
-    @SubscribeEvent
-    public static void registerItemColors(RegisterColorHandlersEvent.Item event) {
-        // 基础色块：使用方块的 rgb 值
-        for (var ro : MardPixelForge._BLOCK_REFS) {
-            Block block = ro.get();
-            if (block instanceof MardBlock mb) {
-                event.getItemColors().register((stack, tint) -> mb.rgb(), mb);
-            }
-        }
-    }
-
     // ==================== FORGE Bus 事件 ====================
 
     /**

@@ -23,6 +23,7 @@
 
 package com.mard.pixel.forge;
 
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
@@ -31,14 +32,11 @@ public class MardBlock extends Block {
     private final String code;
     private final int rgb;
 
-    public MardBlock(String code, int rgb) {
-        this(code, rgb, BlockBehaviour.Properties.of()
+    public MardBlock(ResourceKey<Block> id, String code, int rgb) {
+        super(BlockBehaviour.Properties.of()
+                .setId(id)
                 .mapColor(MapColor.NONE)
                 .strength(0.6f, 1.0f));
-    }
-
-    protected MardBlock(String code, int rgb, BlockBehaviour.Properties properties) {
-        super(properties);
         this.code = code;
         this.rgb = rgb;
     }

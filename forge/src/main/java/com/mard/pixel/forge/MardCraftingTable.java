@@ -25,7 +25,11 @@ package com.mard.pixel.forge;
 
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -42,7 +46,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,21 +57,33 @@ import org.jetbrains.annotations.Nullable;
  */
 public class MardCraftingTable extends BaseEntityBlock {
 
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    public static final EnumProperty<Direction> FACING = HorizontalDirectionalBlock.FACING;
 
-    public static final MapCodec<MardCraftingTable> CODEC = simpleCodec(p -> new MardCraftingTable());
+    public static final MapCodec<MardCraftingTable> CODEC = simpleCodec(MardCraftingTable::new);
 
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }
 
+    /** 供 DeferredRegister 使用的无参构造（内部补 setId）。 */
     public MardCraftingTable() {
-        super(Properties.of()
-                .strength(2.5f)
-                .requiresCorrectToolForDrops());
+        this(defaultProperties());
+    }
+
+    /** 供 CODEC simpleCodec 使用的 Properties 构造。 */
+    public MardCraftingTable(Properties properties) {
+        super(properties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, net.minecraft.core.Direction.NORTH));
+    }
+
+    private static Properties defaultProperties() {
+        return Properties.of()
+                .setId(ResourceKey.create(Registries.BLOCK,
+                        ResourceLocation.fromNamespaceAndPath(MardPixelForge.MODID, "mard_crafting_table")))
+                .strength(2.5f)
+                .requiresCorrectToolForDrops();
     }
 
     @Override
@@ -114,6 +130,6 @@ public class MardCraftingTable extends BaseEntityBlock {
                 ((ServerPlayer) player).openMenu(menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return level.isClientSide ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 }
