@@ -23,10 +23,8 @@
 
 package com.mard.pixel.forge;
 
-import com.mard.pixel.common.MardPalette;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.item.ItemStack;
@@ -34,6 +32,8 @@ import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -48,6 +48,9 @@ import java.util.Optional;
  * 方块染色台方块实体。
  * 存储3x3合成网格（9格）和结果槽（1格）。
  * 支持七彩粉末颜色选择模式：放入七彩粉末后，可从右侧列表选择颜色合成。
+ *
+ * 26.3：存档由 CompoundTag 改为 ValueOutput/ValueInput（ContainerHelper 不再接收 HolderLookup.Provider）；
+ * level.isClientSide 字段改 isClientSide() 方法；assemble 改单参。
  */
 public class MardCraftingTableBlockEntity extends BlockEntity {
 
@@ -61,7 +64,7 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
         @Override
         protected void onContentsChanged(int slot) {
             super.onContentsChanged(slot);
-            if (slot < GRID_SIZE && level != null && !level.isClientSide) {
+            if (slot < GRID_SIZE && level != null && !level.isClientSide()) {
                 updateCraftingResult();
             }
             setChanged();
@@ -92,7 +95,7 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
      */
     public void selectColor(String code) {
         this.selectedColor = code != null ? code : "";
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             updateCraftingResult();
             setChanged();
         }
@@ -154,7 +157,7 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
      * 否则使用原版配方系统，只允许模组内物品。
      */
     private void updateCraftingResult() {
-        if (level == null || level.isClientSide) return;
+        if (level == null || level.isClientSide()) return;
 
         // 七彩粉末颜色选择模式
         if (hasPigment() && !selectedColor.isEmpty()) {
@@ -175,14 +178,14 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
                 net.minecraft.world.item.crafting.CraftingInput.of(3, 3, gridItems);
 
         Optional<net.minecraft.world.item.crafting.RecipeHolder<CraftingRecipe>> recipe = Optional.empty();
-        // 1.21.4：Level.getRecipeManager() 移除，改用 ServerLevel.recipeAccess()，其实现即 RecipeManager
+        // Level.getRecipeManager() 移除，改用 ServerLevel.recipeAccess()，其实现即 RecipeManager
         if (level instanceof net.minecraft.server.level.ServerLevel serverLevel
                 && serverLevel.recipeAccess() instanceof net.minecraft.world.item.crafting.RecipeManager recipeManager) {
             recipe = recipeManager.getRecipeFor(RecipeType.CRAFTING, craftingInput, serverLevel);
         }
 
         if (recipe.isPresent()) {
-            ItemStack result = recipe.get().value().assemble(craftingInput, level.registryAccess());
+            ItemStack result = recipe.get().value().assemble(craftingInput);
             if (isMardPixelItem(result)) {
                 inventory.setStackInSlot(RESULT_SLOT, result);
             } else {
@@ -225,31 +228,45 @@ public class MardCraftingTableBlockEntity extends BlockEntity {
             }
         }
         inventory.setStackInSlot(RESULT_SLOT, ItemStack.EMPTY);
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide()) {
             updateCraftingResult();
         }
     }
 
+    /**
+     * 破坏方块时掉落内部所有物品（含结果槽）。
+     */
+    public void dropContents() {
+        if (level == null || level.isClientSide()) return;
+        for (int i = 0; i < TOTAL_SLOTS; i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                net.minecraft.world.level.block.Block.popResource(level, worldPosition, stack.copy());
+                inventory.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        }
+    }
+
     @Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
-        super.saveAdditional(tag, provider);
+    protected void saveAdditional(ValueOutput out) {
+        super.saveAdditional(out);
         NonNullList<ItemStack> allItems = NonNullList.withSize(TOTAL_SLOTS, ItemStack.EMPTY);
         for (int i = 0; i < TOTAL_SLOTS; i++) {
             allItems.set(i, inventory.getStackInSlot(i).copy());
         }
-        ContainerHelper.saveAllItems(tag, allItems, provider);
-        tag.putString("SelectedColor", selectedColor);
+        ContainerHelper.saveAllItems(out, allItems);
+        out.putString("SelectedColor", selectedColor);
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
-        super.loadAdditional(tag, provider);
+    protected void loadAdditional(ValueInput in) {
+        super.loadAdditional(in);
         NonNullList<ItemStack> allItems = NonNullList.withSize(TOTAL_SLOTS, ItemStack.EMPTY);
-        ContainerHelper.loadAllItems(tag, allItems, provider);
+        ContainerHelper.loadAllItems(in, allItems);
         for (int i = 0; i < TOTAL_SLOTS; i++) {
             inventory.setStackInSlot(i, allItems.get(i));
         }
-        selectedColor = tag.getString("SelectedColor");
+        selectedColor = in.getStringOr("SelectedColor", "");
     }
 
     public Component getDisplayName() {

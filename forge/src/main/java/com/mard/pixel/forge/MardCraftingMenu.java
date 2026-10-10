@@ -220,7 +220,7 @@ public class MardCraftingMenu extends AbstractContainerMenu {
      * 客户端选择颜色（发送网络包到服务端）。
      */
     public void selectColor(String code) {
-        if (player.level().isClientSide) {
+        if (player.level().isClientSide()) {
             MardNetwork.CHANNEL.send(new MardNetwork.SelectCraftingColorPacket(code),
                     net.minecraftforge.network.PacketDistributor.SERVER.noArg());
         }

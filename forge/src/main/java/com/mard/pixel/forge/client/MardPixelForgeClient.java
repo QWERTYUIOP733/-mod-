@@ -25,11 +25,11 @@ package com.mard.pixel.forge.client;
 
 import com.mard.pixel.forge.MardBlock;
 import com.mard.pixel.forge.MardBlockItem;
-import com.mard.pixel.forge.MardCraftingMenu;
 import com.mard.pixel.forge.MardPixelForge;
-import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.color.block.BlockTintSource;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -38,11 +38,11 @@ import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.eventbus.api.listener.Priority;
+import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.List;
 
@@ -54,8 +54,9 @@ import java.util.List;
  * 2. 方块/物品颜色注册 - 程序染色（tintindex）
  * 3. Tooltip 清理 - 移除其他模组添加的额外信息行
  *
- * 注意：所有客户端事件必须注册在 FORGE bus 或 MOD bus 上，
- * 由 @Mod.EventBusSubscriber 注解自动处理。
+ * 26.3：@SubscribeEvent/Priority 迁到 eventbus.api.listener 包；KeyMapping 第三参改 Category；
+ * 方块颜色注册改 event.register(List<BlockTintSource>, Block...)；屏幕注册在 enqueueWork 内；
+ * setScreen 改 setScreenAndShow。
  */
 @Mod.EventBusSubscriber(modid = MardPixelForge.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class MardPixelForgeClient {
@@ -65,101 +66,86 @@ public final class MardPixelForgeClient {
     /** 打开取色器UI的快捷键（默认G键） */
     public static final KeyMapping OPEN_COLOR_PICKER_KEY = new KeyMapping(
             "key.mard_pixel.open",
-            GLFW.GLFW_KEY_G,
-            "key.categories.mard_pixel"
+            InputConstants.KEY_G,
+            KeyMapping.Category.MISC
     );
 
     /** Tooltip 中 RGB 值行的标识关键词 */
     private static final String RGB_IDENTIFIER = "RGB";
 
-    // ==================== MOD Bus 事件 ====================
+    // ==================== 客户端游戏侧事件订阅 ====================
+    // 26.3：RegisterKeyMappingsEvent / RegisterColorHandlersEvent.Block 均不实现 IModBusEvent，
+    // 不能放进 bus=MOD 的 @EventBusSubscriber 自动扫描（否则启动期 BusGroup 抛 IllegalArgumentException）。
+    // 二者各自带静态 BUS，由主类构造器经 DistExecutor 在物理客户端调用本方法、于事件触发前订阅。
+
+    /**
+     * 物理客户端一次性订阅按键注册与方块颜色注册（由主类构造器 DistExecutor 调用）。
+     */
+    public static void registerClientEvents() {
+        RegisterKeyMappingsEvent.BUS.addListener(MardPixelForgeClient::registerKeyMappings);
+        RegisterColorHandlersEvent.Block.BUS.addListener(MardPixelForgeClient::registerBlockColors);
+    }
 
     /**
      * 注册快捷键映射。
-     * 触发时机：MOD 初始化阶段，客户端专用。
      */
-    @SubscribeEvent
     public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(OPEN_COLOR_PICKER_KEY);
     }
 
     /**
-     * 客户端设置。
-     * 注册合成台屏幕。
+     * 客户端设置：注册合成台屏幕（需在 enqueueWork 内执行）。
      */
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        // 注册合成台屏幕
-        MenuScreens.register(MardPixelForge._CRAFTING_MENU.get(), MardCraftingScreen::new);
+        event.enqueueWork(() -> {
+            MenuScreens.register(MardPixelForge._CRAFTING_MENU.get(), MardCraftingScreen::new);
+            // 26.3：ClientTickEvent 拆为 Pre/Post 两个 record，需显式向 Post.BUS 订阅
+            TickEvent.ClientTickEvent.Post.BUS.addListener(ForgeBusEvents::onClientTick);
+        });
     }
 
     /**
-     * 注册方块颜色处理器。
-     * 为 色块设置程序染色（tintindex:0）。
-     * 所有颜色统一使用基础 rgb 值染色，
-     * 确保世界中方块颜色与手中物品颜色完全一致。
-     *
-     * 关键：使用 _BLOCK_REFS（构造函数中已填充）而非 _BLOCKS
-     * （onCommonSetup 才填充），否则注册时列表为空导致染色失效。
+     * 注册方块颜色处理器（tintindex:0）。
+     * 26.3：签名为 register(List<BlockTintSource>, Block...)；经静态 BUS 订阅。
      */
-    @SubscribeEvent
     public static void registerBlockColors(RegisterColorHandlersEvent.Block event) {
         Block[] mardBlocks = MardPixelForge._BLOCK_REFS.stream()
                 .map(ro -> ro.get())
                 .toArray(Block[]::new);
 
-        // 色块：统一使用方块本身存储的 rgb 值染色
-        event.getBlockColors().register((state, level, pos, tint) -> {
-            Block block = state.getBlock();
-            // 所有 色块统一返回基础 rgb 值
-            return block instanceof MardBlock mb ? mb.rgb() : 0xFFFFFF;
-        }, mardBlocks);
+        BlockTintSource tint = state ->
+                state.getBlock() instanceof MardBlock mb ? mb.rgb() : 0xFFFFFF;
+        event.register(List.of(tint), mardBlocks);
     }
 
     // ==================== FORGE Bus 事件 ====================
 
     /**
-     * FORGE bus 事件订阅者。
-     * 游戏运行时事件（tick、tooltip 等）必须注册在此 bus 上。
+     * FORGE bus 事件订阅者：游戏运行时事件（tick、tooltip 等）。
      */
     @Mod.EventBusSubscriber(modid = MardPixelForge.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
     public static final class ForgeBusEvents {
 
         /**
-         * 客户端 tick 事件：检测快捷键按下。
-         * 按下 G 键时打开取色器 UI。
+         * 客户端 tick（Post）：检测快捷键按下，按下 G 键打开取色器 UI。
+         * 26.3 起由 onClientSetup 显式向 TickEvent.ClientTickEvent.Post.BUS 订阅。
          */
-        @SubscribeEvent
-        public static void onClientTick(TickEvent.ClientTickEvent event) {
+        public static void onClientTick(TickEvent.ClientTickEvent.Post event) {
             Minecraft mc = Minecraft.getInstance();
-            if (OPEN_COLOR_PICKER_KEY.consumeClick() && mc.player != null) {
-                mc.setScreen(new MardColorScreen());
+            if (OPEN_COLOR_PICKER_KEY.consumeClick() && mc.player != null && mc.gui.screen() == null) {
+                mc.setScreenAndShow(new MardColorScreen());
             }
         }
 
         /**
-         * 物品 Tooltip 事件：清理其他模组添加的额外信息行。
-         *
-         * 问题背景：
-         * JEI、WTHIT 等信息类模组会在物品 tooltip 中添加模组名称、
-         * 创造模式标签页名称等蓝色/紫色文字，干扰 色块的
-         * "色号 + RGB值" 两行显示格式。
-         *
-         * 清理策略：
-         * 1. 只处理本模组的物品（基础色块）
-         * 2. 保留第一行（物品名称，即色号编号）
-         * 3. 保留包含 "RGB" 关键词的行（RGB值）
-         * 4. 移除其他所有行（模组名称、标签页名称等）
-         *
-         * 优先级：LOWEST - 确保在所有其他模组之后执行，
-         * 这样能移除其他模组添加的内容。
+         * 物品 Tooltip 事件：清理其他模组添加的额外信息行，只保留名称与 RGB 行。
          */
-        @SubscribeEvent(priority = EventPriority.LOWEST)
+        @SubscribeEvent(priority = Priority.LOWEST)
         public static void onItemTooltip(ItemTooltipEvent event) {
             ItemStack stack = event.getItemStack();
             if (stack == null || stack.isEmpty()) return;
 
-            // 只处理本模组的物品
             if (!isMardModItem(stack)) return;
 
             List<Component> tooltip = event.getToolTip();
@@ -169,24 +155,16 @@ public final class MardPixelForgeClient {
             for (int i = tooltip.size() - 1; i >= 1; i--) {
                 Component line = tooltip.get(i);
                 String text = line != null ? line.getString() : "";
-                // 只保留 RGB 值行
                 if (!text.contains(RGB_IDENTIFIER)) {
                     tooltip.remove(i);
                 }
             }
         }
 
-        /**
-         * 判断物品是否属于本模组。
-         * @param stack 物品栈
-         * @return true 如果是 基础色块
-         */
         private static boolean isMardModItem(ItemStack stack) {
-            var item = stack.getItem();
-            return item instanceof MardBlockItem;
+            return stack.getItem() instanceof MardBlockItem;
         }
     }
 
-    // 私有构造函数，防止实例化
     private MardPixelForgeClient() {}
 }

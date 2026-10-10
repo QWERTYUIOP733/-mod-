@@ -32,8 +32,9 @@ import net.minecraft.commands.Commands;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
@@ -42,11 +43,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -107,15 +108,16 @@ public class MardPixelForge {
                     () -> new MenuType<>(MardCraftingMenu::new,
                             net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS));
 
-    public MardPixelForge() {
-        IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+    public MardPixelForge(FMLJavaModLoadingContext context) {
+        // 26.3 eventbus 7：构造注入 context，DeferredRegister 接收 BusGroup
+        var modBusGroup = context.getModBusGroup();
 
         // 注册所有注册器
-        BLOCKS.register(modBus);
-        ITEMS.register(modBus);
-        CREATIVE_TABS.register(modBus);
-        BLOCK_ENTITIES.register(modBus);
-        MENUS.register(modBus);
+        BLOCKS.register(modBusGroup);
+        ITEMS.register(modBusGroup);
+        CREATIVE_TABS.register(modBusGroup);
+        BLOCK_ENTITIES.register(modBusGroup);
+        MENUS.register(modBusGroup);
 
         // 注册 基础色块
         registerMardBlocks();
@@ -123,9 +125,16 @@ public class MardPixelForge {
         // 注册创造模式标签页（按系列分类）
         registerCreativeTabs();
 
-        // 注册 Forge 事件总线
-        MinecraftForge.EVENT_BUS.register(this);
-        modBus.addListener(this::onCommonSetup);
+        // 生命周期事件（MOD bus）
+        FMLCommonSetupEvent.getBus(modBusGroup).addListener(this::onCommonSetup);
+        // 游戏全局事件：命令注册（事件自带静态 BUS）
+        RegisterCommandsEvent.BUS.addListener(this::onRegisterCommands);
+
+        // 纯客户端事件（按键注册、方块颜色）：仅物理客户端订阅。
+        // 客户端类只在 dist==CLIENT 分支内引用，专用服务端不进入分支、JVM 不加载该类（Forge 侧隔离惯例）。
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            com.mard.pixel.forge.client.MardPixelForgeClient.registerClientEvents();
+        }
 
         // 注册网络包（SimpleChannel）
         MardNetwork.init();
@@ -153,13 +162,13 @@ public class MardPixelForge {
     /** 构造方块 ResourceKey。 */
     private static ResourceKey<Block> blockKey(String name) {
         return ResourceKey.create(Registries.BLOCK,
-                ResourceLocation.fromNamespaceAndPath(MODID, name));
+                Identifier.fromNamespaceAndPath(MODID, name));
     }
 
     /** 构造物品 ResourceKey（1.21.4 起 Properties 必须 setId）。 */
     private static ResourceKey<Item> itemKey(String name) {
         return ResourceKey.create(Registries.ITEM,
-                ResourceLocation.fromNamespaceAndPath(MODID, name));
+                Identifier.fromNamespaceAndPath(MODID, name));
     }
 
     /**
@@ -239,20 +248,23 @@ public class MardPixelForge {
 
     // ==================== 命令注册 ====================
 
-    @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
                 Commands.literal("mardp")
-                        // 查找最近的 色
+                        // 查找最近的色（26.3：ColorArgument 已移除，改用字符串 + 自解析 hex）
                         .then(Commands.literal("find")
-                                .then(Commands.argument("hex", net.minecraft.commands.arguments.ColorArgument.color())
+                                .then(Commands.argument("hex", StringArgumentType.string())
                                         .executes(ctx -> {
                                             ServerPlayer p = ctx.getSource().getPlayerOrException();
-                                            ChatFormatting cf = net.minecraft.commands.arguments.ColorArgument.getColor(ctx, "hex");
-                                            int rgb = cf.getColor() != null ? cf.getColor() : 0xFFFFFF;
+                                            String hex = StringArgumentType.getString(ctx, "hex");
+                                            int rgb = parseHexColor(hex);
                                             MardColor nearest = MardPalette.nearest(rgb);
-                                            p.sendSystemMessage(Component.literal("最近颜色："
-                                                    + nearest.code() + " " + ColorMath.toHex(nearest.rgb())));
+                                            if (nearest != null) {
+                                                p.sendSystemMessage(Component.literal("最近颜色："
+                                                        + nearest.code() + " " + ColorMath.toHex(nearest.rgb())));
+                                            } else {
+                                                p.sendSystemMessage(Component.literal("未找到颜色").withStyle(ChatFormatting.RED));
+                                            }
                                             return 1;
                                         })))
                         // 快速给予物品（<色号>）
@@ -263,6 +275,16 @@ public class MardPixelForge {
                                             giveRequestedItem(p, StringArgumentType.getString(ctx, "target"));
                                             return 1;
                                         }))));
+    }
+
+    /** 解析 #RRGGBB / 0xRRGGBB / RRGGBB 十六进制颜色，失败回退白色。 */
+    private static int parseHexColor(String hex) {
+        try {
+            String clean = hex.replace("#", "").replace("0x", "");
+            return Integer.parseInt(clean, 16);
+        } catch (Exception e) {
+            return 0xFFFFFF;
+        }
     }
 
     // ==================== 物品生成 ====================
@@ -294,7 +316,9 @@ public class MardPixelForge {
         if (mb != null) return new ItemStack(mb);
         // 缓存未命中时回退到遍历列表（兼容时序问题）
         MardColor mc = MardPalette.byCode(code);
-        if (mc == null) return ItemStack.EMPTY;
+        if (mc == null) {
+            return ItemStack.EMPTY;
+        }
         for (MardBlock block : _BLOCKS) {
             if (block.code().equalsIgnoreCase(mc.code())) {
                 _BLOCK_MAP.put(block.code().toUpperCase(), block); // 回填缓存
@@ -336,7 +360,8 @@ public class MardPixelForge {
         stack.setCount(64); // 给予一组（64个）
         Component itemName2 = stack.getHoverName();
         player.getInventory().add(stack);
-        player.sendSystemMessage(Component.literal("已给予一组 ").append(itemName2));
+        // 26.3 适配：高频给物成功提示走动作条（不进聊天历史），避免打开色板界面时聊天历史透出并堆叠；旧版 Screen 会隐藏聊天故仍用 sendSystemMessage，此处不回灌
+        player.sendOverlayMessage(Component.literal("已给予一组 ").append(itemName2));
     }
 
     /**
@@ -373,9 +398,9 @@ public class MardPixelForge {
         // 背包也满则扔到地面
         Component hotbarName = stack.getHoverName();
         if (!placed) {
-            player.drop(stack, false);
+            player.drop(stack, false, Prediction.SERVER_ONLY);
         }
-        player.sendSystemMessage(Component.literal("已放入快捷栏一组 ").append(hotbarName));
+        player.sendOverlayMessage(Component.literal("已放入快捷栏一组 ").append(hotbarName));
     }
 
     /**
@@ -427,10 +452,10 @@ public class MardPixelForge {
         Component craftName = stack.getHoverName();
         boolean placed = inv.add(stack);
         if (!placed) {
-            player.drop(stack, false);
+            player.drop(stack, false, Prediction.SERVER_ONLY);
         }
 
-        player.sendSystemMessage(Component.literal("消耗1个七彩粉末，合成一组 ")
+        player.sendOverlayMessage(Component.literal("消耗1个七彩粉末，合成一组 ")
                 .append(craftName));
     }
 

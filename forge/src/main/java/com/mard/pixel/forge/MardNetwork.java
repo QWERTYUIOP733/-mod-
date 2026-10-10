@@ -26,7 +26,7 @@ package com.mard.pixel.forge;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.network.CustomPayloadEvent;
 import net.minecraftforge.network.ChannelBuilder;
@@ -40,7 +40,7 @@ public final class MardNetwork {
     public static final int PROTOCOL_VERSION = 1;
 
     public static final SimpleChannel CHANNEL = ChannelBuilder
-            .named(ResourceLocation.fromNamespaceAndPath(MardPixelForge.MODID, "main"))
+            .named(Identifier.fromNamespaceAndPath(MardPixelForge.MODID, "main"))
             .networkProtocolVersion(PROTOCOL_VERSION)
             .simpleChannel();
 

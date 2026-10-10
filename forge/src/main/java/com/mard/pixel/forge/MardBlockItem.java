@@ -26,19 +26,21 @@ package com.mard.pixel.forge;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.block.Block;
 
-import javax.annotation.Nullable;
-import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * 色块物品类，两行显示：
  * 第一行（物品名称 hoverName）：色号编号（如"A1"），白色
  * 第二行（lore）：RGB值（如"RGB #FF0000"），灰色
  * 使用 Minecraft 标准的 hoverName + lore 方式，避免换行符导致乱码
+ *
+ * 26.3：appendHoverText 改为 5 参（新增 TooltipDisplay，文本收集由 List 改为 Consumer）。
  */
 public class MardBlockItem extends BlockItem {
     private final int rgb;
@@ -60,10 +62,11 @@ public class MardBlockItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay display,
+                               Consumer<Component> tooltip, TooltipFlag flag) {
         // 不调用 super，避免添加额外信息
         // 第二行：RGB值（灰色），格式 "RGB #FF0000"
         String hex = String.format("#%06X", rgb & 0xFFFFFF);
-        tooltip.add(Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY));
+        tooltip.accept(Component.literal("RGB " + hex).withStyle(ChatFormatting.GRAY));
     }
 }

@@ -1,14 +1,19 @@
 pluginManagement {
     repositories {
-        // Forge maven 同时提供 FG7 的 plugin marker 与真实 forgegradle 模块，必须最前
+        // Forge maven 国内镜像（BMCLAPI，提供 FG plugin marker / forgegradle / minecraft-mavenizer），必须最前；
+        // 官方 maven.minecraftforge.net 走 Cloudflare，国内 Java HttpClient 传输会挂起，仅作兜底。
+        maven { url = 'https://bmclapi2.bangbang93.com/maven/' }
         maven { url = 'https://maven.minecraftforge.net/' }
         maven { url = 'https://maven.aliyun.com/repository/gradle-plugin' }
         maven { url = 'https://maven.aliyun.com/repository/public' }
-        maven { url = 'http://127.0.0.1:8899/maven/'; allowInsecureProtocol = true }
         maven { url = 'https://libraries.minecraft.net/' }
         gradlePluginPortal()
         mavenCentral()
     }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 
 rootProject.name = 'mard-pixel-forge'

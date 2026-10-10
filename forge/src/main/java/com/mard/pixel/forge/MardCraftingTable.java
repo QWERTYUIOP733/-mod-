@@ -23,20 +23,20 @@
 
 package com.mard.pixel.forge;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
@@ -59,19 +59,14 @@ public class MardCraftingTable extends BaseEntityBlock {
 
     public static final EnumProperty<Direction> FACING = HorizontalDirectionalBlock.FACING;
 
-    public static final MapCodec<MardCraftingTable> CODEC = simpleCodec(MardCraftingTable::new);
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    // 26.3 起 Block 的 CODEC / block_type 注册表已整体移除，不再覆写 codec()。
 
     /** 供 DeferredRegister 使用的无参构造（内部补 setId）。 */
     public MardCraftingTable() {
         this(defaultProperties());
     }
 
-    /** 供 CODEC simpleCodec 使用的 Properties 构造。 */
+    /** Properties 构造。 */
     public MardCraftingTable(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
@@ -81,7 +76,7 @@ public class MardCraftingTable extends BaseEntityBlock {
     private static Properties defaultProperties() {
         return Properties.of()
                 .setId(ResourceKey.create(Registries.BLOCK,
-                        ResourceLocation.fromNamespaceAndPath(MardPixelForge.MODID, "mard_crafting_table")))
+                        Identifier.fromNamespaceAndPath(MardPixelForge.MODID, "mard_crafting_table")))
                 .strength(2.5f)
                 .requiresCorrectToolForDrops();
     }
@@ -112,7 +107,7 @@ public class MardCraftingTable extends BaseEntityBlock {
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                   Player player, BlockHitResult hit) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MardCraftingTableBlockEntity craftingTable) {
                 MenuProvider menuProvider = new MenuProvider() {
@@ -130,6 +125,18 @@ public class MardCraftingTable extends BaseEntityBlock {
                 ((ServerPlayer) player).openMenu(menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }
-        return level.isClientSide ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
+    }
+
+    /**
+     * 26.3：方块被玩家破坏时掉落内部物品（onRemove 已移除，改重写 playerDestroy）。
+     */
+    @Override
+    public void playerDestroy(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state,
+                              BlockEntity blockEntity, ItemStack tool) {
+        if (blockEntity instanceof MardCraftingTableBlockEntity craftingTable) {
+            craftingTable.dropContents();
+        }
+        super.playerDestroy(level, player, pos, state, blockEntity, tool);
     }
 }

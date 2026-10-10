@@ -1,10 +1,10 @@
 modLoader="javafml"
-loaderVersion="[54,)"
+loaderVersion="[66,)"
 license="MIT"
 
 [[mods]]
 modId="mard_pixel"
-version="2.1.0"
+version="3.0.0"
 displayName="彩色方块扩展"
 description='''
 彩色方块扩展 Mod：
@@ -16,13 +16,13 @@ logoFile="icon.png"
 [[dependencies.mard_pixel]]
 modId="forge"
 mandatory=true
-versionRange="[54,)"
+versionRange="[66,)"
 ordering="NONE"
 side="BOTH"
 
 [[dependencies.mard_pixel]]
 modId="minecraft"
 mandatory=true
-versionRange="[1.21.4,1.22)"
+versionRange="[26.3,26.4,)"
 ordering="NONE"
 side="BOTH"

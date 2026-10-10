@@ -26,9 +26,10 @@ package com.mard.pixel.forge.client;
 import com.mard.pixel.common.MardColor;
 import com.mard.pixel.common.MardPalette;
 import com.mard.pixel.forge.MardCraftingMenu;
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.GuiGraphics;
+import com.mard.pixel.forge.MardPixelForge;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
@@ -36,9 +37,10 @@ import net.minecraft.world.item.ItemStack;
 /**
  * 方块染色台屏幕。
  * 布局类似原版工作台，左侧添加颜色选择列表（七彩粉末模式）。
- * - 中央：3x3 合成网格（9格）+ 结果槽（1格）
- * - 下方：玩家背包（27格）+ 快捷栏（9格）
- * - 左侧：颜色选择列表（仅当合成网格中有七彩粉末时显示，固定放在左侧避免与右侧JEI物品管理器冲突）
+ *
+ * 26.3 渲染管线迁移：render/renderBg/renderTooltip 三件套改为
+ * extractBackground（super 背景 + 自定义面板）与 extractTooltip（g.setTooltipForNextFrame）；
+ * GuiGraphics→GuiGraphicsExtractor、drawString→g.text；mouseClicked 改 MouseButtonEvent。
  */
 public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu> {
 
@@ -65,190 +67,139 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     private String selectedColor = "";
 
     public MardCraftingScreen(MardCraftingMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
-        this.imageWidth = BASE_WIDTH;
-        this.imageHeight = BASE_HEIGHT;
+        super(menu, playerInventory, title, BASE_WIDTH, BASE_HEIGHT);
     }
 
     @Override
     protected void init() {
         super.init();
-        // 标题位置
         this.titleLabelX = 8;
         this.titleLabelY = 6;
-        // 玩家背包标签位置
         this.inventoryLabelX = 8;
         this.inventoryLabelY = this.imageHeight - 94;
-
-        // 根据窗口大小计算面板宽度（自适应）
         updatePanelWidth();
     }
 
     /**
-     * 根据窗口大小计算颜色面板宽度。
-     * 面板固定放在主界面左侧（避免与右侧JEI物品管理器冲突），宽度根据左侧可用空间动态调整。
+     * 根据窗口大小计算颜色面板宽度。面板固定放在主界面左侧，宽度随左侧可用空间动态调整。
      */
     private void updatePanelWidth() {
-        // 左侧可用空间 = 主界面左边界 - 屏幕左边距 - 间隙
         int availableWidth = this.leftPos - COLOR_PANEL_SCREEN_LEFT_MARGIN - COLOR_PANEL_GAP;
-
-        // 面板宽度：在最小值和默认值之间取合适值
         panelWidth = Math.max(COLOR_PANEL_MIN_WIDTH, Math.min(COLOR_PANEL_DEFAULT_WIDTH, availableWidth));
-
-        // 重新计算可见颜色数
         maxVisibleColors = Math.max(3, (COLOR_PANEL_HEIGHT - 20) / COLOR_ITEM_HEIGHT);
-
-        // 确保滚动偏移在有效范围内
         int totalColors = MardPalette.COLORS.size();
         int maxOffset = Math.max(0, totalColors - maxVisibleColors);
         scrollOffset = Math.min(scrollOffset, maxOffset);
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
-        super.render(graphics, mouseX, mouseY, partialTick);
-        this.renderTooltip(graphics, mouseX, mouseY);
-
-        // 如果有七彩粉末，渲染颜色选择列表（放在左侧）
+    public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
+        super.extractBackground(g, mouseX, mouseY, partialTick);
+        drawWorkbenchPanel(g);
         if (menu.hasPigment()) {
-            renderColorPanel(graphics, mouseX, mouseY);
-        }
-    }
-
-    @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-
-        int x = this.leftPos;
-        int y = this.topPos;
-
-        // 绘制主背景（浅灰色）
-        graphics.fill(x, y, x + BASE_WIDTH, y + BASE_HEIGHT, 0xFFC6C6C6);
-
-        // 绘制标题栏背景
-        graphics.fill(x, y, x + BASE_WIDTH, y + 16, 0xFF8B8B8B);
-
-        // 绘制每个槽位的背景（带立体边框）
-        // 3x3 合成网格
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 3; col++) {
-                int slotX = x + MardCraftingMenu.GRID_START_X + col * MardCraftingMenu.SLOT_SIZE;
-                int slotY = y + MardCraftingMenu.GRID_START_Y + row * MardCraftingMenu.SLOT_SIZE;
-                drawSlotBackground(graphics, slotX, slotY);
-            }
-        }
-
-        // 结果槽
-        int resultX = x + MardCraftingMenu.RESULT_X;
-        int resultY = y + MardCraftingMenu.RESULT_Y;
-        drawSlotBackground(graphics, resultX, resultY);
-
-        // 绘制箭头（合成网格 -> 结果槽）
-        int arrowX = x + 90;
-        int arrowY = y + 38;
-        graphics.fill(arrowX, arrowY + 3, arrowX + 22, arrowY + 7, 0xFF555555);
-        graphics.fill(arrowX + 18, arrowY, arrowX + 22, arrowY + 10, 0xFF555555);
-
-        // 玩家背包（27格）
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                int slotX = x + MardCraftingMenu.PLAYER_INV_X + col * MardCraftingMenu.SLOT_SIZE;
-                int slotY = y + MardCraftingMenu.PLAYER_INV_Y + row * MardCraftingMenu.SLOT_SIZE;
-                drawSlotBackground(graphics, slotX, slotY);
-            }
-        }
-
-        // 玩家快捷栏（9格）
-        for (int col = 0; col < 9; col++) {
-            int slotX = x + MardCraftingMenu.PLAYER_INV_X + col * MardCraftingMenu.SLOT_SIZE;
-            int slotY = y + MardCraftingMenu.HOTBAR_Y;
-            drawSlotBackground(graphics, slotX, slotY);
+            renderColorPanel(g, mouseX, mouseY);
         }
     }
 
     /**
-     * 绘制单个槽位的背景（带立体边框效果）。
+     * 绘制工作台主面板（浅灰底 + 标题栏 + 槽位立体边框 + 箭头）。
      */
-    private void drawSlotBackground(GuiGraphics graphics, int x, int y) {
+    private void drawWorkbenchPanel(GuiGraphicsExtractor g) {
+        int x = this.leftPos;
+        int y = this.topPos;
+
+        g.fill(x, y, x + BASE_WIDTH, y + BASE_HEIGHT, 0xFFC6C6C6);
+        g.fill(x, y, x + BASE_WIDTH, y + 16, 0xFF8B8B8B);
+
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 3; col++) {
+                int slotX = x + MardCraftingMenu.GRID_START_X + col * MardCraftingMenu.SLOT_SIZE;
+                int slotY = y + MardCraftingMenu.GRID_START_Y + row * MardCraftingMenu.SLOT_SIZE;
+                drawSlotBackground(g, slotX, slotY);
+            }
+        }
+
+        int resultX = x + MardCraftingMenu.RESULT_X;
+        int resultY = y + MardCraftingMenu.RESULT_Y;
+        drawSlotBackground(g, resultX, resultY);
+
+        int arrowX = x + 90;
+        int arrowY = y + 38;
+        g.fill(arrowX, arrowY + 3, arrowX + 22, arrowY + 7, 0xFF555555);
+        g.fill(arrowX + 18, arrowY, arrowX + 22, arrowY + 10, 0xFF555555);
+
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                int slotX = x + MardCraftingMenu.PLAYER_INV_X + col * MardCraftingMenu.SLOT_SIZE;
+                int slotY = y + MardCraftingMenu.PLAYER_INV_Y + row * MardCraftingMenu.SLOT_SIZE;
+                drawSlotBackground(g, slotX, slotY);
+            }
+        }
+        for (int col = 0; col < 9; col++) {
+            int slotX = x + MardCraftingMenu.PLAYER_INV_X + col * MardCraftingMenu.SLOT_SIZE;
+            int slotY = y + MardCraftingMenu.HOTBAR_Y;
+            drawSlotBackground(g, slotX, slotY);
+        }
+    }
+
+    private void drawSlotBackground(GuiGraphicsExtractor g, int x, int y) {
         int size = MardCraftingMenu.SLOT_SIZE;
-        // 槽位内部（深灰色）
-        graphics.fill(x + 1, y + 1, x + size - 1, y + size - 1, 0xFF8B8B8B);
-        // 上/左边框（浅色，凸起效果）
-        graphics.fill(x, y, x + size, y + 1, 0xFFFFFFFF);
-        graphics.fill(x, y, x + 1, y + size, 0xFFFFFFFF);
-        // 下/右边框（深色，凹陷效果）
-        graphics.fill(x, y + size - 1, x + size, y + size, 0xFF373737);
-        graphics.fill(x + size - 1, y, x + size, y + size, 0xFF373737);
+        g.fill(x + 1, y + 1, x + size - 1, y + size - 1, 0xFF8B8B8B);
+        g.fill(x, y, x + size, y + 1, 0xFFFFFFFF);
+        g.fill(x, y, x + 1, y + size, 0xFFFFFFFF);
+        g.fill(x, y + size - 1, x + size, y + size, 0xFF373737);
+        g.fill(x + size - 1, y, x + size, y + size, 0xFF373737);
     }
 
     /**
      * 渲染颜色选择列表面板（固定放在主界面左侧）。
      */
-    private void renderColorPanel(GuiGraphics graphics, int mouseX, int mouseY) {
-        // 每次渲染时重新计算宽度，确保窗口大小变化时及时响应
+    private void renderColorPanel(GuiGraphicsExtractor g, int mouseX, int mouseY) {
         updatePanelWidth();
 
-        // 计算面板位置（固定放在主界面左侧，带屏幕边界检测）
         int panelX = this.leftPos - panelWidth - COLOR_PANEL_GAP;
-        // 确保面板不会超出屏幕左侧
         panelX = Math.max(COLOR_PANEL_SCREEN_LEFT_MARGIN, panelX);
         int panelY = this.topPos;
 
-        // 绘制面板背景
-        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + COLOR_PANEL_HEIGHT, 0xFFC6C6C6);
-        // 面板边框
-        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + 1, 0xFFFFFFFF);
-        graphics.fill(panelX, panelY, panelX + 1, panelY + COLOR_PANEL_HEIGHT, 0xFFFFFFFF);
-        graphics.fill(panelX, panelY + COLOR_PANEL_HEIGHT - 1, panelX + panelWidth, panelY + COLOR_PANEL_HEIGHT, 0xFF373737);
-        graphics.fill(panelX + panelWidth - 1, panelY, panelX + panelWidth, panelY + COLOR_PANEL_HEIGHT, 0xFF373737);
+        g.fill(panelX, panelY, panelX + panelWidth, panelY + COLOR_PANEL_HEIGHT, 0xFFC6C6C6);
+        g.fill(panelX, panelY, panelX + panelWidth, panelY + 1, 0xFFFFFFFF);
+        g.fill(panelX, panelY, panelX + 1, panelY + COLOR_PANEL_HEIGHT, 0xFFFFFFFF);
+        g.fill(panelX, panelY + COLOR_PANEL_HEIGHT - 1, panelX + panelWidth, panelY + COLOR_PANEL_HEIGHT, 0xFF373737);
+        g.fill(panelX + panelWidth - 1, panelY, panelX + panelWidth, panelY + COLOR_PANEL_HEIGHT, 0xFF373737);
 
-        // 绘制标题栏背景
-        graphics.fill(panelX + 1, panelY + 1, panelX + panelWidth - 1, panelY + 14, 0xFF8B8B8B);
-        // 绘制标题
-        graphics.drawString(this.font, net.minecraft.network.chat.Component.translatable("screen.mard_pixel.crafting.select_color"), panelX + 4, panelY + 4, 0xFFFFFFFF, false);
+        g.fill(panelX + 1, panelY + 1, panelX + panelWidth - 1, panelY + 14, 0xFF8B8B8B);
+        g.text(this.font, "选择颜色", panelX + 4, panelY + 4, 0xFFFFFFFF, false);
 
-        // 计算可见的颜色范围
         int totalColors = MardPalette.COLORS.size();
         int startIndex = Math.max(0, Math.min(scrollOffset, totalColors - 1));
         int endIndex = Math.min(startIndex + maxVisibleColors, totalColors);
-
-        // 颜色列表起始Y位置
         int listStartY = panelY + 18;
 
-        // 绘制颜色列表项
         for (int i = startIndex; i < endIndex; i++) {
             MardColor color = MardPalette.COLORS.get(i);
             int itemY = listStartY + (i - startIndex) * COLOR_ITEM_HEIGHT;
 
-            // 选中项高亮背景
             if (color.code().equals(selectedColor)) {
-                graphics.fill(panelX + 2, itemY, panelX + panelWidth - 2, itemY + COLOR_ITEM_HEIGHT - 1, 0xFF90EE90);
+                g.fill(panelX + 2, itemY, panelX + panelWidth - 2, itemY + COLOR_ITEM_HEIGHT - 1, 0xFF90EE90);
             }
 
-            // 绘制颜色方块（带边框）
             int swatchX = panelX + 4;
             int swatchY = itemY + 3;
-            graphics.fill(swatchX, swatchY, swatchX + COLOR_SWATCH_SIZE, swatchY + COLOR_SWATCH_SIZE, 0xFF000000);
-            graphics.fill(swatchX + 1, swatchY + 1, swatchX + COLOR_SWATCH_SIZE - 1, swatchY + COLOR_SWATCH_SIZE - 1, 0xFF000000 | color.rgb());
+            g.fill(swatchX, swatchY, swatchX + COLOR_SWATCH_SIZE, swatchY + COLOR_SWATCH_SIZE, 0xFF000000);
+            g.fill(swatchX + 1, swatchY + 1, swatchX + COLOR_SWATCH_SIZE - 1, swatchY + COLOR_SWATCH_SIZE - 1, 0xFF000000 | color.rgb());
 
-            // 文字区域起始X位置
             int textX = swatchX + COLOR_SWATCH_SIZE + COLOR_TEXT_PADDING;
-            int availableTextWidth = panelWidth - (textX - panelX) - 8; // 留出滚动条空间
+            int availableTextWidth = panelWidth - (textX - panelX) - 8;
 
-            // 绘制颜色介绍（色号 + RGB）
             String codeText = color.code();
             String rgbText = String.format("RGB:%d,%d,%d", color.r(), color.g(), color.b());
 
-            // 色号
-            graphics.drawString(this.font, codeText, textX, itemY + 3, 0x404040, false);
-            // RGB值（如果宽度不够，截断显示）
+            g.text(this.font, codeText, textX, itemY + 3, 0xFF404040, false);
             if (availableTextWidth > 40) {
-                graphics.drawString(this.font, rgbText, textX, itemY + 13, 0x606060, false);
+                g.text(this.font, rgbText, textX, itemY + 13, 0xFF606060, false);
             }
         }
 
-        // 绘制滚动条
         if (totalColors > maxVisibleColors) {
             int scrollbarX = panelX + panelWidth - 6;
             int scrollbarY = listStartY;
@@ -257,16 +208,11 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
             int maxOffset = Math.max(0, totalColors - maxVisibleColors);
             int thumbY = scrollbarY + (maxOffset > 0 ? (int) ((float) scrollOffset / maxOffset * (scrollbarHeight - thumbHeight)) : 0);
 
-            // 滚动条背景
-            graphics.fill(scrollbarX, scrollbarY, scrollbarX + 4, scrollbarY + scrollbarHeight, 0xFF8B8B8B);
-            // 滚动条滑块
-            graphics.fill(scrollbarX, thumbY, scrollbarX + 4, thumbY + thumbHeight, 0xFF555555);
+            g.fill(scrollbarX, scrollbarY, scrollbarX + 4, scrollbarY + scrollbarHeight, 0xFF8B8B8B);
+            g.fill(scrollbarX, thumbY, scrollbarX + 4, thumbY + thumbHeight, 0xFF555555);
         }
     }
 
-    /**
-     * 获取颜色面板的边界（用于鼠标事件检测）。
-     */
     private int[] getColorPanelBounds() {
         updatePanelWidth();
         int panelX = this.leftPos - panelWidth - COLOR_PANEL_GAP;
@@ -277,7 +223,6 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontalDelta, double verticalDelta) {
-        // 颜色选择列表滚动
         if (menu.hasPigment()) {
             int[] bounds = getColorPanelBounds();
             int panelX = bounds[0];
@@ -296,9 +241,11 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // 颜色选择列表点击
-        if (menu.hasPigment() && button == 0) {
+    public boolean mouseClicked(MouseButtonEvent e, boolean doubleClick) {
+        double mouseX = e.x();
+        double mouseY = e.y();
+        int button = e.button();
+        if (menu.hasPigment() && button == 1) { // 26.3 SDL3 左键=1（旧 GLFW 为 0）
             int[] bounds = getColorPanelBounds();
             int panelX = bounds[0];
             int panelY = bounds[1];
@@ -318,14 +265,13 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
                 }
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(e, doubleClick);
     }
 
     @Override
-    protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
-        super.renderTooltip(graphics, mouseX, mouseY);
+    protected void extractTooltip(GuiGraphicsExtractor g, int mouseX, int mouseY) {
+        super.extractTooltip(g, mouseX, mouseY);
 
-        // 颜色列表项的tooltip
         if (menu.hasPigment()) {
             int[] bounds = getColorPanelBounds();
             int panelX = bounds[0];
@@ -340,9 +286,9 @@ public class MardCraftingScreen extends AbstractContainerScreen<MardCraftingMenu
 
                 if (colorIndex >= 0 && colorIndex < MardPalette.COLORS.size()) {
                     MardColor color = MardPalette.COLORS.get(colorIndex);
-                    ItemStack stack = com.mard.pixel.forge.MardPixelForge.buildStack(color.code());
+                    ItemStack stack = MardPixelForge.buildStack(color.code());
                     if (!stack.isEmpty()) {
-                        graphics.renderTooltip(this.font, stack, mouseX, mouseY);
+                        g.setTooltipForNextFrame(this.font, stack, mouseX, mouseY);
                     }
                 }
             }

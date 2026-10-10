@@ -3,21 +3,21 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '7.0.40'
+    id 'net.minecraftforge.gradle' version '[7.0.17,8)'
 }
 
 group = 'com.mard.pixel'
-version = '2.1.0'
+version = '3.0.0'
 
 base {
     archivesName = 'mard_pixel_forge'
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+// Mojang ships Java 25 to end users in 26.1+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 minecraft {
-    mappings channel: 'official', version: '1.21.4'
-
+    // 26.1 起游戏主体不再混淆，Forge 无需再配置 mappings channel/version。
     runs {
         configureEach {
             workingDir = layout.projectDirectory.dir('run')
@@ -43,27 +43,58 @@ sourceSets {
 }
 
 repositories {
-    // ForgeGradle 7 / 1.21.4 必需的 Mojang/Forge 仓库
     minecraft.mavenizer(it)
     maven fg.forgeMaven
     maven fg.minecraftLibsMaven
+    // Forge maven 走本地反向代理（bmclapi_proxy.ps1，监听 127.0.0.1:8920）。
+    // 代理固定第一跳到 BMCLAPI 国内节点并跟随其全部 302（CERNET/高校镜像），
+    // 规避官方 Cloudflare 挂起与动态镜像主机 DNS 问题。构建前须先启动该代理。
+    maven { url = 'http://127.0.0.1:8920/maven/' }
     // 国内镜像（加速常规依赖）
     maven { url = 'https://maven.aliyun.com/repository/public' }
-    maven { url = 'http://127.0.0.1:8899/maven/'; allowInsecureProtocol = true }
     mavenCentral()
+
+    // 无论 FG 在何时加入 fg.forgeMaven，都把官方 Forge 域名 / BMCLAPI 域名统一改写到本地代理，
+    // 确保 mavenizer 命令行 --repository MinecraftForge 指向代理。
+    all { repo ->
+        if (repo instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository) {
+            def u = repo.url?.toString() ?: ''
+            if (u.contains('maven.minecraftforge.net') || u.contains('bmclapi2.bangbang93.com')) {
+                repo.url = uri('http://127.0.0.1:8920/maven/')
+            } else if (u.contains('repo.maven.apache.org')) {
+                // Maven Central 走 Cloudflare 国内易超时，统一改写到阿里云公共仓库
+                repo.url = uri('https://maven.aliyun.com/repository/public/')
+            }
+        }
+    }
+}
+
+// 兜底：FG 若在 afterEvaluate 阶段才固化 forgeMaven 地址，再统一改写一次。
+afterEvaluate {
+    repositories.each { repo ->
+        if (repo instanceof org.gradle.api.artifacts.repositories.MavenArtifactRepository) {
+            def u = repo.url?.toString() ?: ''
+            if (u.contains('maven.minecraftforge.net') || u.contains('bmclapi2.bangbang93.com')) {
+                repo.url = uri('http://127.0.0.1:8920/maven/')
+            } else if (u.contains('repo.maven.apache.org')) {
+                repo.url = uri('https://maven.aliyun.com/repository/public/')
+            }
+        }
+    }
 }
 
 dependencies {
-    implementation minecraft.dependency('net.minecraftforge:forge:1.21.4-54.1.17')
+    implementation minecraft.dependency('net.minecraftforge:forge:26.3-66.0.9')
+    annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.6'
 }
 
 jar {
     manifest {
         attributes([
             'Specification-Title'     : 'mard_pixel',
-            'Specification-Version'   : '2.1.0',
+            'Specification-Version'   : '3.0.0',
             'Implementation-Title'    : 'Color Blocks Extension',
-            'Implementation-Version'  : '2.1.0'
+            'Implementation-Version'  : '3.0.0'
         ])
     }
     from("LICENSE") {
@@ -73,5 +104,5 @@ jar {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 21
+    options.release = 25
 }
