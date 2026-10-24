@@ -1,0 +1,169 @@
+# 发布工作流：推 tag 时构建、校验版本一致性、生成校验和并发布 Release
+# 修复点：
+#   1. tag 版本必须与 mods.toml / build.gradle 版本一致（防止 v1.2.3 那种「旧包重传」）
+#   2. 资产统一命名 <artifact_prefix>-<版本>.jar，并附带 SHA256SUMS.txt
+#   3. 发布说明从 forge/CHANGELOG.md 自动提取；Release 已存在则覆盖更新（可重复执行）
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - 'mc*-v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check tag matches mod version
+        id: meta
+        run: node tools/ci-meta.js --check-tag "$GITHUB_REF_NAME"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ steps.meta.outputs.java_version }}
+
+      - name: Generate resources from palette
+        run: node tools/generate_resources.js
+
+      - name: Verify resources
+        run: node tools/verify.js
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ steps.meta.outputs.gradle_version }}
+
+      - name: Build
+        working-directory: forge
+        run: gradle build --no-daemon --stacktrace
+
+      - name: Prepare assets
+        env:
+          MOD_VERSION: ${{ steps.meta.outputs.mod_version }}
+          ARTIFACT_PREFIX: ${{ steps.meta.outputs.artifact_prefix }}
+        run: |
+          set -euo pipefail
+          JAR="forge/build/libs/${ARTIFACT_PREFIX}-${MOD_VERSION}.jar"
+          if [ ! -f "$JAR" ]; then
+            echo "::error::未找到预期产物 $JAR"
+            ls -l forge/build/libs || true
+            exit 1
+          fi
+          mkdir -p dist
+          cp "$JAR" "dist/${ARTIFACT_PREFIX}-${MOD_VERSION}.jar"
+          JAR="dist/${ARTIFACT_PREFIX}-${MOD_VERSION}.jar"
+
+          # 先落盘再检查：set -o pipefail 下不能用 head/grep -q 提前关闭管道（SIGPIPE 会误判失败）
+          unzip -p "$JAR" META-INF/MANIFEST.MF > dist/MANIFEST.MF
+          unzip -p "$JAR" META-INF/mods.toml > dist/mods.toml
+          unzip -l "$JAR" > dist/jar-listing.txt
+
+          MANIFEST_VERSION=$(tr -d '\r' < dist/MANIFEST.MF \
+            | sed -n 's/^Implementation-Version: *//p' | sed -n '1p')
+          # mods.toml 允许 "version = \"x\""、单引号、缩进等写法
+          MODS_VERSION=$(tr -d '\r' < dist/mods.toml \
+            | sed -n 's/^[[:space:]]*version[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' \
+            | sed -n '1p')
+          if [ -z "$MODS_VERSION" ]; then
+            MODS_VERSION=$(tr -d '\r' < dist/mods.toml \
+              | sed -n "s/^[[:space:]]*version[[:space:]]*=[[:space:]]*'\([^']*\)'.*/\1/p" \
+              | sed -n '1p')
+          fi
+
+          # 版本校验：manifest 与 mods.toml 至少要有一个能确认版本（两个都有则都必须一致）
+          if [ -n "$MANIFEST_VERSION" ] && [ "$MANIFEST_VERSION" != "$MOD_VERSION" ]; then
+            echo "::error::jar 内 Implementation-Version=${MANIFEST_VERSION} 与 tag 版本 ${MOD_VERSION} 不一致"
+            exit 1
+          fi
+          case "$MODS_VERSION" in
+            '') echo "[WARN] mods.toml 未解析出版本（可能是占位符写法），仅依赖 manifest 校验" ;;
+            *'${'*) echo "[INFO] mods.toml version 为占位符（${MODS_VERSION}），改由 manifest 校验" ;;
+            "$MOD_VERSION") echo "[INFO] mods.toml version 与 tag 一致" ;;
+            *) echo "::error::mods.toml version=${MODS_VERSION} 与 tag 版本 ${MOD_VERSION} 不一致"; exit 1 ;;
+          esac
+          if [ -z "$MANIFEST_VERSION" ] && [ -z "$MODS_VERSION" ]; then
+            echo "::error::既没有 manifest Implementation-Version，也没有 mods.toml version，无法校验发布版本"
+            exit 1
+          fi
+
+          # 产物内容自检（-x 精确匹配根目录，避免 assets/xxx/icon.png 误通过）
+          if ! grep -qx 'META-INF/mods.toml' dist/jar-listing.txt; then
+            echo "::error::jar 内缺少 META-INF/mods.toml"
+            exit 1
+          fi
+          if ! grep -qx 'icon.png' dist/jar-listing.txt; then
+            echo "::error::jar 根目录缺少 icon.png（logoFile 指向它）"
+            exit 1
+          fi
+
+          ( cd dist && sha256sum ./*.jar > SHA256SUMS.txt && cat SHA256SUMS.txt )
+
+      - name: Extract release notes
+        env:
+          MOD_VERSION: ${{ steps.meta.outputs.mod_version }}
+        run: node tools/changelog-note.js --version "$MOD_VERSION" --out dist/RELEASE_NOTES.md
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          MC_VERSION: ${{ steps.meta.outputs.mc_version }}
+          MOD_VERSION: ${{ steps.meta.outputs.mod_version }}
+          ARTIFACT_PREFIX: ${{ steps.meta.outputs.artifact_prefix }}
+        run: |
+          set -euo pipefail
+          TITLE="[Forge ${MC_VERSION}] v${MOD_VERSION}"
+          JAR="dist/${ARTIFACT_PREFIX}-${MOD_VERSION}.jar"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "[INFO] Release 已存在，覆盖更新资产与说明"
+            gh release upload "$TAG" "$JAR" dist/SHA256SUMS.txt --clobber
+            gh release edit "$TAG" --title "$TITLE" --notes-file dist/RELEASE_NOTES.md
+            # 若原 Release 是 draft，这里确保转正
+            gh release edit "$TAG" --draft=false >/dev/null
+          else
+            gh release create "$TAG" "$JAR" dist/SHA256SUMS.txt \
+              --title "$TITLE" \
+              --notes-file dist/RELEASE_NOTES.md \
+              --verify-tag
+          fi
+          gh release view "$TAG" --json url,isDraft,assets --jq '"发布完成: " + .url + " draft=" + (.isDraft|tostring)'
+
+      - name: Job summary
+        if: always()
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          MC_VERSION: ${{ steps.meta.outputs.mc_version }}
+          MOD_VERSION: ${{ steps.meta.outputs.mod_version }}
+        run: |
+          {
+            echo "### Release"
+            echo ""
+            echo "| 项 | 值 |"
+            echo "|---|---|"
+            echo "| Tag | ${TAG_NAME} |"
+            echo "| Minecraft | ${MC_VERSION} |"
+            echo "| 模组版本 | ${MOD_VERSION} |"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -154,6 +154,19 @@ gradle build
 
 ---
 
+## 维护与发布
+
+- **分支与版本线**：每个 Minecraft 版本线一个分支（`mc/1.20.1`、`mc/1.21.1`、`mc/1.21.4`、`mc/26.3`）。截至 2026-10，`main` 的内容是 **1.21.1 线（v2.0.0）**，最新版本线在 `mc/26.3`（v3.0.0）。
+- **下载指引**：Minecraft 1.20.1 用户请使用 **`mc1.20.1-v1.2.1`**。`v1.2.2` / `v1.2.3` 是 1.20.1 线的历史过渡版本（v1.2.3 的发布资产与 v1.2.2 完全相同，仅构建脚本有改动），不建议新用户下载。
+- **提交前本地校验**：
+  ```bash
+  node tools/generate_resources.js   # 由色板生成 blockstate / item model / lang
+  node tools/verify.js               # 色板 ↔ Java 调色板 ↔ 资源 ↔ lang 一致性
+  node tools/ci-meta.js              # 打印当前分支的 Minecraft 版本、模组版本、JDK、Gradle
+  ```
+- **发布规范**：见 [RELEASE.md](RELEASE.md)（tag 命名 `mc<MC版本>-v<模组版本>`、单一版本源、CI 校验、历史遗留修正命令）。
+- **CI**：`.github/workflows/build.yml` 负责各分支构建；`release.yml` 在推送 tag 时自动构建、校验 tag 与版本一致、生成 `SHA256SUMS.txt` 并发布 Release。
+
 ## 许可证
 
 MIT © Pixel Team，可自由使用、修改与分发。

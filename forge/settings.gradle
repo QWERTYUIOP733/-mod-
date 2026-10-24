@@ -1,7 +1,6 @@
 pluginManagement {
     repositories {
         maven { url = 'https://maven.aliyun.com/repository/public' }
-        maven { url = 'http://127.0.0.1:8899/maven/'; allowInsecureProtocol = true }
         maven { url = 'https://maven.minecraftforge.net/' }
         gradlePluginPortal()
         mavenCentral()

@@ -1,0 +1,4 @@
+[submodule "fabric"]
+	path = fabric
+	url = https://github.com/QWERTYUIOP733/color-blocks-extension-fabric.git
+	branch = main

@@ -1,2 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# 二进制文件：不做行尾转换，避免 jar/贴图被损坏
+*.jar binary
+*.zip binary
+*.png binary
+*.ogg binary
+*.class binary

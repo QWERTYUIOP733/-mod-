@@ -2,7 +2,7 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '6.0.+'
+    id 'net.minecraftforge.gradle' version '6.0.54'
 }
 
 group = 'com.mard.pixel'
@@ -55,7 +55,6 @@ sourceSets {
 
 repositories {
     maven { url = 'https://maven.aliyun.com/repository/public' }
-    maven { url = 'http://127.0.0.1:8899/maven/'; allowInsecureProtocol = true }
     maven { url = 'https://maven.minecraftforge.net/' }
     mavenCentral()
 }

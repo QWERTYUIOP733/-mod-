@@ -1,0 +1,27 @@
+# ---- 构建产物 ----
+build/
+.gradle/
+out/
+
+# ---- 发布二进制：只走 GitHub Releases，不再提交进 git ----
+release/**/*.jar
+release/*.zip
+release/**/*.zip
+dist/
+
+# ---- 编辑器 / 系统 ----
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+Thumbs.db
+
+# ---- 临时文件 / 备份 ----
+*.bak
+*.tmp
+*.log
+*.png~
+__pycache__/
+*.pyc

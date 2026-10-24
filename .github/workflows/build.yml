@@ -1,42 +1,105 @@
-name: Build MARD Pixel Mod
+# 构建工作流：任意分支 push / PR 都构建当前分支的 Forge 版
+# 版本、JDK、Gradle 全部由 tools/ci-meta.js 从 forge/gradle.properties 与 mods.toml 推导，
+# 不再在 workflow 里硬编码 1.20.1 / JDK 17 / Gradle 8.8。
+name: Build
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - '**'
+    paths:
+      - 'forge/**'
+      - 'shared/**'
+      - 'colors/**'
+      - 'tools/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'forge/**'
+      - 'shared/**'
+      - 'colors/**'
+      - 'tools/**'
+      - '.github/workflows/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-forge:
-    name: Build Forge (1.20.1)
+  build:
+    name: Forge build
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          fetch-depth: 0
+          submodules: false
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Generate 295 blockstates + item models + lang
+      - name: Read build metadata
+        id: meta
+        run: node tools/ci-meta.js
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ steps.meta.outputs.java_version }}
+
+      - name: Generate resources from palette
         run: node tools/generate_resources.js
 
-      - name: Build Forge mod
-        uses: gradle/gradle-build-action@v3
-        with:
-          arguments: build --no-daemon
-          build-root-directory: forge
-          gradle-version: '8.8'
+      - name: Verify resources
+        run: node tools/verify.js
 
-      - name: Upload Forge jar
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ steps.meta.outputs.gradle_version }}
+
+      - name: Build
+        working-directory: forge
+        run: gradle build --no-daemon --stacktrace
+
+      - name: Show artifacts
+        run: ls -lh forge/build/libs
+
+      - name: Upload jar
         uses: actions/upload-artifact@v4
         with:
-          name: MARD_Pixel_Forge_1.20.1
-          path: forge/build/libs/*.jar
-          retention-days: 30
+          name: mard_pixel_forge-${{ steps.meta.outputs.mod_version }}-${{ github.sha }}
+          path: |
+            forge/build/libs/*.jar
+            !forge/build/libs/*-sources.jar
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Job summary
+        if: always()
+        env:
+          MC_VERSION: ${{ steps.meta.outputs.mc_version }}
+          MOD_VERSION: ${{ steps.meta.outputs.mod_version }}
+          JAVA_VERSION: ${{ steps.meta.outputs.java_version }}
+          GRADLE_VERSION: ${{ steps.meta.outputs.gradle_version }}
+        run: |
+          {
+            echo "### 构建信息"
+            echo ""
+            echo "| 项 | 值 |"
+            echo "|---|---|"
+            echo "| Minecraft | ${MC_VERSION} |"
+            echo "| 模组版本 | ${MOD_VERSION} |"
+            echo "| JDK | ${JAVA_VERSION} |"
+            echo "| Gradle | ${GRADLE_VERSION} |"
+            echo "| 提交 | ${{ github.sha }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
