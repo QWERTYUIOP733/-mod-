@@ -24,7 +24,12 @@
 package com.mard.pixel.forge;
 
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.loot.LootParams;
+
+import java.util.List;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 
@@ -41,6 +46,11 @@ public class MardBlock extends Block {
         this.rgb = rgb;
     }
 
+    /** 没有战利品表，直接按方块本身掉落；工具限制由 requiresCorrectToolForDrops + mineable/pickaxe 控制。 */
+    @Override
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
+        return List.of(new ItemStack(this));
+    }
     public String code() { return code; }
     public int rgb() { return rgb; }
 }
