@@ -1,0 +1,104 @@
+# 发布包审计：从 tag 干净重建，和 Release 里已发布的 jar 逐类比对
+#
+# 目的：拦住"发布包来自带未提交改动的工作区"这种问题。
+# 用法：Actions -> Verify release -> Run workflow，输入 tag（如 mc1.21.4-v2.1.0）
+name: Verify release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: '要校验的 tag，例如 mc1.20.1-v1.2.1 / mc1.21.4-v2.1.0 / mc26.3-v3.0.0'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Rebuild tag and compare with released jar
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout tools (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: meta
+
+      - name: Checkout tag source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          path: src
+          fetch-depth: 0
+          submodules: false
+
+      - name: Resolve toolchain
+        id: tc
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.tag }}"
+          case "$tag" in
+            mc1.20.1-*) java=17; gradle=8.8 ;;
+            mc1.21.1-*) java=21; gradle=8.8 ;;
+            mc1.21.4-*) java=21; gradle=9.7.1 ;;
+            mc26.3-*)   java=25; gradle=9.7.1 ;;
+            *) echo "::error::无法从 tag 识别 Minecraft 版本: $tag"; exit 1 ;;
+          esac
+          echo "java=$java" >> "$GITHUB_OUTPUT"
+          echo "gradle=$gradle" >> "$GITHUB_OUTPUT"
+          echo "工具链: JDK $java / Gradle $gradle"
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ steps.tc.outputs.java }}
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: ${{ steps.tc.outputs.gradle }}
+
+      - name: Build from tag
+        working-directory: src/forge
+        run: gradle build --no-daemon --stacktrace
+
+      - name: Download released jar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          gh release download "$TAG" --pattern '*.jar' --dir out
+          ls -l out
+
+      - name: Compare
+        run: |
+          set -euo pipefail
+          RELEASED=$(find out -maxdepth 1 -name '*.jar' ! -name '*sources*' | head -n 1)
+          REBUILT=$(find src/forge/build/libs -maxdepth 1 -name '*.jar' ! -name '*sources*' | head -n 1)
+          echo "发布包: $RELEASED"
+          echo "重建包: $REBUILT"
+          python3 meta/tools/compare_jars.py "$RELEASED" "$REBUILT"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### 发布包审计"
+            echo ""
+            echo "| 项 | 值 |"
+            echo "|---|---|"
+            echo "| Tag | ${{ inputs.tag }} |"
+            echo "| JDK | ${{ steps.tc.outputs.java }} |"
+            echo "| Gradle | ${{ steps.tc.outputs.gradle }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
