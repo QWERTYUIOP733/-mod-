@@ -36,7 +36,7 @@ public class MardBlock extends Block {
         super(BlockBehaviour.Properties.of()
                 .setId(id)
                 .mapColor(MapColor.NONE)
-                .strength(0.6f, 1.0f));
+                .strength(0.6f, 1.0f).requiresCorrectToolForDrops());
         this.code = code;
         this.rgb = rgb;
     }
